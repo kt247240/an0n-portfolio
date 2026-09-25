@@ -1,0 +1,667 @@
+/* =========================================================
+   ANON. 森の美術館
+   ========================================================= */
+:root {
+  --ink: #1b2319;
+  --paper: #f4eee2;
+  --paper-2: #ebe2d0;
+  --cream: #fffaf2;
+  --moss: #172c21;
+  --lime: #a5c23e;
+  --accent: #df7418;
+  --glow: 255, 230, 200;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+  --ease-io: cubic-bezier(.77, 0, .18, 1);
+  --sig: "Yellowtail", "Allura", "Brush Script MT", cursive;
+  --serif: "Shippori Mincho", serif;
+  --en: "Cormorant Garamond", "Times New Roman", serif;
+  --sans: "Zen Kaku Gothic New", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body { margin: 0; background: var(--moss); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body.viewing { overflow: hidden; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+img, video { display: block; }
+
+/* ---------- 紙の粒子（作品と同じ質感を全体に） ---------- */
+#grain {
+  position: fixed; inset: -50%; pointer-events: none; z-index: 90; opacity: .12; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3  0 0 0 0 .26  0 0 0 0 .2  0 0 0 .95 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
+#fx { position: fixed; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; }
+
+/* ---------- SVG の中の動き ---------- */
+.sway { animation: sway 5s ease-in-out infinite alternate; }
+.sway.slow { animation-duration: 8s; }
+.hang { animation: hang 6s ease-in-out infinite alternate; }
+.bob { animation: bob 4s ease-in-out infinite alternate; }
+.shimmer { animation: shimmer 3.4s ease-in-out infinite; }
+.beam { animation: beam 7s ease-in-out infinite alternate; }
+.twinkle { animation: twinkle 2.6s ease-in-out infinite; }
+.flicker { animation: flicker 2.3s steps(1) infinite; }
+.swim { animation: swim 22s linear infinite alternate; }
+.float { animation: float 6s ease-in-out infinite alternate; }
+@keyframes sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+@keyframes hang { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+@keyframes bob { from { transform: translateY(-.25px); } to { transform: translateY(.25px); } }
+@keyframes shimmer { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+@keyframes beam { from { opacity: .45; } to { opacity: 1; } }
+@keyframes twinkle { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+@keyframes flicker { 0%, 100% { opacity: 1; } 42% { opacity: .5; } 44% { opacity: 1; } 71% { opacity: .78; } }
+@keyframes swim { from { transform: translateX(-6px); } to { transform: translateX(8px); } }
+@keyframes float { from { transform: translateY(-1.2px); } to { transform: translateY(1.2px); } }
+.room:not(.live) .wind, .room:not(.live) .canvas { animation-play-state: paused !important; }
+
+/* ---------- ローダー：署名を書くように ---------- */
+#loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: var(--moss); color: var(--cream); transition: opacity 1s .2s, transform 1.4s var(--ease-io); }
+body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; }
+.loader-inner { text-align: center; }
+.loader-sig { font-family: var(--sig); font-size: clamp(90px, 16vw, 170px); line-height: 1; margin: 0; clip-path: inset(0 100% 0 0); animation: write 1.6s .2s var(--ease-io) forwards; }
+.loader-sub { margin: 10px 0 0; font-family: var(--serif); letter-spacing: .5em; font-size: 14px; opacity: 0; animation: fadeUp .8s 1.2s forwards; }
+@keyframes write { to { clip-path: inset(0 0 0 0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: .85; transform: none; } }
+
+/* ---------- ヘッダー・ナビ ---------- */
+#site-head { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; color: var(--cream); pointer-events: none; transition: color .5s, background .5s; }
+#site-head > * { pointer-events: auto; }
+#site-head.solid { color: var(--ink); background: linear-gradient(rgba(244, 238, 226, .95), rgba(244, 238, 226, 0)); }
+.brand { display: flex; align-items: baseline; gap: 12px; text-decoration: none; text-shadow: 0 2px 16px rgba(0, 0, 0, .25); }
+#site-head.solid .brand { text-shadow: none; }
+.brand .sig { font-family: var(--sig); font-size: 42px; line-height: 1; }
+.brand small { font-family: var(--serif); font-size: 12px; letter-spacing: .35em; }
+.head-links { display: flex; gap: 22px; font-size: 13px; letter-spacing: .15em; }
+.head-links a { text-decoration: none; position: relative; text-shadow: 0 1px 12px rgba(0, 0, 0, .3); }
+#site-head.solid .head-links a { text-shadow: none; }
+.head-links a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .5s var(--ease-out); }
+.head-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+#room-nav { position: fixed; right: 22px; top: 50%; z-index: 50; transform: translate(20px, -50%); opacity: 0; transition: opacity .6s, transform .6s var(--ease-out); display: flex; flex-direction: column; gap: 14px; }
+#room-nav.show { opacity: 1; transform: translate(0, -50%); }
+#room-nav a { display: flex; align-items: center; justify-content: flex-end; gap: 10px; color: var(--cream); text-decoration: none; text-shadow: 0 1px 10px rgba(0, 0, 0, .4); }
+#room-nav b { font-family: var(--en); font-weight: 600; font-size: 15px; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid rgba(255, 250, 242, .6); border-radius: 50%; transition: background .3s, color .3s; }
+#room-nav span { font-family: var(--serif); font-size: 12px; letter-spacing: .15em; opacity: 0; transform: translateX(6px); transition: opacity .3s, transform .3s; }
+#room-nav a:hover span, #room-nav a.on span { opacity: 1; transform: none; }
+#room-nav a.on b { background: var(--cream); color: var(--ink); }
+#progress { position: fixed; left: 0; right: 0; bottom: 0; height: 2px; z-index: 50; background: var(--lime); transform-origin: left; transform: scaleX(0); }
+
+/* ---------- シーン共通 ---------- */
+.sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+.sky { position: absolute; inset: 0; }
+.plane { position: absolute; left: 0; top: 0; height: 100%; will-change: transform; pointer-events: none; }
+.work .canvas, .work.pending { pointer-events: auto; }
+.plane > img { display: block; height: 100%; max-width: none; user-select: none; }
+.frame { position: absolute; inset: 0; pointer-events: none; will-change: transform; transform-origin: 50% 55%; }
+.frame > img { width: 100%; height: 100%; display: block; user-select: none; }
+/* 画面の縁の植物は、層ごとゆっくり風に揺らす（合成だけなので軽い） */
+.wind { transform-origin: 50% 100%; animation: wind 7s ease-in-out infinite alternate; }
+@keyframes wind { from { transform: rotate(-.35deg) scale(1.01); } to { transform: rotate(.35deg) scale(1.025) translateY(-.3vh); } }
+.veil { position: absolute; inset: 0; background: var(--moss); opacity: 0; pointer-events: none; }
+
+/* ---------- 閉館後の部屋：懐中電灯 ---------- */
+.flash { position: absolute; inset: 0; pointer-events: none; display: none; }
+.scene-attic-off .flash { display: block; background: rgba(6, 6, 12, .84);
+  -webkit-mask-image: radial-gradient(circle 26vh at var(--fx, 50%) var(--fy, 62%), transparent 0 40%, #000 100%), radial-gradient(ellipse calc(var(--spot, 0) * 40vh + 1px) calc(var(--spot, 0) * 50vh + 1px) at 50% 44%, transparent 0 50%, #000 100%);
+  -webkit-mask-composite: source-in; mask-image: radial-gradient(circle 26vh at var(--fx, 50%) var(--fy, 62%), transparent 0 40%, #000 100%), radial-gradient(ellipse calc(var(--spot, 0) * 40vh + 1px) calc(var(--spot, 0) * 50vh + 1px) at 50% 44%, transparent 0 50%, #000 100%);
+  mask-composite: intersect; }
+.frame-spot .work .canvas { border: .7vh solid #1a1712; box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5); }
+.frame-spot .work.near .canvas { box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5), 0 0 12vh rgba(var(--glow), .35); }
+.frame-spot .work .deco.spot { width: 30vh; height: 20vh; margin-bottom: 1.9vh; }
+.scene-attic .room-title { text-shadow: 0 2px 24px rgba(0, 0, 0, .7); }
+
+/* ---------- 入口 ---------- */
+#entrance { height: 250vh; position: relative; }
+#entrance .plane { transform-origin: 50% 70%; }
+.guide { position: absolute; left: 50%; bottom: 13vh; height: 27vh; transform-origin: 50% 100%; z-index: 2; cursor: pointer; }
+.guide.huff .walker { animation: huff .6s var(--ease-out); }
+/* 案内人の後ろ姿の歩き（23 コマで 1 周の横並びの絵）。コマはスクロールで進んだ距離に合わせて JS で送る */
+.guide .walker { display: block; height: 100%; aspect-ratio: 186 / 480; background: url("../guide-walk.webp") 0 0 / 2300% 100% no-repeat; transform-origin: 50% 100%; filter: brightness(.94) saturate(.94); }
+@keyframes huff { 30% { transform: scale(1.04, .96) rotate(-2deg); } }
+.guide img { height: 100%; width: auto; filter: drop-shadow(0 .8vh .6vh rgba(20, 30, 10, .25)); animation: breathe 3.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.guide .puff { position: absolute; left: 17%; top: 13%; width: 1.4vh; height: 1.4vh; border-radius: 50%; background: radial-gradient(rgba(245, 242, 236, .9), rgba(245, 242, 236, 0) 70%); animation: puff 3.6s ease-out infinite; pointer-events: none; }
+.guide .puff:nth-of-type(2) { animation-delay: 1.2s; }
+.guide .puff:nth-of-type(3) { animation-delay: 2.4s; }
+@keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
+@keyframes puff { 0% { transform: translate(0, 0) scale(.4); opacity: 0; } 15% { opacity: .9; } 100% { transform: translate(-2vh, -9vh) scale(3.4); opacity: 0; } }
+.sign { position: absolute; left: calc(50% + 8vh); bottom: 11vh; width: 19vh; transform-origin: 50% 100%; z-index: 1; }
+.hero-title { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); text-align: center; color: var(--cream); text-shadow: 0 2px 6px rgba(20, 40, 20, .35), 0 4px 30px rgba(20, 40, 20, .45); width: min(92vw, 900px); z-index: 3; }
+.hero-title .sig { font-family: var(--sig); font-size: clamp(96px, 17vw, 210px); line-height: .9; margin: 0; }
+.hero-title h1 { font-family: var(--serif); font-weight: 800; font-size: clamp(26px, 3.6vw, 44px); letter-spacing: .4em; margin: 8px 0 0; padding-left: .4em; }
+.hero-title .en { font-family: var(--en); font-style: italic; font-size: clamp(16px, 1.8vw, 22px); letter-spacing: .08em; margin: 10px 0 0; }
+.hero-title .meta { margin: 18px 0 0; font-size: 12px; letter-spacing: .35em; opacity: .9; }
+body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
+.hero-title > * { transition: opacity 1.2s var(--ease-out), transform 1.4s var(--ease-out); }
+.hero-title > :nth-child(2) { transition-delay: .25s; } .hero-title > :nth-child(3) { transition-delay: .4s; } .hero-title > :nth-child(4) { transition-delay: .55s; }
+.scroll-cue { position: absolute; left: 50%; bottom: 3.5vh; transform: translateX(-50%); color: var(--cream); font-size: 11px; letter-spacing: .4em; text-align: center; z-index: 3; text-shadow: 0 1px 10px rgba(0, 0, 0, .35); }
+.scroll-cue i { display: block; width: 1px; height: 44px; margin: 10px auto 0; background: linear-gradient(var(--cream), transparent); animation: cue 2s var(--ease-io) infinite; transform-origin: top; }
+@keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* ---------- 展示室 ---------- */
+.room { position: relative; }
+.room-title { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--cream); text-shadow: 0 3px 24px rgba(0, 0, 0, .3); z-index: 4; width: min(90vw, 720px); pointer-events: none; }
+.room-title .no { font-family: var(--en); font-style: italic; font-size: 18px; letter-spacing: .3em; margin: 0; }
+.room-title h2 { font-family: var(--serif); font-weight: 800; font-size: clamp(40px, 6vw, 84px); letter-spacing: .25em; margin: 10px 0 0; padding-left: .25em; }
+.room-title .en { font-family: var(--en); font-style: italic; font-size: clamp(18px, 2vw, 26px); margin: 6px 0 0; }
+.room-title .lead { font-size: 14px; letter-spacing: .12em; line-height: 2; margin: 18px 0 0; }
+.room-title .count { font-size: 11px; letter-spacing: .35em; margin: 14px 0 0; opacity: .85; }
+.scene-cove .room-title, .scene-forest .room-title { text-shadow: 0 2px 30px rgba(60, 40, 20, .45); }
+
+.work { position: absolute; top: 46%; transform: translate(-50%, -50%); transform-origin: 50% 50%; will-change: transform, opacity; }
+.work .canvas { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: #111; cursor: zoom-in; transition: box-shadow .8s; box-sizing: content-box; }
+.work .canvas img, .work .canvas video { width: 100%; height: 100%; object-fit: contain; }
+.work .halo { position: absolute; left: 50%; top: 50%; width: 170%; height: 150%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(var(--glow), .5), rgba(var(--glow), 0)); opacity: .45; transition: opacity 1s; pointer-events: none; }
+.work.near .halo { opacity: 1; }
+.work .deco { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; overflow: visible; }
+.work .deco.top { bottom: 100%; width: 150%; height: 14vh; }
+.work .deco.under { top: calc(100% - 1px); width: 130%; height: 16vh; }
+/* 額装：部屋ごとに違う */
+.frame-hang .work .canvas { border: 1.3vh solid #8a5a3b; box-shadow: inset 0 0 0 .4vh #6b4630, 0 2.4vh 4vh rgba(20, 30, 10, .35); transform-origin: 50% -14vh; animation: hang 6s ease-in-out infinite alternate; }
+.frame-easel .work .canvas { border: 1vh solid var(--cream); box-shadow: 0 2vh 4vh rgba(30, 40, 20, .35); }
+.frame-lamp .work .canvas { border: 1.1vh solid #fdf4ea; box-shadow: 0 0 0 .45vh #c7b3e6, 0 3vh 6vh rgba(90, 60, 80, .3); }
+.frame-lamp .work::before { content: ""; position: absolute; left: -2.6vh; right: -2.6vh; top: -6vh; bottom: -1.6vh; border-radius: 50vh 50vh 1vh 1vh; background: rgba(253, 244, 234, .35); box-shadow: inset 0 0 0 .5vh rgba(199, 179, 230, .6); pointer-events: none; }
+.frame-lamp .work .deco.lamp { width: 12vh; height: 16vh; }
+.frame-lamp .work .halo { top: 30%; }
+.frame-lightbox .work .canvas { border: .9vh solid #15121a; box-shadow: 0 0 0 .35vh rgba(var(--glow), .9), 0 0 6vh rgba(var(--glow), .55), 0 0 16vh rgba(var(--glow), .3); }
+.work.near .canvas { box-shadow: 0 0 0 0 transparent, 0 3vh 7vh rgba(0, 0, 0, .35), 0 0 10vh rgba(var(--glow), .45); }
+.frame-hang .work.near .canvas { box-shadow: inset 0 0 0 .4vh #6b4630, 0 3vh 6vh rgba(20, 30, 10, .35), 0 0 9vh rgba(var(--glow), .45); }
+.frame-lightbox .work.near .canvas { box-shadow: 0 0 0 .35vh rgba(var(--glow), 1), 0 0 8vh rgba(var(--glow), .7), 0 0 20vh rgba(var(--glow), .4); }
+.work.pending .crate { width: 30vh; height: 36vh; display: grid; place-content: center; text-align: center; gap: 6px; color: #5a4128;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, .04) 0 2px, transparent 2px 9px), #c9a878; box-shadow: 0 2vh 4vh rgba(0, 0, 0, .3); position: relative; }
+.work.pending .crate::before, .work.pending .crate::after { content: ""; position: absolute; left: 50%; width: 38%; height: 2.4vh; background: rgba(240, 225, 190, .85); transform: translateX(-50%) rotate(-3deg); }
+.work.pending .crate::before { top: -1vh; } .work.pending .crate::after { bottom: -1vh; transform: translateX(-50%) rotate(2deg); }
+.work.pending p { margin: 0; font-family: var(--serif); letter-spacing: .4em; font-size: 16px; }
+.work.pending strong { font-family: var(--en); font-size: 7vh; font-weight: 600; line-height: 1; }
+.work.pending span { font-size: 10px; letter-spacing: .4em; }
+
+/* キャプション：美術館の作品プレート */
+.caption { position: absolute; left: 5vw; bottom: 8vh; width: min(360px, 84vw); z-index: 5; padding: 20px 22px 18px; background: rgba(255, 250, 242, .94); color: var(--ink);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .18); clip-path: inset(0 0 100% 0); transition: clip-path .45s var(--ease-io); }
+.caption.show { clip-path: inset(0 0 0 0); transition-duration: .9s; }
+.caption .num { margin: 0; font-family: var(--en); font-style: italic; font-size: 14px; letter-spacing: .15em; color: rgb(var(--glow)); filter: saturate(1.6) brightness(.7); }
+.caption h3 { font-family: var(--en); font-weight: 600; font-size: 38px; line-height: 1.05; margin: 4px 0 2px; }
+.caption h3 .w, #v-title .w { display: inline-block; white-space: nowrap; opacity: 1; transform: none; }
+.caption h3 span { display: inline-block; opacity: 0; transform: translateY(.5em); transition: opacity .5s, transform .8s var(--ease-out); transition-delay: calc(var(--i) * 30ms + 200ms); }
+.caption.show h3 span { opacity: 1; transform: none; }
+.caption .ja { margin: 0; font-family: var(--serif); font-size: 13px; letter-spacing: .2em; }
+.caption .meta { margin: 8px 0 0; font-size: 11px; letter-spacing: .2em; opacity: .65; }
+.caption .note { margin: 10px 0 0; font-size: 13px; line-height: 1.9; }
+.caption .enter { margin-top: 14px; background: var(--ink); color: var(--cream); border: 0; padding: 10px 18px; font-size: 12px; letter-spacing: .2em; cursor: pointer; transition: background .3s, letter-spacing .4s var(--ease-out); }
+.caption .enter:hover { background: #33452c; letter-spacing: .3em; }
+
+/* ---------- 収蔵目録 ---------- */
+#catalog { position: relative; z-index: 2; background: var(--paper); padding: 140px 6vw 120px; }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px; border-bottom: 1px solid rgba(27, 35, 25, .25); padding-bottom: 26px; }
+.sec-head .kick { font-family: var(--en); font-style: italic; font-size: 18px; margin: 0; letter-spacing: .1em; }
+.sec-head h2 { font-family: var(--serif); font-weight: 800; font-size: clamp(40px, 6vw, 80px); letter-spacing: .2em; margin: 6px 0 0; }
+.stats { display: flex; gap: 34px; }
+.stats div { text-align: right; }
+.stats b { display: block; font-family: var(--en); font-size: 56px; font-weight: 600; line-height: 1; }
+.stats small { font-size: 11px; letter-spacing: .3em; }
+
+/* ---------- 作家について ---------- */
+#artist { position: relative; z-index: 2; min-height: 100vh; color: var(--cream); overflow: hidden;
+  background: radial-gradient(ellipse at 70% 110%, rgba(223, 116, 24, .28), transparent 55%), linear-gradient(#151a36, #1c2046 45%, #2a2c55); display: grid; grid-template-columns: 1.1fr .9fr; align-items: center; padding: 120px 8vw 80px; gap: 5vw; }
+#artist .sig { font-family: var(--sig); font-size: clamp(110px, 14vw, 200px); line-height: .9; margin: 0; }
+#artist .role { font-family: var(--en); font-style: italic; font-size: 22px; margin: 10px 0 0; }
+#artist-bio { font-size: 15px; line-height: 2.1; letter-spacing: .06em; margin: 28px 0 0; max-width: 34em; }
+#artist-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+#artist-links a { text-decoration: none; border: 1px solid rgba(255, 250, 242, .5); padding: 11px 20px; font-size: 13px; letter-spacing: .15em; transition: background .3s, color .3s; }
+#artist-links a:hover { background: var(--cream); color: var(--ink); }
+.artist-figure { position: relative; justify-self: center; height: min(70vh, 640px); }
+.artist-figure img { height: 100%; width: auto; filter: brightness(.82) drop-shadow(0 0 40px rgba(223, 116, 24, .25)); }
+.artist-figure .puff { position: absolute; left: 17%; top: 13%; width: 3vh; height: 3vh; border-radius: 50%; background: radial-gradient(rgba(245, 242, 236, .8), transparent 70%); animation: puff 4s ease-out infinite; }
+.artist-figure .puff:nth-of-type(2) { animation-delay: 1.3s; } .artist-figure .puff:nth-of-type(3) { animation-delay: 2.6s; }
+.reveal-up { opacity: 0; transform: translateY(40px); transition: opacity 1.2s var(--ease-out), transform 1.4s var(--ease-out); }
+.reveal-up.in { opacity: 1; transform: none; }
+footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 250, 242, .6); font-size: 11px; letter-spacing: .25em; padding: 22px 8vw; display: flex; justify-content: space-between; }
+
+/* ---------- 没入ビューア ---------- */
+#viewer { position: fixed; inset: 0; z-index: 80; background: #07080a; clip-path: circle(0 at var(--ox, 50%) var(--oy, 50%)); transition: clip-path 1.1s var(--ease-io); visibility: hidden; overflow: hidden; }
+#viewer.open { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); visibility: visible; }
+#viewer.closing { visibility: visible; }
+#v-wash { position: absolute; left: -8%; top: -8%; width: 116%; height: 116%; filter: blur(30px) saturate(1.35) brightness(.72); animation: vbreathe 9s ease-in-out infinite alternate; }
+@keyframes vbreathe { to { transform: scale(1.06); } }
+.v-stage { position: absolute; inset: 0; perspective: 900px; perspective-origin: 50% 45%; }
+#v-space { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .6s var(--ease-out); }
+.v-wall { position: absolute; top: 6%; height: 70%; width: 60%; opacity: .5; filter: blur(1.5px) saturate(1.2); }
+.v-wall.left { right: 100%; transform-origin: 100% 50%; transform: translateX(22%) rotateY(72deg); }
+.v-wall.right { left: 100%; transform-origin: 0 50%; transform: translateX(-22%) rotateY(-72deg); }
+.v-floor { position: absolute; left: 5%; width: 90%; top: 74%; height: 60%; transform-origin: 50% 0; transform: rotateX(78deg); opacity: .45; filter: blur(2px); -webkit-mask-image: linear-gradient(#000, transparent 70%); mask-image: linear-gradient(#000, transparent 70%); }
+#v-screen { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) translateZ(40px); margin: 0; transition: opacity .33s; }
+#v-screen img, #v-screen video { max-height: 72vh; max-width: 70vw; box-shadow: 0 0 0 6px rgba(255, 250, 242, .92), 0 0 80px 16px rgba(var(--glow), .42), 0 40px 90px rgba(0, 0, 0, .5); }
+#v-fx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.v-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 45%, rgba(0, 0, 0, .55)); }
+.v-ui { position: absolute; inset: 0; pointer-events: none; color: var(--cream); }
+.v-ui button { pointer-events: auto; }
+.v-top { position: absolute; top: 18px; left: 28px; right: 28px; display: flex; justify-content: space-between; align-items: center; }
+.v-top .sig { font-family: var(--sig); font-size: 40px; }
+#v-close { background: rgba(255, 250, 242, .1); border: 1px solid rgba(255, 250, 242, .55); color: var(--cream); padding: 10px 20px; font-size: 12px; letter-spacing: .2em; cursor: pointer; backdrop-filter: blur(6px); }
+#v-close:hover { background: var(--cream); color: var(--ink); }
+.v-cap { position: absolute; left: 34px; bottom: 30px; max-width: 440px; }
+#v-kicker { margin: 0; font-size: 11px; letter-spacing: .3em; color: rgb(var(--glow)); }
+#v-title { font-family: var(--en); font-weight: 600; font-size: clamp(40px, 5.5vw, 76px); line-height: 1; margin: 8px 0 4px; }
+#v-title span { display: inline-block; opacity: 0; transform: translateY(.5em); transition: opacity .6s, transform .9s var(--ease-out); transition-delay: calc(var(--i) * 35ms + 450ms); }
+#viewer.cap #v-title span { opacity: 1; transform: none; }
+#v-meta { margin: 0; font-family: var(--serif); font-size: 13px; letter-spacing: .15em; opacity: .85; }
+#v-note { margin: 10px 0 0; font-size: 13px; line-height: 1.9; opacity: .8; }
+.v-nav { position: absolute; right: 34px; bottom: 34px; display: flex; gap: 10px; }
+.v-nav button { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); color: var(--cream); cursor: pointer; font-size: 18px; backdrop-filter: blur(6px); }
+.v-nav button:hover { background: var(--cream); color: var(--ink); }
+
+/* ---------- スマホ ---------- */
+@media (max-width: 760px) {
+  #site-head { padding: 10px 16px; }
+  .brand .sig { font-size: 34px; }
+  .brand small { display: none; }
+  .head-links { gap: 14px; font-size: 11px; }
+  #room-nav { right: 10px; }
+  #room-nav span { display: none; }
+  .work { top: 38%; }
+  .caption { left: 16px; right: 16px; width: auto; bottom: 22px; padding: 14px 16px; }
+  .caption h3 { font-size: 28px; }
+  .caption .note { display: none; }
+  .guide { height: 22vh; bottom: 16vh; }
+  .sign { left: calc(50% + 6vh); width: 15vh; bottom: 14vh; }
+  #catalog { padding: 110px 20px 90px; }
+  .stats b { font-size: 40px; }
+  #artist { grid-template-columns: 1fr; padding: 100px 24px 60px; }
+  .artist-figure { height: 46vh; order: -1; }
+  .v-wall { display: none; }
+  #v-screen img, #v-screen video { max-width: 88vw; max-height: 56vh; }
+  .v-cap { left: 20px; right: 20px; bottom: 100px; }
+  #v-note { display: none; }
+  .v-nav { left: 20px; right: auto; bottom: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* =========================================================
+   ヒップホップの層：ビート・ストリートの小物・ミックステープ・VHS
+   ========================================================= */
+:root { --kick: 0; }
+.cone { transform: scale(calc(1 + var(--kick) * .14)); transform-box: view-box; }
+.spin { animation: spin 1.8s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.led { animation: twinkle 1.4s steps(2) infinite; }
+body:not(.beat-on) .spin { animation-duration: 7s; }
+
+/* ビートのボタン（イコライザーつき） */
+.beat { display: flex; align-items: center; gap: 8px; margin-left: auto; margin-right: 22px; padding: 7px 14px; cursor: pointer; font-family: "VT323", monospace; font-size: 17px; letter-spacing: .12em;
+  color: var(--cream); background: rgba(20, 20, 16, .35); border: 1px solid rgba(255, 250, 242, .5); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
+#site-head.solid .beat { color: var(--ink); border-color: rgba(27, 35, 25, .4); background: rgba(255, 250, 242, .6); }
+.beat:hover { background: var(--cream); color: var(--ink); }
+.beat .eq { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+.beat .eq i { width: 3px; height: 30%; background: currentColor; transition: height .1s; }
+body.beat-on .beat .eq i { animation: eq .5s ease-in-out infinite alternate; }
+body.beat-on .beat .eq i:nth-child(2) { animation-delay: -.2s; } body.beat-on .beat .eq i:nth-child(3) { animation-delay: -.35s; } body.beat-on .beat .eq i:nth-child(4) { animation-delay: -.1s; }
+@keyframes eq { from { height: 20%; } to { height: 100%; } }
+body.beat-on .beat { color: #f2c14e; border-color: #f2c14e; }
+
+/* 入口のラジカセ（押すとビート） */
+.boombox-btn { position: absolute; left: calc(50% - 22vh); bottom: 10.5vh; width: 17vh; padding: 0; border: 0; background: none; cursor: pointer; z-index: 2; transform-origin: 50% 100%; transition: transform .3s var(--ease-out); }
+.boombox-btn:hover { transform: rotate(-3deg) scale(1.05); }
+.boombox-btn svg, .prop svg, .artist-boombox svg { display: block; width: 100%; height: auto; overflow: visible; }
+body:not(.beat-on) .boombox-btn::after { content: "PRESS PLAY"; position: absolute; left: 50%; top: -3.2vh; transform: translateX(-50%); font-family: "VT323", monospace; font-size: 2vh; letter-spacing: .15em; color: var(--cream); background: rgba(20, 20, 16, .55); padding: .2vh .8vh; white-space: nowrap; animation: twinkle 1.6s steps(2) infinite; }
+
+/* 森の中の小物 */
+.plane.props { z-index: 0; }
+.prop { position: absolute; transform: translateX(-50%); filter: drop-shadow(0 1vh .8vh rgba(0, 0, 0, .22)); }
+.prop.hang-prop { transform-origin: 50% 0; animation: hang 4s ease-in-out infinite alternate; filter: none; }
+.scene-night .prop, .scene-attic .prop { filter: brightness(.7) drop-shadow(0 1vh .8vh rgba(0, 0, 0, .3)); }
+
+/* レコード棚の目録 */
+.sec-lead { margin: 12px 0 0; font-size: 13px; letter-spacing: .1em; opacity: .7; }
+.artist-boombox { position: absolute; left: -24%; bottom: 0; width: 42%; z-index: 1; filter: brightness(.8); }
+
+/* VHS：ロード画面とビューア */
+.osd-play { left: 0; top: 0; animation: twinkle 1.2s steps(2) infinite; }
+.osd-sp { right: 0; top: 0; }
+.osd-tc { left: 0; bottom: 0; }
+.osd-track { right: 0; bottom: 0; opacity: .7; }
+@keyframes tracking { from { top: -10vh; } to { top: 110vh; } }
+body.beat-on .work.near .halo { opacity: calc(.8 + var(--kick) * .2); transform: translate(-50%, -50%) scale(calc(1 + var(--kick) * .05)); }
+@media (max-width: 760px) {
+  .beat { margin-right: 10px; padding: 5px 9px; font-size: 14px; }
+  .beat .lbl { display: none; }
+  .boombox-btn { left: calc(50% - 17vh); width: 12vh; bottom: 14vh; }
+}
+
+/* =========================================================
+   小ネタ（イースターエッグ）
+   ========================================================= */
+.egg-prop { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; transform: translateX(-50%); }
+.egg-prop svg { display: block; width: 100%; height: auto; overflow: visible; }
+.egg-hot { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; border-radius: 40%; }
+.egg-hot:focus-visible, .egg-prop:focus-visible { outline: 2px dashed rgba(255, 250, 242, .7); }
+.sign { pointer-events: auto; cursor: pointer; }
+@keyframes bubble { from { opacity: 0; transform: translate(-50%, 6px) scale(.8); } }
+/* 鳥が飛び立つ */
+.bird { transform-box: fill-box; transform-origin: center; }
+[data-egg="birds"].fly .bird { animation: flyaway 6.5s var(--ease-io) forwards; animation-delay: calc(var(--i) * .12s); }
+@keyframes flyaway { 0% { transform: none; } 12% { transform: translate(10px, -14px) rotate(-10deg); } 45% { transform: translate(140px, -160px) scale(.6); opacity: 1; } 55% { opacity: 0; } 85% { opacity: 0; transform: translate(-40px, -30px); } 100% { opacity: 1; transform: none; } }
+/* カエル */
+.frog { transform-box: fill-box; transform-origin: 50% 100%; }
+[data-egg="frog"].jump .frog { animation: frogjump .55s var(--ease-out); }
+@keyframes frogjump { 40% { transform: translateY(-14px) scale(1.05, .95); } 70% { transform: translateY(0) scale(1.08, .9); } }
+/* スニーカーが大きく揺れる */
+.prop.swing { animation: bigswing 2.4s var(--ease-out) !important; }
+@keyframes bigswing { 0% { transform: translateX(-50%) rotate(0); } 15% { transform: translateX(-50%) rotate(22deg); } 35% { transform: translateX(-50%) rotate(-16deg); } 55% { transform: translateX(-50%) rotate(9deg); } 75% { transform: translateX(-50%) rotate(-4deg); } 100% { transform: translateX(-50%) rotate(0); } }
+.prop.hang-prop { transform-origin: 50% 0; }
+/* 屋根裏の箱：ふたが跳ねる */
+[data-egg="box"] .lid { transform-box: fill-box; transform-origin: 0% 100%; }
+[data-egg="box"].open .lid { animation: lidpop 1s var(--ease-out); }
+@keyframes lidpop { 30% { transform: translateY(-3px) rotate(-38deg); } 70% { transform: rotate(6deg); } }
+/* 砂浜の瓶が跳ねる */
+[data-egg="bottle"].bob svg { animation: bottlebob .9s var(--ease-out); }
+@keyframes bottlebob { 30% { transform: translateY(-1.2vh) rotate(-8deg); } 60% { transform: translateY(0) rotate(5deg); } }
+/* 入口の看板が揺れる */
+.sign.swing { animation: signswing 1.4s var(--ease-out); }
+@keyframes signswing { 20% { rotate: -6deg; } 45% { rotate: 4deg; } 70% { rotate: -2deg; } }
+/* 懐中電灯でだけ見える落書き（バラクラバの顔） */
+.egg-wall { position: absolute; width: 12vh; transform: translateX(-50%) rotate(-4deg); opacity: .6; pointer-events: none; }
+/* 「anon」でスプレー */
+/* パーティーモード */
+body.party::after { content: ""; position: fixed; inset: 0; z-index: 55; pointer-events: none; mix-blend-mode: soft-light; opacity: calc(.25 + var(--kick) * .45);
+  background: radial-gradient(circle at 20% 30%, #ff7ab8, transparent 40%), radial-gradient(circle at 80% 40%, #77b2b9, transparent 40%), radial-gradient(circle at 50% 90%, #f2c14e, transparent 45%); animation: disco 4s linear infinite; }
+@keyframes disco { to { filter: hue-rotate(360deg); } }
+/* 散歩する Anon */
+@keyframes stroll { to { left: -10%; } }
+/* 署名を書き直す */
+.brand .sig.rewrite { animation: write 1.4s var(--ease-io); clip-path: inset(0 100% 0 0); animation-fill-mode: forwards; }
+/* 目録のスクラッチ */
+/* ビューアの巻き戻し */
+/* エンドロール */
+.prop.hang-prop { animation: hangprop 4s ease-in-out infinite alternate; }
+@keyframes hangprop { from { transform: translateX(-50%) rotate(-3deg); } to { transform: translateX(-50%) rotate(3deg); } }
+
+/* 閉館後の部屋の深夜テレビ（3 作品をチャンネルで） */
+.egg-prop.tv { width: 22vh; bottom: 6vh; }
+.tv-body { position: relative; display: block; padding: 1.4vh 1.4vh 3.2vh; background: #3a3128; border-radius: 1.6vh; box-shadow: 0 1.5vh 3vh rgba(0, 0, 0, .5); }
+.tv-body::after { content: ""; position: absolute; right: 1.6vh; bottom: .9vh; width: 1.4vh; height: 1.4vh; border-radius: 50%; background: #1d1813; box-shadow: -2.4vh 0 0 #1d1813; }
+.tv-screen { position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 1.2vh / 1vh; background: #0b0c0a; box-shadow: inset 0 0 2vh rgba(0, 0, 0, .8); }
+.tv-screen video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.tv.on .tv-screen { box-shadow: inset 0 0 2vh rgba(0, 0, 0, .6), 0 0 5vh rgba(180, 220, 255, .35); }
+.tv-screen .static { position: absolute; inset: 0; opacity: 0; background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .5) 0 1px, rgba(0, 0, 0, .6) 1px 3px); animation: tracking .15s linear infinite; }
+.tv.zap .tv-screen .static { opacity: 1; }
+.tv-screen .lines { position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, .25) 2px 3px); pointer-events: none; }
+.tv .ant { position: absolute; left: 50%; top: -5vh; width: 10vh; height: 5vh; transform: translateX(-50%); }
+
+/* ---------- 文字は少なく ---------- */
+.brand small { display: none; }
+.caption { width: auto; min-width: 0; padding: 12px 18px 12px; }
+.caption h3 { font-size: 30px; margin: 0; }
+.caption .num { font-size: 12px; }
+.caption .meta { margin: 4px 0 0; }
+.room-title .no { font-size: 22px; letter-spacing: .2em; }
+.work.pending strong { font-size: 9vh; }
+body:not(.beat-on) .boombox-btn::after { content: "▶"; font-size: 2.6vh; padding: .2vh 1vh; }
+.sec-head h2 { letter-spacing: .3em; }
+#artist-bio { font-family: var(--en); font-style: italic; font-size: 22px; margin-top: 10px; }
+.beat .lbl { display: none; }
+#room-nav span { display: none; }
+
+/* ---------- 仕上げ：植物のカーテン・足元の影・カーソル ---------- */
+.curtain { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; visibility: hidden; }
+.curtain img { position: absolute; display: block; height: auto; max-width: none; will-change: transform; transform-origin: 50% 50%; }
+.veil { z-index: 5; }
+.work .ground-shadow { position: absolute; left: 50%; top: calc(100% + 13vh); width: 120%; height: 4vh; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(20, 20, 10, .32), transparent); pointer-events: none; }
+.frame-lightbox .work .ground-shadow { top: calc(100% + 15vh); }
+.frame-lamp .work .ground-shadow { top: calc(100% + 1vh); height: 3vh; }
+#cursor { position: fixed; left: 0; top: 0; z-index: 99; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 1.5px solid rgba(255, 250, 242, .9); border-radius: 50%; pointer-events: none; display: grid; place-items: center;
+  box-shadow: 0 0 8px rgba(0, 0, 0, .25); transition: width .35s var(--ease-out), height .35s var(--ease-out), margin .35s var(--ease-out), background .35s, border-color .35s; }
+#cursor span { opacity: 0; color: var(--cream); font-size: 16px; transform: translateX(2px) scale(.6); transition: opacity .25s, transform .35s var(--ease-out); }
+#cursor.view { width: 74px; height: 74px; margin: -37px 0 0 -37px; background: rgba(20, 20, 16, .28); border-color: rgba(255, 250, 242, .75); backdrop-filter: blur(3px); }
+#cursor.view span { opacity: 1; transform: translateX(2px) scale(1); }
+#cursor.link { width: 34px; height: 34px; margin: -17px 0 0 -17px; background: rgba(255, 250, 242, .12); }
+body.has-cursor .work .canvas, body.has-cursor .spec { cursor: none; }
+#site-head.solid ~ #cursor { border-color: rgba(27, 35, 25, .7); }
+
+.room-title::before { content: ""; position: absolute; inset: -8vh -12vw; z-index: -1; background: radial-gradient(closest-side, rgba(12, 18, 12, .32), transparent); pointer-events: none; }
+
+/* =========================================================
+   文字を使わない表現（v5）
+   ========================================================= */
+/* ヘッダーとナビはアイコンだけ */
+.head-links a { display: grid; place-items: center; width: 34px; height: 34px; }
+.head-links a::after { display: none; }
+.head-links svg { width: 20px; height: 20px; fill: currentColor; filter: drop-shadow(0 1px 6px rgba(0, 0, 0, .35)); transition: transform .3s var(--ease-out); }
+.head-links a:hover svg { transform: scale(1.15); }
+#room-nav a { width: 30px; height: 30px; justify-content: center; border-radius: 50%; border: 1px solid rgba(255, 250, 242, .55); margin: 8px 0; transition: background .3s, transform .3s var(--ease-out); }
+#room-nav a svg { width: 16px; height: 16px; fill: var(--cream); filter: drop-shadow(0 1px 4px rgba(0, 0, 0, .4)); }
+#room-nav a.on { background: var(--cream); transform: scale(1.12); }
+#room-nav a.on svg { fill: var(--ink); filter: none; }
+#room-nav a:hover { transform: scale(1.12); }
+#artist-links a { display: grid; place-items: center; width: 50px; height: 50px; padding: 0; border-radius: 50%; }
+#artist-links svg { width: 22px; height: 22px; fill: currentColor; }
+#catalog { padding-top: 12vh; }
+footer { justify-content: center; }
+/* まだ届いていない作品：布をかけたキャンバス */
+.work.pending .covered { display: block; width: 30vh; height: 36vh; filter: drop-shadow(0 2vh 3vh rgba(20, 30, 10, .3)); animation: clothbreath 5s ease-in-out infinite alternate; transform-origin: 50% 0; }
+@keyframes clothbreath { to { transform: skewX(1.2deg) scaleY(1.01); } }
+
+/* 部屋の入口のアニメーション */
+.room-intro { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: visible; }
+.room:not(.live) .room-intro * { animation-play-state: paused !important; }
+.ib-fly { transform-box: view-box; animation: ibfly var(--dur) linear var(--d) infinite both; }
+@keyframes ibfly { from { transform: translate(-20px, var(--y)); } 50% { transform: translate(100px, calc(var(--y) - 9px)); } to { transform: translate(225px, calc(var(--y) - 2px)); } }
+.ib-flap { transform-box: fill-box; transform-origin: 50% 90%; animation: ibflap .32s ease-in-out var(--d) infinite alternate; }
+@keyframes ibflap { to { transform: scaleY(-.55); } }
+.ib-fall { animation: ibfall 8s linear var(--d) infinite both; }
+@keyframes ibfall { from { transform: translate(var(--x), -6px); } 25% { transform: translate(calc(var(--x) + 6px), 22px); } 50% { transform: translate(calc(var(--x) - 3px), 50px); } 75% { transform: translate(calc(var(--x) + 5px), 78px); } to { transform: translate(calc(var(--x) - 2px), 106px); } }
+.ib-spin { transform-box: fill-box; transform-origin: 50% 50%; animation: ibspin 2.6s ease-in-out infinite alternate; }
+@keyframes ibspin { from { transform: rotate(-50deg) scaleX(1); } to { transform: rotate(60deg) scaleX(.4); } }
+.ib-ripple { transform-box: fill-box; transform-origin: 50% 50%; animation: ibripple 3.6s ease-out var(--d) infinite both; }
+@keyframes ibripple { from { transform: scale(.1); opacity: .9; } to { transform: scale(1.7); opacity: 0; } }
+.ib-koi { animation: ibkoi 16s ease-in-out infinite both; }
+@keyframes ibkoi { from { transform: translate(20px, 82px) rotate(-6deg); } 35% { transform: translate(80px, 74px) rotate(4deg); } 70% { transform: translate(140px, 80px) rotate(-5deg); } to { transform: translate(205px, 72px) rotate(3deg); } }
+.ib-dragon { animation: ibdragon 11s ease-in-out infinite both; }
+@keyframes ibdragon { 0% { transform: translate(-10px, 40px); } 18%, 30% { transform: translate(70px, 50px); } 42%, 58% { transform: translate(118px, 36px) rotate(8deg); } 72%, 84% { transform: translate(150px, 55px) rotate(-6deg); } 100% { transform: translate(215px, 30px); } }
+.ib-buzz { transform-box: fill-box; transform-origin: 50% 50%; animation: ibbuzz .07s linear infinite alternate; }
+@keyframes ibbuzz { to { transform: scaleY(.55); } }
+.ib-tail { animation: ibtail 9s ease-in-out infinite both; }
+@keyframes ibtail { 0%, 12% { transform: translateY(18px); } 32%, 48% { transform: translateY(0); } 52% { transform: translateY(1px) rotate(-1deg); } 72%, 100% { transform: translateY(18px); } }
+.ib-drop { opacity: 0; animation: ibdrop 9s ease-out var(--d) infinite both; }
+@keyframes ibdrop { 0%, 60% { opacity: 0; transform: translate(0, 4px); } 63% { opacity: 1; } 72% { opacity: 0; transform: translate(var(--dx), -9px); } 100% { opacity: 0; } }
+.ib-gull { animation: ibgull 14s linear infinite both; }
+@keyframes ibgull { from { transform: translate(215px, 26px); } 50% { transform: translate(110px, 20px); } to { transform: translate(-15px, 28px); } }
+.ib-ff { animation: ibff var(--dur) ease-in-out var(--d) infinite; }
+@keyframes ibff { 0% { transform: translate(var(--x), var(--y)); opacity: 0; } 15% { opacity: 1; } 30% { transform: translate(calc(var(--x) + var(--r)), calc(var(--y) - var(--r) - 5px)); opacity: .4; } 45% { opacity: 1; } 60% { transform: translate(var(--x), calc(var(--y) - var(--r) * 2 - 10px)); opacity: .5; } 80% { transform: translate(calc(var(--x) - var(--r)), calc(var(--y) - var(--r) - 16px)); opacity: 1; } 100% { transform: translate(var(--x), calc(var(--y) - 24px)); opacity: 0; } }
+.ib-torch { transform-box: view-box; transform-origin: 40px 92px; animation: ibflick 1.4s steps(1) both, ibsway 7s ease-in-out 1.4s infinite alternate; }
+@keyframes ibflick { 0% { opacity: 0; } 30% { opacity: 1; } 40% { opacity: .15; } 55% { opacity: 1; } 100% { opacity: 1; } }
+@keyframes ibsway { from { transform: rotate(4deg); } to { transform: rotate(-14deg); } }
+.ib-mote { animation: twinkle 3s ease-in-out var(--d) infinite; }
+
+/* 没入：歩いている間は UI が引っ込み、画面の縁がほんのり暗い */
+body.walking #site-head, body.walking #room-nav.show { opacity: 0; pointer-events: none; }
+#site-head { transition: opacity .8s, background .4s; }
+.room .sticky::after { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(10, 16, 8, .28) 100%); }
+.scene-night .sticky::after, .scene-attic .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(0, 0, 0, .42) 100%); }
+
+/* =========================================================
+   作品を主役に（v6）：被写界深度、到着の光、集中
+   ========================================================= */
+/* 作品の前では、縁のかげりが少し深くなり、視線が中央に集まる */
+.room .sticky::after { opacity: calc(.7 + var(--focus, 0) * .3); transition: opacity .6s; }
+
+/* =========================================================
+   ヒップホップの動き（v7）：ビートで呼吸する世界、スクラッチ、遊べる小物
+   ========================================================= */
+:root { --snare: 0; }
+/* スネアのたびに、作品のまわりの光と画面の縁がふっと明るむ */
+body.beat-on .work.near .halo { opacity: calc(.75 + var(--kick) * .15 + var(--snare) * .2); }
+body.beat-on .room .sticky::after { opacity: calc(.7 + var(--focus, 0) * .3 - var(--snare) * .12); }
+body.beat-on #room-nav a.on { transform: scale(calc(1.12 + var(--kick) * .12)); }
+/* 触ると跳ねる小物 */
+.prop.bump svg { animation: propbump .5s var(--ease-out); transform-origin: 50% 100%; }
+@keyframes propbump { 30% { transform: scale(1.08, .9); } 60% { transform: scale(.96, 1.06) translateY(-.6vh); } }
+[data-egg="turntable"], [data-egg="cassettes"], [data-egg="crate"] { cursor: pointer; pointer-events: auto; }
+body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
+/* 巻き戻し：画面がビデオテープのように横に揺れ、走査線が走る */
+
+
+/* 夕凪の浜：流木の柱に吊るす額（作品は切り抜かない） */
+.frame-post .work .canvas { border: 1vh solid #f3e7d3; box-shadow: 0 2.4vh 4vh rgba(60, 40, 30, .28); }
+.frame-post .work .deco.under { top: calc(100% - 1px); width: 124%; height: 16vh; }
+.frame-post .work .deco.top.post { bottom: 100%; width: 124%; height: 8vh; }
+.frame-post .work .ground-shadow { top: calc(100% + 14vh); width: 110%; }
+.ib-drift { animation: ibdrift 18s linear infinite both; }
+@keyframes ibdrift { from { transform: translate(40px, 72px) rotate(-10deg); } 50% { transform: translate(105px, 70px) rotate(8deg); } to { transform: translate(175px, 74px) rotate(-6deg); } }
+
+/* 夜更けの小屋：壁の釘から吊るす額（作品は切り抜かない） */
+.frame-wall .work .canvas { border: 1vh solid #3a2618; box-shadow: inset 0 0 0 .3vh #5a3e2a, .6vh 1.6vh 2.4vh rgba(10, 6, 2, .45); }
+.frame-wall .work .deco.top.wall { bottom: 100%; width: 60%; height: 12vh; }
+.frame-wall .work.near .canvas { box-shadow: inset 0 0 0 .3vh #5a3e2a, .6vh 1.6vh 2.4vh rgba(10, 6, 2, .45), 0 0 8vh rgba(var(--glow), .35); }
+.ib-step { opacity: 0; animation: ibstep 8s ease-out var(--d) infinite; }
+@keyframes ibstep { 0% { opacity: 0; } 4% { opacity: .9; } 70% { opacity: .6; } 100% { opacity: 0; } }
+
+/* =========================================================
+   目録：森の標本箱
+   部屋ごとに木の箱。布張りの底に、台紙に載せた作品を元の比率のまま並べる（切り抜かない）
+   ========================================================= */
+#catalog { background: #e9e1cf; }
+#catalog-grid { display: grid; gap: 7vh; max-width: 1180px; margin: 0 auto; }
+.specimen { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--ease-out), transform 1.2s var(--ease-out); }
+#catalog-grid.in .specimen { opacity: 1; transform: none; }
+#catalog-grid.in .specimen:nth-child(2) { transition-delay: .12s; } #catalog-grid.in .specimen:nth-child(3) { transition-delay: .24s; }
+#catalog-grid.in .specimen:nth-child(4) { transition-delay: .36s; } #catalog-grid.in .specimen:nth-child(5) { transition-delay: .48s; }
+/* 木の枠：上が明るく下が暗い板、角は少し丸く */
+.specimen .box { padding: 18px; border-radius: 4px; background: linear-gradient(#8a6440, #6b4a2e 55%, #5a3d25);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 200, .35), inset 0 -2px 0 rgba(0, 0, 0, .25), 0 18px 40px rgba(50, 35, 20, .28); }
+/* 布張りの底：細かい織り目と、枠の内側に落ちる影 */
+.specimen .bed { position: relative; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center; gap: 34px 34px; padding: 48px 120px 44px; min-height: 30vh;
+  background: repeating-linear-gradient(0deg, rgba(120, 100, 70, .05) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(120, 100, 70, .05) 0 1px, transparent 1px 3px), #f3ecdc;
+  box-shadow: inset 0 6px 14px rgba(40, 25, 10, .28), inset 0 0 0 1px rgba(60, 40, 20, .25); }
+/* 台紙に載せた作品：高さをそろえ、幅は作品の比率どおり */
+.spec { --h: clamp(160px, 28vh, 300px); position: relative; background: none; border: 0; padding: 0; cursor: zoom-in; transition: transform .6s var(--ease-out); }
+.spec .mount { position: relative; display: block; height: var(--h); width: calc(var(--h) * var(--ar)); padding: 8px; box-sizing: content-box; background: #fbf7ee;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 6px 14px rgba(40, 25, 10, .18), 0 1px 2px rgba(40, 25, 10, .2); transition: box-shadow .6s var(--ease-out); }
+.spec .mount img, .spec .mount video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.spec .mount video { position: absolute; left: 8px; top: 8px; width: calc(100% - 16px); height: calc(100% - 16px); opacity: 0; transition: opacity .5s; }
+.spec.playing .mount video { opacity: 1; }
+.spec .pin { position: absolute; left: 50%; top: -3px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #f3dfa6, #b8925e 55%, #7a5a30); box-shadow: 0 2px 2px rgba(0, 0, 0, .3); }
+.spec:hover, .spec:focus-visible { transform: translateY(-4px); }
+.spec:hover .mount, .spec:focus-visible .mount { box-shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 14px 26px rgba(40, 25, 10, .24), 0 1px 2px rgba(40, 25, 10, .2); }
+/* 押し葉：箱の右下の隅に */
+.specimen .pressed { position: absolute; right: 22px; bottom: 12px; width: clamp(64px, 8vw, 110px); pointer-events: none; opacity: .92; }
+.specimen .pressed svg { display: block; width: 100%; height: auto; }
+@media (max-width: 700px) {
+  .specimen .box { padding: 10px; }
+  .specimen .bed { gap: 22px 16px; padding: 28px 16px 60px; justify-content: center; }
+  .spec { --h: clamp(120px, 20vh, 180px); }
+}
+
+/* =========================================================
+   ヒップホップの夜の色調：元の色からほんの少しだけ暗く、ネオンの紫・マゼンタをかすかに
+   背景の色は JS（GRADES）で描くときに変換済み。ここでは光と粒子だけ。どれも作品（.art）より奥
+   ========================================================= */
+.room .neon, .room .grain-under { position: absolute; inset: 0; pointer-events: none; }
+.room .neon { opacity: calc(var(--neon, .2) * .7);
+  background:
+    radial-gradient(70% 55% at 0% 100%, rgba(214, 46, 196, .5), transparent 70%),
+    radial-gradient(60% 50% at 100% 95%, rgba(140, 60, 255, .45), transparent 70%),
+    radial-gradient(90% 40% at 50% 0%, rgba(90, 40, 170, .3), transparent 75%); }
+.scene-forest { --neon: .15; } .scene-jungle { --neon: .18; } .scene-cove { --neon: .22; } .scene-night { --neon: .4; } .scene-attic { --neon: .22; }
+body.beat-on .room .neon { opacity: calc(var(--neon, .2) * .7 + var(--kick, 0) * .14); }
+.room .grain-under { inset: -10%; opacity: .2; mix-blend-mode: overlay; background-size: 240px 240px; animation: grain 1s steps(4) infinite;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1.1 -.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+/* 手描きの小物（ラジカセ・看板・スニーカーなど）も背景と同じくらいに */
+/* 小物の色は JS で描くときに変換済み（CSS の filter は横に長い層を丸ごと描き直すので使わない） */
+/* 周囲をほんの少し暗く絞る（中央の作品にはかからない） */
+.room .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(12, 8, 18, .34) 100%); }
+.scene-night .sticky::after, .scene-attic .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(4, 2, 8, .46) 100%); }
+/* 画面全体の紙の粒子は、作品のない入口とアーティストの場面だけ（展示室・目録・ビューアでは作品の奥の粒子に任せる） */
+#grain { opacity: .16; transition: opacity .6s; }
+body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
+
+/* 目録：木の箱と生成りの布はそのまま、少しだけ落ち着いた色に */
+#catalog { background: #d9d0bd; }
+.specimen .box { background: linear-gradient(#6e4f33, #563a24 55%, #47301d); }
+.spec:hover .mount, .spec:focus-visible .mount { box-shadow: 0 14px 26px rgba(40, 25, 10, .26), 0 0 22px rgba(214, 46, 196, .18); }
+
+/* 夜更けの小屋の扉：左の蝶番を軸に内側へひらく（--open: 0 → 1） */
+.cabin-door { position: absolute; top: 44vh; width: 12vh; height: 38vh; perspective: 60vh; pointer-events: none; --open: 0; }
+.cabin-door .leaf { position: absolute; inset: 0; transform-origin: 0 50%; transform: rotateY(calc(var(--open) * -104deg)); filter: brightness(calc(1 - var(--open) * .35)); }
+.cabin-door .leaf svg, .cabin-door .spill { display: block; width: 100%; height: 100%; }
+.cabin-door .spill { position: absolute; left: -14vh; top: 100%; width: 40vh; height: 18vh; opacity: calc(var(--open) * .3); }
+
+/* 小屋の扉へ吸い込まれるときの、中の灯り（画面いっぱいの暖かい光。作品が見える前に引いていく） */
+.scene-attic .flash { display: block; z-index: 7; opacity: 0; background: radial-gradient(circle at 50% 63%, #fff1d2 0%, #ffd9a0 35%, #f2b566 70%, #c9874a 100%); }
+
+/* スマホ・タブレットで焼いた絵（canvas のタイル）を入れる箱。img と同じ並べ方 */
+.plane > .raster { position: relative; display: block; height: 100%; }
+.frame > .raster { position: relative; width: 100%; height: 100%; }
+.curtain .raster { position: absolute; will-change: transform; transform-origin: 50% 50%; }
+.curtain .raster canvas { height: 100% !important; }
+/* スマホ・タブレット：画面いっぱいの重ね合わせ（ブレンド）と粒子の層は、メモリを大きく使うので省く */
+@media (pointer: coarse) {
+  .room .grain-under, #grain { display: none; }
+}
+
+/* =========================================================
+   隠し金庫（夜更けの小屋の隅）
+   ========================================================= */
+.vault-safe { position: absolute; top: 76vh; width: 11vh; padding: 0; border: 0; background: none; pointer-events: auto; cursor: pointer; transform-origin: 50% 100%; transition: transform .3s var(--ease-out); }
+.vault-safe svg { display: block; width: 100%; height: auto; }
+.vault-safe:hover, .vault-safe:focus-visible { transform: scale(1.04); outline: none; }
+#vault { position: fixed; inset: 0; z-index: 86; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 45%, rgba(40, 28, 18, .9), rgba(6, 5, 8, .97) 70%); opacity: 0; visibility: hidden; transition: opacity .5s, visibility .5s; touch-action: none; }
+#vault.show { opacity: 1; visibility: visible; }
+.vault-close { position: absolute; top: 18px; right: 22px; width: 44px; height: 44px; border: 0; background: none; color: rgba(255, 244, 220, .7); font-size: 28px; cursor: pointer; }
+.vault-stage { position: relative; width: min(80vw, 58vh); aspect-ratio: 4 / 5; perspective: 140vh; }
+.vault-inside { position: absolute; inset: 0; border-radius: 2.4vh; background: linear-gradient(#17130f, #0b0907); box-shadow: inset 0 0 6vh rgba(0, 0, 0, .9), 0 3vh 8vh rgba(0, 0, 0, .6); overflow: hidden; display: grid; place-items: center; }
+.vault-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 55%, rgba(255, 200, 110, .35), transparent 60%); opacity: 0; transition: opacity 1.6s .6s; }
+.vault-prize { position: relative; max-width: 62%; max-height: 86%; opacity: 0; transform-origin: 50% 0; transform: translateY(3vh) scale(.94); transition: opacity 1.4s .9s, transform 1.6s .9s var(--ease-out); filter: drop-shadow(0 2vh 3vh rgba(0, 0, 0, .7)) drop-shadow(0 0 3vh rgba(255, 190, 90, .25)); }
+.vault-door { position: absolute; inset: 0; border-radius: 2.4vh; transform-origin: 0 50%; transition: transform 1.5s .45s cubic-bezier(.5, 0, .2, 1); background: linear-gradient(135deg, #3a473f, #2a342e 55%, #202823); box-shadow: inset 0 0 0 .5vh #46544a, inset 0 0 0 1.4vh #28322c, inset 0 0 0 1.6vh #1a211d, 0 3vh 8vh rgba(0, 0, 0, .6); backface-visibility: hidden; }
+.vault-door .rivet { position: absolute; width: 1.2vh; height: 1.2vh; margin: -.6vh; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #8a9a8e, #3a463e); }
+.vault-lamps { position: absolute; left: 50%; top: 12%; transform: translateX(-50%); display: flex; gap: 1.6vh; }
+.vault-lamps i { width: 1.4vh; height: 1.4vh; border-radius: 50%; background: #1a1f1c; box-shadow: inset 0 0 0 .2vh #0d100e; transition: background .2s, box-shadow .2s; }
+.vault-lamps i.on { background: #ffcf7a; box-shadow: 0 0 1.4vh #ffb84a; }
+.vault-lamps i.bad { background: #d9483b; box-shadow: 0 0 1.4vh #d9483b; }
+#vault.trying .vault-lamps i { animation: vaultpulse .5s ease-in-out infinite alternate; }
+@keyframes vaultpulse { to { opacity: .35; } }
+.vault-dialwrap { position: absolute; left: 50%; top: 54%; width: 58%; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.vault-dial { position: absolute; inset: 0; border-radius: 50%; cursor: grab; touch-action: none; box-shadow: 0 1vh 2.4vh rgba(0, 0, 0, .55); }
+.vault-dial:active { cursor: grabbing; }
+.vault-dial:focus-visible { outline: .3vh solid rgba(255, 207, 122, .6); outline-offset: .6vh; }
+.vault-dial svg { display: block; width: 100%; height: 100%; }
+.vault-mark { position: absolute; left: 50%; top: -3.2vh; width: 0; height: 0; transform: translateX(-50%); border-left: 1vh solid transparent; border-right: 1vh solid transparent; border-top: 1.8vh solid #ffcf7a; filter: drop-shadow(0 0 .8vh rgba(255, 184, 74, .6)); }
+.vault-knob { position: absolute; left: 50%; top: 50%; width: 30%; aspect-ratio: 1; transform: translate(-50%, -50%); border: 0; border-radius: 50%; cursor: pointer; background: radial-gradient(circle at 38% 34%, #efdcaf, #b39b6e 55%, #7c6a47); box-shadow: 0 .6vh 1.2vh rgba(0, 0, 0, .5), inset 0 -.4vh .6vh rgba(0, 0, 0, .3); transition: transform .12s; }
+.vault-knob:active { transform: translate(-50%, -50%) scale(.92); }
+.vault-handle { position: absolute; right: 8%; top: 50%; width: 3vh; height: 16%; margin-top: -8%; border-radius: 1.5vh; background: linear-gradient(90deg, #b39b6e, #7c6a47); box-shadow: 0 .6vh 1vh rgba(0, 0, 0, .5); transform-origin: 50% 50%; transition: transform .45s var(--ease-out); }
+#vault.wrong .vault-door { animation: vaultshake .45s; }
+@keyframes vaultshake { 20%, 60% { translate: -1.2vh 0; } 40%, 80% { translate: 1.2vh 0; } }
+#vault.open .vault-handle { transform: rotate(90deg); }
+#vault.open .vault-door { transform: rotateY(-112deg); }
+#vault.open .vault-glow { opacity: 1; }
+#vault.open .vault-prize { opacity: 1; transform: none; animation: vaultswing 5s 2.4s ease-in-out infinite alternate; }
+@keyframes vaultswing { from { transform: rotate(-2.4deg); } to { transform: rotate(2.4deg); } }
+@media (prefers-reduced-motion: reduce) { #vault.open .vault-prize { animation: none; } }
+/* 扉がほぼ横を向いたら、扉の上の部品（ダイヤル・つまみ・ランプ）も消える（奥に残って見えないように） */
+.vault-door > * { transition: opacity .25s; }
+#vault.open .vault-door > * { opacity: 0; transition-delay: 1.1s; }
+/* 金庫の床に置いたブラント：先の火がゆっくり明滅し、細い煙が立ちのぼる */
+#vault.has-blunt .vault-inside { align-items: start; }
+#vault.has-blunt .vault-prize { margin-top: 5%; max-height: 70%; }
+.vault-blunt { position: absolute; left: 12%; right: 10%; bottom: 7%; opacity: 0; transform: translateY(2vh); transition: opacity 1.4s 1.3s, transform 1.6s 1.3s var(--ease-out); }
+.vault-blunt img { display: block; width: 100%; height: auto; filter: drop-shadow(0 1.4vh 1.6vh rgba(0, 0, 0, .6)); }
+.vault-blunt .smoke { position: absolute; left: 1.5%; top: 48%; width: 3vh; height: 3vh; margin: -1.5vh; border-radius: 50%; background: radial-gradient(rgba(235, 228, 220, .5), rgba(235, 228, 220, 0) 70%); opacity: 0; }
+#vault.open .vault-blunt { opacity: 1; transform: none; }
+#vault.open .vault-blunt .smoke { animation: bluntsmoke 4.2s ease-out infinite; }
+#vault.open .vault-blunt .smoke:nth-of-type(2) { animation-delay: 1.4s; }
+#vault.open .vault-blunt .smoke:nth-of-type(3) { animation-delay: 2.8s; }
+@keyframes bluntsmoke { 0% { transform: translate(0, 0) scale(.5); opacity: 0; } 15% { opacity: .8; } 100% { transform: translate(-2vh, -22vh) scale(3.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #vault.open .vault-blunt .smoke { animation: none; } }
+
+/* 入口 → 最初の部屋：最初の部屋を入口の最後の 1 画面ぶん下に重ね、入口のカーテンが閉じきったら入口を隠す */
+#entrance { z-index: 3; }
+#entrance.gone .sticky { visibility: hidden; }
+#rooms > .room:first-child { margin-top: -100vh; }
+#entrance .curtain { z-index: 6; }
+
+/* 作家の場面：キャラクターは置かず、Instagram への入口だけを静かに中央に */
+#artist { grid-template-columns: 1fr; justify-items: center; text-align: center; min-height: 70vh; }
+#artist-links { justify-content: center; margin-top: 0; gap: 22px; }
+#artist-links a { width: 64px; height: 64px; }
+#artist-links svg { width: 28px; height: 28px; }

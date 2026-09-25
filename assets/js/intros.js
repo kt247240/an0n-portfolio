@@ -1,0 +1,51 @@
+// =========================================================
+// 部屋の入口：部屋の名前の代わりに、その部屋らしい小さなアニメーションで迎える
+// 文字は使わない。形は nature.js と同じ作風（輪郭線なし、光は左上から）
+// 座標は viewBox 0 0 200 100（画面いっぱいに slice で敷く）
+// =========================================================
+
+let s = 7;
+const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+const R = (a, b) => a + rnd() * (b - a);
+const f1 = (v) => Math.round(v * 10) / 10;
+
+// 朝の森：小鳥の群れが弧を描いて横切り、葉が一枚ひらひら落ちる
+function forest() {
+  s = 11;
+  let birds = '';
+  for (let i = 0; i < 7; i++) {
+    const y = R(22, 40), sc = R(.7, 1.15), d = R(0, 1.6);
+    birds += `<g class="ib-fly" style="--y:${f1(y)}px;--d:${f1(d)}s;--dur:${f1(R(7, 9))}s"><g transform="scale(${f1(sc)})"><g class="ib-flap" style="--d:${f1(R(0, .4))}s">
+      <path d="M0 0Q-3 -3.2 -6 -1.6Q-3 -1.4 0 .6Z" fill="#3f5a3a"/><path d="M0 0Q3 -3.2 6 -1.6Q3 -1.4 0 .6Z" fill="#4d6b45"/></g><ellipse cx="0" cy=".4" rx="1.6" ry=".9" fill="#2f4630"/></g></g>`;
+  }
+  const leaves = [0, 1, 2].map((i) => `<g class="ib-fall" style="--x:${f1(R(70, 130))}px;--d:${i * 2.4}s"><g class="ib-spin"><path d="M0 0C1.6 -.6 1.6 -3.4 0 -4.2C-1.6 -3.4 -1.6 -.6 0 0Z" fill="${['#a5c23e', '#769721', '#c9d77a'][i]}"/></g></g>`).join('');
+  return birds + leaves;
+}
+// 水辺：水面に波紋がひろがり、落ち葉が一枚、ゆっくり流れていく
+function jungle() {
+  const rip = [0, 1, 2, 3].map((i) => `<ellipse class="ib-ripple" style="--d:${i * .9}s" cx="100" cy="66" rx="16" ry="4" fill="none" stroke="#eef3d8" stroke-width=".5"/>`).join('');
+  const leaf = `<g class="ib-drift"><path d="M0 0C2 -1 5 -1 7 0C5 1 2 1 0 0Z" fill="#8a9a3a"/><path d="M0 0L7 0" stroke="#5f6a28" stroke-width=".2"/><ellipse cx="3.5" cy=".6" rx="4" ry=".6" fill="#000" opacity=".12"/></g>`;
+  return rip + leaf;
+}
+// 夕凪：水平線の上を、カモメが一羽ゆっくり渡っていく
+function cove() {
+  return `<g class="ib-gull"><g class="ib-flap" style="--d:0s"><path d="M0 0Q-3 -2.6 -6.5 -1Q-3 -1 0 .5Z" fill="#fffaf2"/><path d="M0 0Q3 -2.6 6.5 -1Q3 -1 0 .5Z" fill="#f1e6da"/></g></g>`;
+}
+// 夜の庭：ホタルが集まってきて、ゆっくり輪を描いてのぼる
+function night() {
+  s = 41;
+  let out = '<defs><radialGradient id="ib-ff"><stop offset="0" stop-color="#f5ff9e" stop-opacity=".9"/><stop offset=".35" stop-color="#e8ff7a" stop-opacity=".35"/><stop offset="1" stop-color="#e8ff7a" stop-opacity="0"/></radialGradient></defs>';
+  for (let i = 0; i < 16; i++) {
+    out += `<g class="ib-ff" style="--x:${f1(R(60, 140))}px;--y:${f1(R(50, 80))}px;--r:${f1(R(4, 14))}px;--d:${f1(-R(0, 8))}s;--dur:${f1(R(6, 10))}s"><circle r="3" fill="url(#ib-ff)"/><circle r=".45" fill="#fbffd8"/></g>`;
+  }
+  return out;
+}
+// 夜更けの小屋：雪の上に、小屋へ向かう足あとがひとつずつ刻まれていく
+function attic() {
+  let out = '';
+  for (let i = 0; i < 14; i++) { const x = 40 + i * 9, y = 88 + (i % 2 ? 1.6 : -1.6); out += `<ellipse class="ib-step" style="--d:${(i * .45).toFixed(2)}s" cx="${x}" cy="${y}" rx="1.5" ry=".6" fill="#8d98b8"/>`; }
+  return out;
+}
+
+const BUILD = { forest, jungle, cove, night, attic };
+export const introSVG = (scene) => `<svg class="room-intro intro-${scene}" viewBox="0 0 200 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${(BUILD[scene] || forest)()}</svg>`;
