@@ -64,13 +64,33 @@ const svgImg = (w, body, cls = '') => {
 const skyDomHTML = (sd) => !sd ? '' : `<div class="skydom" aria-hidden="true">${sd.bright.map(([x, y, sz, c, d]) => `<i class="sky-star" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${(sz * U).toFixed(1)}px;--c:${c};animation-delay:-${d}s"></i>`).join('')}`
   + (sd.moon ? `<div class="sky-moon" style="left:${((sd.moon.x - sd.moon.r * 5) * U).toFixed(1)}px;top:${((sd.moon.y - sd.moon.r * 5) * U).toFixed(1)}px;width:${(sd.moon.r * 10 * U).toFixed(1)}px">${moonSVG(sd.moon.kind, sd.moon.halo)}</div>` : '') + '</div>';
 // 葉のカーテンの 1 かたまり（正方形の絵）
+// 葉のかたまりの画像は、正方形のままだと四隅の透明なところが広い。描いた葉の外形ぎりぎりまで切り詰めて、画像を小さくする（見た目は同じ）
+let bbSvg = null;
+function leafBounds(q) {
+  if (q.bb) return q.bb;
+  const w = q.svg[0];
+  try {
+    if (!bbSvg) {
+      bbSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      bbSvg.setAttribute('style', 'position:absolute;left:-9999px;top:0;width:10px;height:10px;visibility:hidden;pointer-events:none');
+      bbSvg.setAttribute('aria-hidden', 'true');
+      document.body.append(bbSvg);
+    }
+    bbSvg.innerHTML = `<g>${q.svg[1]}</g>`;
+    const b = bbSvg.firstElementChild.getBBox(), pad = 1; // 線の太さや、ふちのやわらかさの分の余白
+    const x0 = Math.max(0, b.x - pad), y0 = Math.max(0, b.y - pad), x1 = Math.min(w, b.x + b.width + pad), y1 = Math.min(w, b.y + b.height + pad);
+    q.bb = x1 > x0 && y1 > y0 ? [x0, y0, x1 - x0, y1 - y0] : [0, 0, w, w];
+  } catch { q.bb = [0, 0, w, w]; }
+  bbSvg.innerHTML = '';
+  return q.bb;
+}
 const leafImg = (q) => {
-  const [w, raw] = q.svg, body = gradeColors(raw, GRADE);
-  const style = `left:${q.x * U}px;top:${q.y * U}px;width:${q.box * U}px;height:${q.box * U}px`;
+  const [bx, by, bw, bh] = leafBounds(q), body = `<g transform="translate(${n2(-bx)} ${n2(-by)})">${gradeColors(q.svg[1], GRADE)}</g>`;
+  const style = `left:${(q.x + bx) * U}px;top:${(q.y + by) * U}px;width:${bw * U}px;height:${bh * U}px`;
   // 葉のカーテンは動いている間しか見えないので 1 倍の密度で十分
-  if (RASTER) return rasterBox(w, w, q.box * U, q.box * U, body, 'leaf', style, 1);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n2(w)} ${n2(w)}" width="${Math.round(w * U)}" height="${Math.round(w * U)}">${LEAF_DEFS}${body}</svg>`;
-  return `<img alt="" draggable="false" decoding="async" style="left:${q.x * U}px;top:${q.y * U}px;width:${q.box * U}px" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
+  if (RASTER) return rasterBox(bw, bh, bw * U, bh * U, body, 'leaf', style, 1);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n2(bw)} ${n2(bh)}" width="${Math.round(bw * U)}" height="${Math.round(bh * U)}">${LEAF_DEFS}${body}</svg>`;
+  return `<img alt="" draggable="false" decoding="async" style="${style}" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
 };
 // <div class="raster"> に、SVG を焼いた canvas（タイル）を入れる。1 枚ずつ順番に（同時に焼くとメモリが跳ねる）
 const rasterQueue = [];
@@ -507,6 +527,8 @@ function updateCurtain(r, cur) {
   if (!r.leaves) return;
   const c = Math.round(cur * 400) / 400;
   if (c === r.curShown) return;
+  // 開いていく途中で葉がすべて画面の外へ出たら、もう手放してある。また閉じはじめるまでは作り直さない
+  if (r.offAt != null) { if (c > 0 && c <= r.offAt + .01) { r.curShown = c; return; } r.offAt = null; }
   r.curShown = c;
   const box = r.box || $('.curtain', r.el);
   box.style.visibility = c > 0 ? 'visible' : 'hidden';
@@ -527,6 +549,11 @@ function updateCurtain(r, cur) {
     // 葉は真横にだけひらく（のれんのように、その高さのまま左右へ。下へずれたり回ったりはしない）
     r.leafEls[i].style.transform = k <= 0 ? '' : `translate3d(${(q.dx * k) * U}px, 0, 0)`;
   });
+  // 開いていく途中で、葉がすべて画面の外へ出たら、止まるのを待たずに手放す（開ききるまでの数秒、画像を持ち続けないように）
+  if (r.lastC != null && c < r.lastC && r.leaves.every((q) => { const [bx, , bw] = q.bb || [0, 0, q.box], k = ease(clamp(o * (1 + q.delay) - q.delay)), x0 = q.x + bx + q.dx * k; return x0 + bw < 0 || x0 > W; })) {
+    box.innerHTML = ''; r.leafEls = null; box.style.visibility = 'hidden'; r.offAt = c;
+  }
+  r.lastC = c;
 }
 
 // 水辺の水：奥へ歩くほど、淡い緑に光り、水底の光の網目（揺らめき）が浮かび上がる。
