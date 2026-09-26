@@ -572,14 +572,14 @@ footer { justify-content: center; }
 /* 没入：歩いている間は UI が引っ込み、画面の縁がほんのり暗い */
 body.walking #site-head, body.walking #room-nav.show { opacity: 0; pointer-events: none; }
 #site-head { transition: opacity .8s, background .4s; }
-.room .sticky::after { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(10, 16, 8, .28) 100%); }
-.scene-night .sticky::after, .scene-attic .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(0, 0, 0, .42) 100%); }
+.room .vig { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(10, 16, 8, .28) 100%); }
+.scene-night .vig, .scene-attic .vig { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(0, 0, 0, .42) 100%); }
 
 /* =========================================================
    作品を主役に（v6）：被写界深度、到着の光、集中
    ========================================================= */
 /* 作品の前では、縁のかげりが少し深くなり、視線が中央に集まる */
-.room .sticky::after { opacity: calc(.7 + var(--focus, 0) * .3); transition: opacity .6s; }
+.room .vig { opacity: calc(.7 + var(--focus, 0) * .3); transition: opacity .6s; }
 
 /* =========================================================
    ヒップホップの動き（v7）：ビートで呼吸する世界、スクラッチ、遊べる小物
@@ -587,7 +587,7 @@ body.walking #site-head, body.walking #room-nav.show { opacity: 0; pointer-event
 :root { --snare: 0; }
 /* スネアのたびに、作品のまわりの光と画面の縁がふっと明るむ */
 body.beat-on .work.near .halo { opacity: calc(.75 + var(--kick) * .15 + var(--snare) * .2); }
-body.beat-on .room .sticky::after { opacity: calc(.7 + var(--focus, 0) * .3 - var(--snare) * .12); }
+body.beat-on .room .vig { opacity: calc(.7 + var(--focus, 0) * .3 - var(--snare) * .12); }
 body.beat-on #room-nav a.on { transform: scale(calc(1.12 + var(--kick) * .12)); }
 /* 触ると跳ねる小物 */
 .prop.bump svg { animation: propbump .5s var(--ease-out); transform-origin: 50% 100%; }
@@ -708,8 +708,8 @@ body.beat-on .room .neon { opacity: calc(var(--neon, .2) * .7 + var(--kick, 0) *
 /* 手描きの小物（ラジカセ・看板・スニーカーなど）も背景と同じくらいに */
 /* 小物の色は JS で描くときに変換済み（CSS の filter は横に長い層を丸ごと描き直すので使わない） */
 /* 周囲をほんの少し暗く絞る（中央の作品にはかからない） */
-.room .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(12, 8, 18, .34) 100%); }
-.scene-night .sticky::after, .scene-attic .sticky::after { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(4, 2, 8, .46) 100%); }
+.room .vig { background: radial-gradient(120% 95% at 50% 50%, transparent 58%, rgba(12, 8, 18, .34) 100%); }
+.scene-night .vig, .scene-attic .vig { background: radial-gradient(120% 95% at 50% 50%, transparent 52%, rgba(4, 2, 8, .46) 100%); }
 /* 画面全体の紙の粒子は、作品のない入口とアーティストの場面だけ（展示室・目録・ビューアでは作品の奥の粒子に任せる） */
 #grain { opacity: .16; transition: opacity .6s; }
 body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }

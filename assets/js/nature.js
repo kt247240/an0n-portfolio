@@ -1214,6 +1214,20 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   const [snG, snD] = lgrad([[0, '#a3b5f1'], [.35, '#9eb0ec'], [1, '#95a7e2']]);
   mid += `<defs>${snD}</defs><path d="M-5 106L-5 ${n1(py)}${smoothD(Array.from({ length: 8 }, (_, i) => [-5 + (wallX + 5) * i / 7, py + R(-.8, .8)]))}L${n1(wallX)} 106Z" fill="url(#${snG})"/>`;
   for (const [y, c] of [[py + 8, '#a6b8f3'], [py + 18, '#9aaceb'], [py + 30, '#a3b5f1'], [py + 42, '#97a9e5']]) mid += `<path d="M-5 106L-5 ${n1(y)}${smoothD(Array.from({ length: 7 }, (_, i) => [-5 + (facade0 + 5) * i / 6, y + R(-2.5, 2.5)]))}L${n1(facade0)} 106Z" fill="${c}"/>`;
+  // 雪景色の絵と小屋のつなぎ目（絵の上に重ねる）：外壁の角から突き出た丸太の端と、壁ぎわに吹き寄せた雪
+  let corner = '';
+  for (let y = -5, i = 0; y < 82; y += 3.4, i++) {
+    if (i % 2) continue;
+    const L = facade0 - R(2, 2.8);
+    corner += `<path d="M${n1(facade0 + .5)} ${n1(y)}H${n1(L + 1)}Q${n1(L)} ${n1(y + 1.55)} ${n1(L + 1)} ${n1(y + 3.1)}H${n1(facade0 + .5)}Z" fill="${pick(['#6b4a30', '#744f33', '#62432b'])}"/><ellipse cx="${n1(L + .9)}" cy="${n1(y + 1.55)}" rx=".7" ry="1.35" fill="#c9a276"/><ellipse cx="${n1(L + .9)}" cy="${n1(y + 1.55)}" rx=".28" ry=".6" fill="#96704a" opacity=".7"/><path d="M${n1(L + .6)} ${n1(y + .15)}H${n1(facade0 + .3)}" stroke="#e3ecf7" stroke-width=".55" stroke-linecap="round" opacity=".85"/>`;
+  }
+  {
+    const [dG, dD] = lgrad([[0, '#b4c4f6'], [.4, '#a3b5f1'], [1, '#97a9e5']]);
+    const a = facade0 - 16, b = facade0 + 16;
+    corner += `<defs>${dD}</defs><path d="M${n1(a - 6)} 106Q${n1(a + 1)} 104.5 ${n1(a + 4)} 99.6Q${n1(a + 8)} 94.4 ${n1(facade0 - 5)} 90Q${n1(facade0 - 1.5)} 86.4 ${n1(facade0 + .5)} 84.6L${n1(facade0 + 8)} 85Q${n1(b - 3)} 87 ${n1(b)} 92L${n1(b)} 106Z" fill="url(#${dG})"/>`;
+    corner += `<path d="M${n1(a + 3)} 99.2Q${n1(a + 8)} 94.6 ${n1(facade0 - 5)} 90.4Q${n1(facade0 - 1.5)} 87 ${n1(facade0 + .5)} 85.3" stroke="#c6d3fa" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".8"/>`;
+    for (let k = 0; k < 7; k++) corner += `<ellipse cx="${n1(R(a + 4, b - 3))}" cy="${n1(R(95, 104))}" rx="${n1(R(1.5, 3.5))}" ry="${n1(R(.3, .6))}" fill="#8b9ddb" opacity=".55"/>`;
+  }
   // 小屋の外壁（丸太）と軒、窓の灯り、少し開いた扉
   const logs = [];
   for (let y = -5; y < 82; y += 3.4) logs.push(`<rect x="${n1(facade0)}" y="${n1(y)}" width="${n1(wallX - facade0)}" height="3.1" rx="1.5" fill="${pick(['#6b4a30', '#744f33', '#62432b'])}"/><rect x="${n1(facade0)}" y="${n1(y + .3)}" width="${n1(wallX - facade0)}" height=".7" rx=".35" fill="#8c6644" opacity=".7"/>`);
@@ -1275,7 +1289,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   }
   return {
     sky: '#0d1027',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: SP,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] },
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
 }
