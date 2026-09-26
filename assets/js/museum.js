@@ -88,20 +88,35 @@ function svgSize(d) {
   Object.assign(d, { dens, pxW: Math.max(1, Math.round(d.cssW * dens)), pxH: Math.max(1, Math.round(d.cssH * dens)) });
 }
 // 層の絵を読み込む（解析は重いので、1 つの絵につき 1 回だけ。先読みしたものはそのまま使う）
+// 読み込んだら、描き上がった画像（ImageBitmap）だけを残して、元の SVG はすぐに手放す。
+// SVG の画像を持ち続けると、iPhone は元の図形（数万個）ごとメモリに抱えたままになり、次の部屋の分と重なると落ちる
 function loadSVG(d) {
-  if (!d.img) {
+  if (!d.ready) {
     if (!d.pxW) svgSize(d);
-    const img = new Image();
-    d.img = img;
-    d.ready = new Promise((ok) => { img.onload = () => ok(true); img.onerror = () => ok(false); });
-    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgDoc(d.vbW, d.vbH, d.pxW, d.pxH, d.body))}`;
+    const gen = d.gen = (d.gen || 0) + 1;
+    d.ready = new Promise((ok) => {
+      const img = new Image();
+      img.onload = async () => {
+        let out = img;
+        try { if (window.createImageBitmap) { out = await createImageBitmap(img); img.src = ''; } } catch { out = img; }
+        if (d.gen !== gen) { out.close?.(); img.src = ''; ok(null); return; } // 待っている間に手放された
+        d.img = out; ok(out);
+      };
+      img.onerror = () => ok(null);
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgDoc(d.vbW, d.vbH, d.pxW, d.pxH, d.body))}`;
+    });
   }
-  return d.img;
+  return d.ready;
 }
-function dropSVG(d) { if (d?.img) { d.img.src = ''; d.img = null; d.ready = null; } }
+function dropSVG(d) {
+  if (!d) return;
+  d.gen = (d.gen || 0) + 1;
+  if (d.img) { if (d.img.close) d.img.close(); else d.img.src = ''; }
+  d.img = null; d.ready = null;
+}
 async function drawTile(el, d, t) {
-  const img = loadSVG(d);
-  if (!(await d.ready) || !el.isConnected || t.canvas || d.img !== img) return;
+  const img = await loadSVG(d);
+  if (!img || !el.isConnected || t.canvas || d.img !== img) return;
   const c = document.createElement('canvas');
   c.width = t.tw; c.height = d.pxH;
   c.style.cssText = `position:absolute;top:0;left:${t.tx / d.dens}px;width:${t.tw / d.dens + .5}px;height:100%`;
@@ -115,8 +130,8 @@ async function drawTile(el, d, t) {
 // 画面 1 枚ずつの canvas を並べると、境目のピクセルが透けて細い縦線が出るので、1 枚にしている
 const virtBoxes = new Set();
 async function drawWindow(el) {
-  const d = el._d, w = el._win, img = loadSVG(d);
-  if (!(await d.ready) || !el.isConnected || d.img !== img) return;
+  const d = el._d, w = el._win, img = await loadSVG(d);
+  if (!img || !el.isConnected || d.img !== img) return;
   const ox = w.want, cw = w.cw, H = d.pxH;
   if (ox === w.ox && w.c) return;
   // 絵の一部 [sx, sx + sw) を、canvas の同じ位置に描く（少し広めに描いて端を切り、帯の境目をなじませる）
@@ -696,6 +711,7 @@ function updateRoom(r, now) {
     const v = el.querySelector('video');
     if (v) {
       if (d < 1.1) {
+        if (scrollFast && !v.getAttribute('src')) return; // 速く通り過ぎている間は読み込まない（表紙の絵は見えている）
         if (!v.getAttribute('src') && v.dataset.vsrc) { v.src = v.dataset.vsrc; delete v.dataset.vsrc; }
         if (v.paused) v.play().catch(() => {});
       } else {
@@ -721,7 +737,7 @@ function updateRoom(r, now) {
 function pauseRoomVideos(r) { r.el.querySelectorAll('video').forEach((v) => { if (!v.paused) v.pause(); }); }
 
 
-let currentRoom = null;
+let currentRoom = null, scrollFast = false;
 const entranceCurtain = { el: entrance, leaves: null, curtainHTML: '', leafEls: null, curShown: -1 };
 function updateEntrance() {
   const len = GEO.entH - vh, p = clamp(sy / len);
@@ -1027,11 +1043,10 @@ function prefetchNext(from) {
   if (!RASTER || prefetching) return;
   const i = from ? rooms.indexOf(from) + 1 : 0, r = rooms[i];
   if (!r || !r.svgRange) return;
-  const d = svgIds(r).map((id) => SVG_STORE.get(id)).find((x) => x && !x.img && x.body.length > 20000);
+  const d = svgIds(r).map((id) => SVG_STORE.get(id)).find((x) => x && !x.ready && x.body.length > 20000);
   if (!d) return;
   prefetching = true; r.prefetched = true;
-  loadSVG(d);
-  d.ready.then(() => { prefetching = false; });
+  loadSVG(d).then(() => { prefetching = false; });
 }
 function attachNext(r) {
   if (!r.pending?.length) return;
@@ -1066,7 +1081,9 @@ function manageMemory(r) {
   const { top, len } = roomMetrics(r);
   const d = sy < top ? top - sy : sy > top + len ? sy - (top + len) : 0;
   // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）
-  if (d < vh * (COARSE ? .8 : 1.5)) { if (r.attached) attachNext(r); else attachLayers(r); }
+  // 速くスクロールしている間は、画面に入るぎりぎりまで用意しない（通り過ぎるだけの部屋を用意しない）
+  const ahead = scrollFast ? vh * .15 : vh * (COARSE ? .8 : 1.5);
+  if (d < ahead) { if (r.attached) attachNext(r); else attachLayers(r); }
   else if (d > vh * (COARSE ? 1.05 : 2.5) && r.attached) detachLayers(r);
   // 先読みしたまま入らなかった部屋から遠ざかったら、読み込んだ絵を手放す
   if (r.prefetched && !r.attached && d > vh * 3) { r.prefetched = false; svgIds(r).forEach((id) => dropSVG(SVG_STORE.get(id))); }
@@ -1083,7 +1100,7 @@ function rebuild() {
 /* =========================================================
    ビート（音は最初は OFF。ボタンかラジカセで ON）
    ========================================================= */
-let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0, fxDirty = true, movedAt = 0;
+let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0, fxDirty = true, movedAt = 0, fastUntil = 0;
 // SoundCloud のラジオがあればそれを、なければサイトで作った曲を流す（どちらも同じ形で扱える）
 const beat = RADIO ? createRadio(RADIO) : createBeat({
   onKick: () => { kick = 1; },
@@ -1156,6 +1173,10 @@ function frame(now) {
   // 勢いよく戻るようにスクロールすると、レコードをスクラッチする（音が出ているときだけ）
   const vel = (SY - lastSY) / dt;
   if (Math.abs(SY - lastSY) > .5) movedAt = now;
+  // 速くスクロールしている間（と止まってから少しの間）は、新しい読み込みを始めない（動画・次の部屋の絵）。
+  // 通り過ぎるだけのものを次々に読み込むと、iPhone ではメモリが積み上がって落ちる
+  if (Math.abs(vel) > vh * 2.2) fastUntil = now + 350;
+  scrollFast = now < fastUntil;
   lastSY = SY;
   if (vel < -vh * 5 && now - scratchAt > 900 && !vOpen) {
     scratchAt = now;
