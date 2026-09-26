@@ -158,13 +158,22 @@ let scrollMovedAt = 0, scrollDir = 1; // 最後にスクロールが動いた時
 async function paintRegion(el) {
   const d = el._d, w = el._win, ox = w.want, cw = w.cw, H = d.pxH;
   const img = new Image();
+
   const ok = await new Promise((res) => { img.onload = () => res(true); img.onerror = () => res(false); img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgDoc(d.vbW, d.vbH, cw, H, d.body, d.vbW * ox / d.pxW, d.vbW * cw / d.pxW))}`; });
   if (!ok || !el.isConnected) { img.src = ''; return; }
   let c = w.c;
-  if (!c) { c = document.createElement('canvas'); c.width = cw; c.height = H; c.style.cssText = `position:absolute;top:0;width:${cw / d.dens}px;height:100%`; el.append(c); w.c = c; }
-  const g = c.getContext('2d'); g.clearRect(0, 0, cw, H); g.drawImage(img, 0, 0, cw, H);
+  if (!c || c.width !== cw) {
+    // 幅が変わるときは新しい canvas に描いてから入れ替える（今の canvas の幅を変えると中身が消えて、描き終わるまで空白になる）
+    const nc = document.createElement('canvas'); nc.width = cw; nc.height = H; nc.style.cssText = `position:absolute;top:0;left:${ox / d.dens}px;width:${cw / d.dens}px;height:100%`;
+    nc.getContext('2d').drawImage(img, 0, 0, cw, H);
+    if (c) { c.width = 0; c.remove(); }
+    el.append(nc); c = w.c = nc;
+  } else {
+    const g = c.getContext('2d'); g.clearRect(0, 0, cw, H); g.drawImage(img, 0, 0, cw, H);
+    c.style.left = `${ox / d.dens}px`;
+  }
   img.src = '';
-  w.ox = ox; c.style.left = `${ox / d.dens}px`;
+  w.ox = ox; w.dirty = false;
 }
 async function drawWindow(el) {
   if (COARSE) return paintRegion(el);
@@ -219,7 +228,7 @@ async function pumpRaster() {
     const n = Math.ceil(d.pxW / tilePx);
     el._d = d;
     el._tiles = Array.from({ length: n }, (_, t) => { const tx = Math.round(d.pxW * t / n); return { tx, tw: Math.round(d.pxW * (t + 1) / n) - tx, canvas: null, queued: false, want: !virt }; });
-    if (virt) { el._win = { c: null, ox: -1, want: 0, cw: Math.min(d.pxW, Math.round(vw * dens * (COARSE ? 4 : 2.6))), queued: false }; virtBoxes.add(el); tickTiles(); continue; }
+    if (virt) { el._win = { c: null, ox: -1, want: 0, cw: Math.min(d.pxW, Math.round(vw * dens * (COARSE ? 1.6 : 2.6))), queued: false }; virtBoxes.add(el); tickTiles(); continue; }
     for (const t of el._tiles) { await drawTile(el, d, t); if (!el.isConnected) break; }
   }
   rastering = false;
@@ -234,20 +243,24 @@ function tickTiles() {
     const x0 = -r.left / k * d.dens, x1 = (vw - r.left) / k * d.dens, S = vw / k * d.dens; // S：画面 1 枚ぶん
     let want = null;
     if (COARSE) {
+      // 入る前の部屋は画面 1.6 枚ぶん、入ったら 4 枚ぶん（入る前の部屋のぶんが、今の部屋のぶんと重なっても小さく済むように）
+      const room = el._room || (el._room = rooms.find((x) => x.el.contains(el)));
+      const cwWant = Math.min(d.pxW, Math.round(S * (room && !room.entered ? 1.6 : 4)));
+      if (cwWant !== w.cw) { w.cw = cwWant; w.dirty = true; } // 幅が変わったら描き直す
       // スマホ：描いてある範囲（画面 4 枚ぶん）を、進んでいる向きの先に多めにとる（後ろは画面 0.5 枚ぶん）。
       // 描き直しは立ち止まっているあいだに。次の作品まで歩くあいだ（中景で画面 1.2 枚、手前で 1.7 枚ぶん）は描き直さずに済む
       const dir = scrollDir, idle = performance.now() - scrollMovedAt > 450;
       const edge = dir > 0 ? w.ox + w.cw >= d.pxW : w.ox <= 0; // 進む先がもう層の端まで描いてある
       const ahead = dir > 0 ? w.ox + w.cw - x1 : x0 - w.ox;
       const place = () => Math.round(Math.max(0, Math.min(d.pxW - w.cw, dir > 0 ? x0 - S * .5 : x1 + S * .5 - w.cw)));
-      if (!w.c || x0 < w.ox || x1 > w.ox + w.cw || (!edge && ahead < S * .6)) want = place(); // 端に近い（歩いている途中でも）
+      if (!w.c || w.dirty || x0 < w.ox || x1 > w.ox + w.cw || (!edge && ahead < S * 1.1)) want = place(); // 端に近い（歩いている途中でも）
       else if (idle && !edge && ahead < w.cw - S * 1.8) want = place(); // 立ち止まっているあいだに、先へ多めに描いておく
     } else {
       // パソコン：見えている範囲の少し外まで入っていなければ、画面の真ん中に来るようにずらす
       const m = S * .15;
       if (!(w.c && x0 - m >= w.ox && x1 + m <= w.ox + w.cw)) want = Math.round(Math.max(0, Math.min(d.pxW - w.cw, (x0 + x1) / 2 - w.cw / 2)));
     }
-    if (want != null && (want !== w.want || !w.c)) { w.want = want; if (!w.queued) { w.queued = true; rasterQueue.push({ el, win: true }); added = true; } }
+    if (want != null && (want !== w.want || !w.c || w.dirty)) { w.want = want; if (!w.queued) { w.queued = true; rasterQueue.push({ el, win: true }); added = true; } }
   }
   if (added && !rastering) pumpRaster();
 }
@@ -565,7 +578,8 @@ function updateCurtain(r, cur) {
   if (c <= 0) { if (r.leafEls) { box.innerHTML = ''; r.leafEls = null; } return; }
   if (!r.leafEls) {
     // 前の部屋（や入口）で閉じきっている同じ葉があれば、焼いた絵ごと引き継ぐ（同じ葉を 2 回焼かない）
-    const donor = [entranceCurtain, ...rooms.map((x) => x.leaveC)].find((d) => d && d !== r && d.leaves === r.leaves && d.leafEls && d.curShown >= 1);
+    // （引き継いだ葉は、このあとすぐこの部屋の開き具合に置き直すので、前の部屋でどこまで閉じていたかは問わない）
+    const donor = [entranceCurtain, ...rooms.map((x) => x.leaveC)].find((d) => d && d !== r && d.leaves === r.leaves && d.leafEls && d.curShown > 0);
     if (donor) {
       donor.leafEls.forEach((el) => box.append(el));
       r.leafEls = donor.leafEls; donor.leafEls = null; donor.curShown = -1;
@@ -750,7 +764,8 @@ function updateRoom(r, now) {
     r.leaveC = r.leaveC || { el: r.el, box: $('.curtain-leave', r.el), leafEls: null, curShown: -1 };
     r.leaveC.leaves = next.leaves; r.leaveC.curtainHTML = next.curtainHTML;
     // 隠した部屋（次の部屋に入れ替わった後）では作らない。作ると、閉じた葉だけが上へ流れていき、下の端がまっすぐ見える
-    updateCurtain(r.leaveC, r.el.classList.contains('gone') ? 0 : leave);
+    // 隠した部屋（次の部屋に入れ替わった後）では、閉じきった形のまま置いておく（次の部屋がその葉を引き継ぐ。部屋ごと隠れているので見えない）
+    updateCurtain(r.leaveC, r.el.classList.contains('gone') ? 1 : leave);
   }
   put(q(r, '.veil'), 'opacity', (Math.max(r.curS, next ? 0 : leave) * .35).toFixed(3));
   // 部屋の入口のアニメーション（部屋の名前の代わり）
@@ -767,13 +782,14 @@ function updateRoom(r, now) {
     if (d < best) { best = d; near = i; }
     const v = el.querySelector('video');
     if (v) {
-      if (d < 1.1) {
+      // 作品の前で立ち止まっているときは、その作品の動画だけ（隣の作品は画面の外）。作品と作品のあいだでは両方が動く
+      if (d < (COARSE ? .8 : 1.1)) {
         if (!v.getAttribute('src') && v.dataset.vsrc) { v.src = v.dataset.vsrc; delete v.dataset.vsrc; }
         if (v.paused) v.play().catch(() => {});
       } else {
         if (!v.paused) v.pause();
         // 離れた動画は読み込んだ中身ごと手放す（止めるだけだとメモリに残る）。表紙の絵はそのまま見える
-        if (d > 1.6 && v.getAttribute('src')) { v.dataset.vsrc = v.getAttribute('src'); v.removeAttribute('src'); v.load(); }
+        if (d > (COARSE ? .95 : 1.6) && v.getAttribute('src')) { v.dataset.vsrc = v.getAttribute('src'); v.removeAttribute('src'); v.load(); }
       }
     }
   });
@@ -795,6 +811,7 @@ function pauseRoomVideos(r) { r.el.querySelectorAll('video').forEach((v) => { if
 
 let currentRoom = null;
 const entranceCurtain = { el: entrance, leaves: null, curtainHTML: '', leafEls: null, curShown: -1 };
+if (location.search.includes('memdebug')) { window.__rooms = rooms; window.__entC = entranceCurtain; } // 点検用
 function updateEntrance() {
   const len = GEO.entH - vh, p = clamp(sy / len);
   const mx = mouse.x, my = mouse.y;
@@ -851,24 +868,49 @@ function updateEntrance() {
    ========================================================= */
 const fx = $('#fx'), fctx = fx.getContext('2d');
 const parts = [];
+if (location.search.includes('memdebug')) window.__parts = parts; // 点検用
 const R = (a, b) => a + Math.random() * (b - a);
 const THEMES = {
   forest: [[5, () => ({ k: 'mote', vx: R(-.5, .5), vy: R(-.6, .2), life: R(5, 9), s: R(.15, .35), x: R(0, 100), y: R(10, 90) })],
     [2, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.3), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#c9d77a'][Math.floor(R(0, 3))] })]],
-  jungle: [[4, () => ({ k: 'glint', vx: 0, vy: 0, life: R(1.2, 2.4), s: R(.3, .7), x: R(0, 100), y: R(30, 98) })], [4, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.4), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#47733c'][Math.floor(R(0, 3))] })],
+  // （部屋の中を漂うキラキラ（四つ星の光）は出さない：作品の前で浮いて見えるので。さわったときの小さな反応だけに残す）
+  jungle: [[4, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.4), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#47733c'][Math.floor(R(0, 3))] })],
     [3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
-  cove: [[5, () => ({ k: 'glint', vx: 0, vy: 0, life: R(1, 2.2), s: R(.3, .6), x: R(0, 100), y: R(66, 98) })]],
+  cove: [],
   // 小屋の外は雪、中はランプに照らされたほこり
   snow: [[9, () => ({ k: 'snow', vx: R(-1.2, 1.2), vy: R(3, 6), life: R(8, 14), s: R(.18, .45), x: R(-5, 105), y: -3 })]],
   attic: [[3, () => ({ k: 'mote', vx: R(-.4, .4), vy: R(-.4, .2), life: R(5, 9), s: R(.12, .28), x: R(30, 70), y: R(15, 80) })]],
-  night: [[4, () => ({ k: 'glint', vx: 0, vy: 0, life: R(1.5, 3), s: R(.2, .45), x: R(0, 100), y: R(2, 50) })], [5, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .4), life: R(4, 8), s: R(.25, .45), x: R(0, 100), y: R(40, 95) })],
+  night: [[5, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .4), life: R(4, 8), s: R(.25, .45), x: R(0, 100), y: R(40, 95) })],
     [1, () => ({ k: 'smoke', vx: R(.6, 1.6), vy: R(-.8, -.3), life: R(7, 10), s: R(4, 7), x: R(0, 100), y: R(55, 85) })]],
 };
+// 落ち葉は、作品の枠の列には落とさない（枠の後ろに消えていくように見えるので）。作品と作品のあいだの空いたところだけを落ちる
+const LEAF_PAD = 7; // 枠の左右の余白（画面の幅の %）。葉は落ちながら少し横に流れるので、そのぶんも見込む
+function leafGaps() {
+  const rects = GEO.workRects; if (!rects || !rects.length) return null;
+  const bands = rects.map((b) => [b.left / vw * 100 - LEAF_PAD, b.right / vw * 100 + LEAF_PAD]).sort((a, b) => a[0] - b[0]);
+  const gaps = []; let x = 0;
+  for (const [l, r] of bands) { if (l - x > 4) gaps.push([x, l]); x = Math.max(x, r); }
+  if (100 - x > 4) gaps.push([x, 100]);
+  return gaps;
+}
 function spawn(theme, rate, dt, list, zRange = [1, 1]) {
   if (REDUCED) return;
+  const gaps = leafGaps();
   THEMES[theme].forEach(([r, make]) => {
     let n = r * rate * dt;
-    while (n > 0) { if (Math.random() < n) list.push({ ...make(), age: 0, ph: R(0, 10), z: R(...zRange), theme }); n -= 1; }
+    while (n > 0) {
+      if (Math.random() < n) {
+        const q = { ...make(), age: 0, ph: R(0, 10), z: R(...zRange), theme };
+        if (q.k === 'leaf' && gaps) {
+          if (!gaps.length) { n -= 1; continue; }
+          const total = gaps.reduce((a, [l, r]) => a + (r - l), 0); let pick = Math.random() * total, g = gaps[0];
+          for (const gg of gaps) { if (pick < gg[1] - gg[0]) { g = gg; break; } pick -= gg[1] - gg[0]; }
+          q.x = g[0] + 1 + Math.random() * Math.max(0, g[1] - g[0] - 2); q.vx = R(-.4, .5);
+        }
+        list.push(q);
+      }
+      n -= 1;
+    }
   });
 }
 function drawP(c, q, sx, sy2, s, t) {
@@ -898,7 +940,7 @@ function measureGeo() {
   rooms.forEach((r) => { r.top = r.el.offsetTop; r.h = r.el.offsetHeight; });
   GEO.lamp = entrance.classList.contains('night') && sy < GEO.entH ? $('#lamp').getBoundingClientRect() : null;
   // 画面の粒子をよける作品の枠（前のフレームの位置。1 フレームの遅れは、よける幅を少し広げて吸収する）
-  GEO.workRects = parts.length && currentRoom ? [...currentRoom.el.querySelectorAll('.work .canvas')].map((el) => el.getBoundingClientRect()).filter((b) => b.width && b.right > 0 && b.left < innerWidth) : null;
+  GEO.workRects = currentRoom ? [...currentRoom.el.querySelectorAll('.work .canvas')].map((el) => el.getBoundingClientRect()).filter((b) => b.width && b.right > 0 && b.left < innerWidth) : null;
   if (RASTER) tickTiles();
 }
 function clipOutRects(c, rects, pad = 0) {
@@ -1127,9 +1169,10 @@ function attachEntrance() {
 function manageEntrance() {
   const d = sy - GEO.entH;
   if (d < vh * 1.5) attachEntrance();
-  else if (d > vh * 4 && entrance.attached) {
+  else if (d > vh * (COARSE ? .6 : 4) && entrance.attached) { // スマホは、最初の部屋のカーテンが開いたらすぐ手放す（入口はもう見えない）
     entrance.attached = false;
     Object.keys(entrance.layerHTML).forEach((sel) => { $(sel, entrance).innerHTML = ''; });
+    updateCurtain(entranceCurtain, 0);
     entrance.querySelectorAll('video[src]').forEach((v) => { v.pause(); v.dataset.src = v.getAttribute('src'); v.removeAttribute('src'); v.load(); });
   }
 }
@@ -1139,6 +1182,7 @@ function manageMemory(r) {
   // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）。
   // 通り過ぎた部屋は、カーテンが閉じきった先（次の部屋に入れ替わったあと）ではもう見えないので、画面 0.3 枚ぶん進んだら手放す
   const passed = sy > top + len;
+  r.entered = sy >= top - vh * .05; // 部屋に入った（入る直前）かどうか。入る前は、背景を画面 1.6 枚ぶんだけ描いておく
   const near = passed && COARSE ? vh * .12 : vh * (COARSE ? .8 : 1.5), far = passed && COARSE ? vh * .3 : vh * (COARSE ? 1.05 : 2.5);
   if (d < near) { if (r.attached) attachNext(r); else attachLayers(r); }
   else if (d > far && r.attached) detachLayers(r);
@@ -1249,7 +1293,7 @@ function frame(now) {
     entrance.classList.toggle('gone', gone);
     // 部屋も同じ：次の部屋の葉のカーテンが閉じきったら、この部屋を隠す（真下の次の部屋が同じカーテンのまま現れる）
     rooms.forEach((r, i) => { if (rooms[i + 1]) r.el.classList.toggle('gone', sd >= r.top + r.h - vh - 1); });
-    if (gone && entranceCurtain.leafEls) updateCurtain(entranceCurtain, 0);
+    // （入口の葉のカーテンは、ここでは外さない。最初の部屋がそのまま引き継いで開く。入口の絵を手放すときに一緒に外す）
     currentRoom = null;
     rooms.forEach((r) => updateRoom(r, now));
     // 0.4 秒ほど立ち止まっていたら、次の部屋の絵を先に読み込む（入口にいるときは最初の部屋）
@@ -1270,6 +1314,8 @@ function frame(now) {
     // パーティクル（画面に固定）
     spawn(activeTheme, currentRoom || inEntrance || inArtist ? 1 : 0, dt, parts);
     stepP(parts, dt);
+    // 落ちながら作品の枠の列に入りそうな葉は、枠の手前で薄れて消える（枠の後ろへ回らない）
+    if (GEO.workRects?.length) for (const q of parts) { if (q.k !== 'leaf') continue; for (const b of GEO.workRects) { const l = b.left / vw * 100 - 3, r = b.right / vw * 100 + 3; if (q.x > l && q.x < r && q.y > b.top / vh * 100 - 12) { q.life = Math.min(q.life, q.age + .8); break; } } }
     // 粒子がひとつもないときは、画面いっぱいの canvas を消し直さない
     if (parts.length || fxDirty) {
       fctx.setTransform(FXD, 0, 0, FXD, 0, 0); fctx.clearRect(0, 0, vw, vh);
