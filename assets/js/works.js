@@ -53,7 +53,7 @@ export const WORKS = [
     id: 'season-goldfish', room: 'dapple',
     sold: true, // 売約済み（価格の代わりに SOLD OUT）
     title: 'Season. I', ja: '金魚鉢', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/season-goldfish.mp4', poster: 'assets/works/season-goldfish.jpg', aspect: 1,
+    type: 'video', src: 'assets/works/season-goldfish.mp4', poster: 'assets/works/season-goldfish.jpg', aspect: 704 / 720,
     note: '本棚の下、モンステラに囲まれた金魚鉢。白い帯が部屋を流れていく。',
     tentative: true,
   },
@@ -158,14 +158,14 @@ export const WORKS = [
   {
     id: 'season-attic', room: 'afterhours',
     title: 'Season. III', ja: '屋根裏', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/season-attic.mp4', poster: 'assets/works/season-attic.jpg', aspect: 1,
+    type: 'video', src: 'assets/works/season-attic.mp4', poster: 'assets/works/season-attic.jpg', aspect: 702 / 720,
     note: '段ボールの積まれた屋根裏に、地球と惑星が浮かぶ。箱のカウンターは 1515。',
     tentative: true,
   },
   {
     id: 'season-nap', room: 'afterhours',
     title: 'Season. II', ja: '昼寝', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/season-nap.mp4', poster: 'assets/works/season-nap.jpg', aspect: 1,
+    type: 'video', src: 'assets/works/season-nap.mp4', poster: 'assets/works/season-nap.jpg', aspect: 702 / 720,
     note: 'スケートボードの飾られた部屋。ソファの向こうから Zzz… と寝息がのぼる。',
     tentative: true,
   },

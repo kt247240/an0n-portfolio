@@ -3,7 +3,7 @@
 // =========================================================
 import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
-import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors } from './nature.js';
+import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
 import { introSVG } from './intros.js';
@@ -54,11 +54,14 @@ const rasterBox = (vbW, vbH, cssW, cssH, body, cls, style, dens = RASTER) => {
 };
 const svgImg = (w, body, cls = '') => {
   body = gradeColors(body, GRADE);
-  // 奥の層（もともと霞ませてある）は 1 倍の密度で十分
-  if (RASTER) return rasterBox(w, 100, w * U, 100 * U, body, cls, `width:${w * U}px`, cls.includes('far-r') ? 1 : RASTER);
+  // 奥の層（空・山・町）も、中景と同じ細かさで焼く（月と明るい星は焼かずに画面に直接置くので、どの画面でもくっきり）
+  if (RASTER) return rasterBox(w, 100, w * U, 100 * U, body, cls, `width:${w * U}px`, RASTER);
   const svg = svgDoc(w, 100, w * U, 100 * U, body);
   return `<img class="${cls}" alt="" decoding="async" draggable="false" style="width:${w * U}px" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
 };
+// 明るい星（またたく）と月は、焼いた絵ではなく画面に直接置く（どの画面でもくっきり）
+const skyDomHTML = (sd) => !sd ? '' : `<div class="skydom" aria-hidden="true">${sd.bright.map(([x, y, sz, c, d]) => `<i class="sky-star" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${(sz * U).toFixed(1)}px;--c:${c};animation-delay:-${d}s"></i>`).join('')}`
+  + (sd.moon ? `<div class="sky-moon" style="left:${((sd.moon.x - sd.moon.r * 5) * U).toFixed(1)}px;top:${((sd.moon.y - sd.moon.r * 5) * U).toFixed(1)}px;width:${(sd.moon.r * 10 * U).toFixed(1)}px">${moonSVG(sd.moon.kind, sd.moon.halo)}</div>` : '') + '</div>';
 // 葉のカーテンの 1 かたまり（正方形の絵）
 const leafImg = (q) => {
   const [w, raw] = q.svg, body = gradeColors(raw, GRADE);
@@ -107,13 +110,45 @@ async function drawTile(el, d, t) {
   // 全部のタイルを焼き終えた（横に長くない）層は、元の絵を手放す
   if (!el._tiles.some((x) => !x.canvas) && !virtBoxes.has(el)) dropSVG(d);
 }
-// 横に長い層（画面 1.6 枚ぶんより広いもの）は、画面 1 枚ぶんの幅のタイルに分け、
-// 見えているあたりのタイルだけを焼いて、遠いタイルは捨てる（部屋がどれだけ長くてもメモリは画面数枚ぶん）
+// 横に長い層（画面 1.6 枚ぶんより広いもの）は、画面 2.6 枚ぶんの幅の canvas 1 枚を、歩くのに合わせて横へずらして使う。
+// ずらすときは、今ある絵をそのまま横へ写し、新しく見えてくる端の帯だけを描き足す（部屋がどれだけ長くてもメモリは画面数枚ぶん）。
+// 画面 1 枚ずつの canvas を並べると、境目のピクセルが透けて細い縦線が出るので、1 枚にしている
 const virtBoxes = new Set();
+async function drawWindow(el) {
+  const d = el._d, w = el._win, img = loadSVG(d);
+  if (!(await d.ready) || !el.isConnected || d.img !== img) return;
+  const ox = w.want, cw = w.cw, H = d.pxH;
+  if (ox === w.ox && w.c) return;
+  // 絵の一部 [sx, sx + sw) を、canvas の同じ位置に描く（少し広めに描いて端を切り、帯の境目をなじませる）
+  const paint = (g, sx, sw) => {
+    const m = 4, a = Math.max(0, sx - m), b = Math.min(d.pxW, sx + sw + m);
+    g.save(); g.beginPath(); g.rect(sx - ox, 0, sw, H); g.clip();
+    g.drawImage(img, a, 0, b - a, H, a - ox, 0, b - a, H);
+    g.restore();
+  };
+  let c = w.c;
+  if (!c) {
+    c = document.createElement('canvas'); c.width = cw; c.height = H;
+    c.style.cssText = `position:absolute;top:0;width:${cw / d.dens}px;height:100%`;
+    paint(c.getContext('2d'), ox, cw);
+    el.append(c); w.c = c;
+  } else {
+    const g = c.getContext('2d'), dx = ox - w.ox;
+    if (Math.abs(dx) >= cw) { g.clearRect(0, 0, cw, H); paint(g, ox, cw); }
+    else {
+      // 今ある絵を横へ写す（'copy' なので、はみ出して空いたところは透明になる）
+      g.globalCompositeOperation = 'copy'; g.drawImage(c, -dx, 0); g.globalCompositeOperation = 'source-over';
+      if (dx > 0) paint(g, ox + cw - dx, dx); else paint(g, ox, -dx);
+    }
+  }
+  w.ox = ox;
+  c.style.left = `${ox / d.dens}px`;
+}
 async function pumpRaster() {
   rastering = true;
   while (rasterQueue.length) {
     const item = rasterQueue.shift();
+    if (item.win) { item.el._win.queued = false; if (item.el.isConnected) await drawWindow(item.el); continue; }
     if (item.tile) {
       item.tile.queued = false;
       if (item.el.isConnected && !item.tile.canvas && item.tile.want) await drawTile(item.el, item.el._d, item.tile);
@@ -130,7 +165,7 @@ async function pumpRaster() {
     const n = Math.ceil(d.pxW / tilePx);
     el._d = d;
     el._tiles = Array.from({ length: n }, (_, t) => { const tx = Math.round(d.pxW * t / n); return { tx, tw: Math.round(d.pxW * (t + 1) / n) - tx, canvas: null, queued: false, want: !virt }; });
-    if (virt) { virtBoxes.add(el); tickTiles(); continue; }
+    if (virt) { el._win = { c: null, ox: -1, want: 0, cw: Math.min(d.pxW, Math.round(vw * dens * 2.6)), queued: false }; virtBoxes.add(el); tickTiles(); continue; }
     for (const t of el._tiles) { await drawTile(el, d, t); if (!el.isConnected) break; }
   }
   rastering = false;
@@ -140,13 +175,13 @@ function tickTiles() {
   let added = false;
   for (const el of virtBoxes) {
     if (!el.isConnected) { virtBoxes.delete(el); continue; }
-    const r = el.getBoundingClientRect(), k = r.width / (el._d.cssW || 1) || 1;
-    const x0 = -r.left / k, x1 = (vw - r.left) / k, pad = vw * .8 / k;
-    for (const t of el._tiles) {
-      const a = t.tx / el._d.dens, b = (t.tx + t.tw) / el._d.dens;
-      t.want = b > x0 - pad && a < x1 + pad;
-      if (t.want && !t.canvas && !t.queued) { t.queued = true; rasterQueue.push({ el, tile: t }); added = true; }
-      else if (t.canvas && (b < x0 - pad * 2 || a > x1 + pad * 2)) { t.canvas.width = 0; t.canvas.remove(); t.canvas = null; }
+    const r = el.getBoundingClientRect(), k = r.width / (el._d.cssW || 1) || 1, d = el._d, w = el._win;
+    // いま見えている範囲（層の中の px）。見えている範囲の少し外まで canvas に入っていなければ、画面の真ん中に来るようにずらす
+    const x0 = -r.left / k * d.dens, x1 = (vw - r.left) / k * d.dens, m = vw * .15 / k * d.dens;
+    const inside = w.c && x0 - m >= w.ox && x1 + m <= w.ox + w.cw;
+    if (!inside) {
+      const want = Math.round(Math.max(0, Math.min(d.pxW - w.cw, (x0 + x1) / 2 - w.cw / 2)));
+      if (want !== w.want || !w.c) { w.want = want; if (!w.queued) { w.queued = true; rasterQueue.push({ el, win: true }); added = true; } }
     }
   }
   if (added && !rastering) pumpRaster();
@@ -272,7 +307,8 @@ function buildRoomScene(r) {
   // 奥の層は、描くときに一度だけ薄くぼかしておく（被写界深度。スクロール中の負担はない）
   r.leaves = S.curtain ? curtainLeaves(W, S.curtain) : null;
   r.layerHTML = {
-    '.far': svgImg(S.far[0], `<defs><filter id="dof" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation=".12"/></filter></defs><g filter="url(#dof)">${S.far[1]}</g>`, 'far-r') + farHotspot(r.room.id, S.far[0], U),
+    // 空（skyArt）はぼかさずにいちばん下へ。その上の遠景（山・町）だけを薄くぼかす
+    '.far': svgImg(S.far[0], `${S.skyArt || ''}<defs><filter id="dof" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation=".12"/></filter></defs><g filter="url(#dof)">${S.far[1]}</g>`, 'far-r') + skyDomHTML(S.skyDom) + farHotspot(r.room.id, S.far[0], U),
     '.mid': svgImg(...S.mid),
     '.move': svgImg(...S.move),
     '.frame': svgImg(W, S.frame, 'wind') + frameHotspot(r.room.id),
@@ -358,7 +394,9 @@ function propHTML(kind, scene) {
 function buildProps(r) {
   const L = $('.props', r.el), cfg = STREET[r.room.id];
   if (!cfg) return;
-  const spots = cfg.intro ? [cfg.introAt != null ? [cfg.introAt, W / 2, cfg.intro] : [0, W * .16, cfg.intro]] : [];
+  // 部屋の入口の小物は左寄りに。狭い画面でも画面の外にはみ出さないように（小物の幅の半分 + 余白より内側）
+  const introX = (kind) => Math.max(W * .16, (PROPS[kind]?.w || 0) / 2 + 3);
+  const spots = cfg.intro ? [cfg.introAt != null ? [cfg.introAt, W / 2, cfg.intro] : [0, introX(cfg.intro), cfg.intro]] : [];
   if (cfg.pool.length) for (let i = 1; i < r.items.length; i++) spots.push([i + .5, W / 2, cfg.pool[(i - 1) % cfg.pool.length]]);
   (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + dx, kind])); // dx：金庫などとぶつからないよう横にずらす（vh）
   L.innerHTML = spots.map(([s, x, kind]) => {
@@ -424,6 +462,8 @@ function buildArtist() {
     GitHub: '<path d="M10 2a8 8 0 0 0-2.5 15.6c.4.1.5-.2.5-.4v-1.4c-2.2.5-2.7-1-2.7-1-.4-.9-.9-1.2-.9-1.2-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.9.9 2.4.7.1-.5.3-.9.5-1.1-1.8-.2-3.6-.9-3.6-3.9 0-.9.3-1.6.8-2.1-.1-.2-.4-1 .1-2.1 0 0 .7-.2 2.2.8a7.6 7.6 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4 1.1.2 1.9.1 2.1.5.6.8 1.3.8 2.1 0 3-1.8 3.7-3.6 3.9.3.3.5.8.5 1.5v2.2c0 .2.1.5.6.4A8 8 0 0 0 10 2Z"/>',
   };
   // メールは新しいタブではなくメールアプリで開く。アドレスはマウスを乗せると見える
+  // 作家の欄の結び：星空に満月、森と小屋のシルエット（窓にひとつ灯り）。文字は増やさない
+  { const sky = nightSky(0, 100, 0, 60, { density: .5 }); $('#artist').insertAdjacentHTML('afterbegin', `<div class="farewell" aria-hidden="true"><svg class="fw-stars" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice">${sky.svg}</svg><div class="fw-moon">${moonSVG('full')}</div>${farewellSVG()}</div>`); }
   $('#artist-links').innerHTML = ARTIST.links.map((l) => `<a href="${esc(l.href)}"${l.href.startsWith('mailto:') ? '' : ' target="_blank" rel="noopener"'} aria-label="${esc(l.title ? `${l.label}: ${l.title}` : l.label)}"${l.title ? ` title="${esc(l.title)}"` : ''}><svg viewBox="0 0 20 20" aria-hidden="true">${LOGO[l.label] || ''}</svg></a>`).join('');
 }
 

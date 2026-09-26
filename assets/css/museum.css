@@ -720,6 +720,22 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .spec:hover .mount, .spec:focus-visible .mount { box-shadow: 0 14px 26px rgba(40, 25, 10, .26), 0 0 22px rgba(214, 46, 196, .18); }
 
 /* 夜更けの小屋の扉：左の蝶番を軸に内側へひらく（--open: 0 → 1） */
+/* 作家の欄の結び：星空・満月・森と小屋のシルエット（中身より後ろ） */
+.farewell { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.farewell .fw-stars { position: absolute; inset: 0 0 20% 0; width: 100%; height: 80%; }
+.farewell .fw-moon { position: absolute; right: 12%; top: 12%; width: min(46vw, 320px); aspect-ratio: 1; transform: translate(50%, -50%); }
+.farewell .fw-moon svg { width: 100%; height: 100%; display: block; }
+.farewell > svg:last-child { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(120px, 26vh, 260px); display: block; }
+#artist > *:not(.farewell) { position: relative; z-index: 1; }
+/* 夜空：明るい星（光芒つきでまたたく）と月。焼いた絵ではなく画面に直接置くので、どの画面でもくっきり */
+.skydom { position: absolute; inset: 0; pointer-events: none; }
+.sky-star { position: absolute; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, #fff 0 5%, var(--c) 9%, rgba(255, 255, 255, .22) 17%, transparent 40%); animation: starTw 3.8s ease-in-out infinite; will-change: opacity, transform; }
+.sky-star::before, .sky-star::after { content: ""; position: absolute; left: 6%; right: 6%; top: 50%; height: 4%; margin-top: -2%; border-radius: 50%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7) 50%, transparent); }
+.sky-star::after { transform: rotate(90deg); }
+@keyframes starTw { 0%, 100% { opacity: .55; transform: translate(-50%, -50%) scale(.8); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+.sky-moon { position: absolute; aspect-ratio: 1; }
+.sky-moon svg { display: block; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .sky-star { animation: none; } }
 /* 小屋の前の雪景色（An0n の絵）と、扉の脇に立てかけたスノーボード */
 .snowcut { position: absolute; overflow: hidden; }
 .snowcut img { display: block; max-width: none; user-select: none; }

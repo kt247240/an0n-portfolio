@@ -369,6 +369,169 @@ function stars(W, n) {
   for (let i = 0; i < n; i++) s += `<circle class="twinkle" style="animation-delay:${n1(-R(0, 4))}s" cx="${n1(R(0, W))}" cy="${n1(R(0, 55))}" r="${n1(R(.08, .28))}" fill="#fff6e0"/>`;
   return s;
 }
+// ---------- 夜空：星（明るさ 3 段階）、天の川、月明かりの薄雲、オーロラ ----------
+// 奥の層に焼く分（ぼかさない）と、画面に直接置いてくっきり見せる分（明るい星・月）に分けて返す
+const n2s = (v) => Math.round(v * 100) / 100;
+export function nightSky(x0, x1, y0, y1, { density = 1, fade = null, milky = null } = {}) {
+  let s = '';
+  const bright = [], span = x1 - x0, keep = (x) => !fade || rnd() < fade(x);
+  const depth = (y) => 1 - (y - y0) / (y1 - y0) * .55; // 地平線に近いほど淡く
+  // かすかな星（たくさん、ごく小さく）
+  for (let i = 0; i < span * 2.4 * density; i++) {
+    const x = R(x0, x1); if (!keep(x)) continue;
+    const y = y0 + (y1 - y0) * Math.pow(rnd(), 1.25);
+    s += `<circle cx="${n2s(x)}" cy="${n2s(y)}" r="${n2s(R(.03, .085))}" fill="${pick(['#ffffff', '#e6edff', '#fff2da'])}" opacity="${n2s(R(.35, .9) * depth(y))}"/>`;
+  }
+  // 中くらいの星（小さな光のにじみ付き）
+  for (let i = 0; i < span * .32 * density; i++) {
+    const x = R(x0, x1); if (!keep(x)) continue;
+    const y = y0 + (y1 - y0) * Math.pow(rnd(), 1.5), r = R(.09, .16), c = pick(['#ffffff', '#dfe8ff', '#ffecc8', '#cfdcff']);
+    s += `<circle cx="${n2s(x)}" cy="${n2s(y)}" r="${n2s(r * 2.6)}" fill="${c}" opacity="${n2s(.04 * depth(y))}"/><circle cx="${n2s(x)}" cy="${n2s(y)}" r="${n2s(r * 1.6)}" fill="${c}" opacity="${n2s(.1 * depth(y))}"/><circle cx="${n2s(x)}" cy="${n2s(y)}" r="${n2s(r)}" fill="${c}" opacity="${n2s(depth(y))}"/>`;
+  }
+  // 明るい星（またたかせるので、画面に直接置く）：[x, y, 大きさ, 色, 遅れ]
+  for (let i = 0; i < Math.max(3, span * .055 * density); i++) {
+    const x = R(x0 + 2, x1 - 2); if (!keep(x)) continue;
+    bright.push([n2s(x), n2s(y0 + (y1 - y0) * Math.pow(rnd(), 1.7) * .75), n2s(R(1.4, 2.4)), pick(['#fffaf0', '#e3ebff', '#ffe9c8']), n2s(R(0, 5))]);
+  }
+  // 天の川：ぼかした光の帯と、暗い塵の筋、帯に沿って密に集まる小さな星
+  if (milky) {
+    // ぼかし（フィルター）は焼くのが重いので使わず、中心から外へ透明になるグラデーションで柔らかくする
+    const [ax, ay, bx, by, wd] = milky, ang = Math.atan2(by - ay, bx - ax) * 180 / Math.PI, id = `mw${gid++}`;
+    const soft = (c, k) => `<radialGradient id="${id}${k}"><stop offset="0" stop-color="${c}"/><stop offset=".5" stop-color="${c}" stop-opacity=".45"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+    const cols = ['#b9b4ff', '#d8c9ff', '#c6d6ff', '#f0dcc8'];
+    const along = (t, off = 0) => { const nx = -(by - ay), ny = bx - ax, L = Math.hypot(nx, ny); return [ax + (bx - ax) * t + nx / L * off, ay + (by - ay) * t + Math.sin(t * Math.PI) * wd * .5 + ny / L * off]; };
+    let band = '';
+    for (let i = 0; i < 34; i++) { const t = i / 33 + R(-.01, .01), [x, y] = along(t, R(-wd * .15, wd * .15)); band += `<ellipse cx="${n2s(x)}" cy="${n2s(y)}" rx="${n2s(R(wd * 1.4, wd * 2.4))}" ry="${n2s(R(wd * .5, wd * .85))}" transform="rotate(${n2s(ang)} ${n2s(x)} ${n2s(y)})" fill="url(#${id}${Math.floor(rnd() * 4)})" opacity="${n2s(R(.1, .2))}"/>`; }
+    for (let i = 0; i < 12; i++) { const t = R(.05, .95), [x, y] = along(t, R(-wd * .1, wd * .1)); band += `<ellipse cx="${n2s(x)}" cy="${n2s(y)}" rx="${n2s(R(wd * .9, wd * 1.8))}" ry="${n2s(R(wd * .1, wd * .22))}" transform="rotate(${n2s(ang + R(-8, 8))} ${n2s(x)} ${n2s(y)})" fill="url(#${id}d)" opacity="${n2s(R(.25, .45))}"/>`; }
+    s += `<defs>${cols.map((c, k) => soft(c, k)).join('')}${soft('#070820', 'd')}</defs>${band}`;
+    for (let i = 0; i < 380 * density; i++) { const t = rnd(), off = (rnd() + rnd() + rnd() - 1.5) * wd * .75, [x, y] = along(t, off); if (x < x0 || x > x1 || !keep(x)) continue; s += `<circle cx="${n2s(x)}" cy="${n2s(y)}" r="${n2s(R(.025, .07))}" fill="#fff" opacity="${n2s(R(.3, .85))}"/>`; }
+  }
+  return { svg: s, bright };
+}
+// 月明かりの薄い雲（横に長く、両端が消える）
+function wisps(x0, x1, y0, y1, n, c = '#cfcaf2') {
+  const id = `ws${gid++}`;
+  let s = '';
+  for (let i = 0; i < n; i++) { const x = R(x0, x1), y = R(y0, y1), w = R(12, 30), h = R(.9, 2); s += `<ellipse cx="${n2s(x)}" cy="${n2s(y)}" rx="${n2s(w)}" ry="${n2s(h)}" fill="url(#${id})" opacity="${n2s(R(.3, .6))}" transform="rotate(${n2s(R(-4, 2))} ${n2s(x)} ${n2s(y)})"/>`; }
+  return `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity=".55"/><stop offset=".55" stop-color="${c}" stop-opacity=".2"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>${s}`;
+}
+// オーロラ：下の縁が明るく、上へ淡く消えていく光のカーテン。縦の筋を重ね、ゆるく波打たせる
+function aurora(x0, x1, yBot, h) {
+  const [gi, gd] = lgrad([[0, '#a88cff', 0], [.35, '#9a86ff', .14], [.7, '#56e6b4', .5], [.9, '#b6ffe0', .75], [1, '#b6ffe0', 0]]);
+  let a = '';
+  for (let k = 0; k < 3; k++) {
+    const base = yBot - k * R(2.5, 5), amp = R(1.5, 4), ph = R(0, 6), f = R(1.1, 1.8), hk = h * R(.7, 1.05);
+    for (let x = x0; x < x1; x += R(.3, .7)) {
+      const t = (x - x0) / (x1 - x0), yb = base + Math.sin(t * Math.PI * 2 * f + ph) * amp, hh = hk * R(.55, 1.05) * (.6 + .4 * Math.sin(t * 9 + ph * 2) ** 2);
+      a += `<rect x="${n2s(x - .3)}" y="${n2s(yb - hh)}" width="${n2s(R(.7, 1.3))}" height="${n2s(hh)}" fill="url(#${gi})" opacity="${n2s(R(.12, .42) * (k ? .7 : 1))}"/>`;
+    }
+  }
+  return `<defs>${gd}</defs><g opacity=".85">${a}</g>`;
+}
+// 夕焼けの雲：上がもこもこ、下が平らな 1 枚の形。上は夕日に照らされて明るく、下は影の色。
+// 太陽側の上の縁にもう一段明るい面を重ね、外側にうすい縁を付けて、フィルターなしでやわらかく見せる
+function sunsetCloud(x, y, w, h, sunX, tones) {
+  const [top, mid, under, rim] = tones, id = `sc${gid++}`, side = sunX > x ? 1 : -1;
+  const n = Math.max(3, Math.round(w / 7)), x0 = x - w / 2, pts = [];
+  for (let i = 0; i <= n; i++) pts.push(x0 + w * i / n + (i && i < n ? R(-w / n * .2, w / n * .2) : 0));
+  const shape = (k, dy) => {
+    let d = `M${n1(x0 + w * (1 - k) / 2)} ${n1(y + dy)}`;
+    for (let i = 0; i < n; i++) {
+      const a = x + (pts[i] - x) * k, b = x + (pts[i + 1] - x) * k, t = (i + .5) / n, hh = h * (.55 + Math.sin(t * Math.PI) * .9) * R(.8, 1.15) * k;
+      d += `C${n1(a)} ${n1(y + dy - hh)} ${n1(b)} ${n1(y + dy - hh)} ${n1(b)} ${n1(y + dy - h * .12 * k)}`;
+    }
+    return d + `Q${n1(x)} ${n1(y + dy + h * .18 * k)} ${n1(x0 + w * (1 - k) / 2)} ${n1(y + dy)}Z`;
+  };
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset=".55" stop-color="${mid}"/><stop offset="1" stop-color="${under}"/></linearGradient></defs>`
+    + `<path d="${shape(1.06, h * .04)}" fill="${mid}" opacity=".22"/>`
+    + `<path d="${shape(1, 0)}" fill="url(#${id})"/>`
+    + `<path d="${shape(.62, -h * .3)}" fill="${rim}" opacity=".32" transform="translate(${n1(side * w * .12)} 0)"/>`;
+}
+// 細くたなびく雲（地平線近く）：下の縁が夕日に照らされる
+function streakCloud(x0, x1, y, h, c, lit) {
+  const id = `st${gid++}`;
+  let s = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset=".55" stop-color="${c}" stop-opacity=".75"/><stop offset=".8" stop-color="${lit}" stop-opacity=".9"/><stop offset="1" stop-color="${lit}" stop-opacity="0"/></linearGradient></defs>`;
+  for (let x = x0; x < x1; x += R(18, 40)) { const w = R(20, 46), hh = h * R(.6, 1.2), yy = y + R(-h, h); s += `<path d="M${n1(x)} ${n1(yy)}Q${n1(x + w * .3)} ${n1(yy - hh)} ${n1(x + w * .6)} ${n1(yy - hh * .6)}Q${n1(x + w * .85)} ${n1(yy - hh * .9)} ${n1(x + w)} ${n1(yy)}Q${n1(x + w * .5)} ${n1(yy + hh * .35)} ${n1(x)} ${n1(yy)}Z" fill="url(#${id})" opacity="${n1(R(.5, .9))}"/>`; }
+  return s;
+}
+// 夕日：光冠と、放射状に伸びる淡い光の筋。円盤は中心が白く、縁が金色
+function setSun(x, y, r) {
+  const id = `sn${gid++}`;
+  let s = `<defs><radialGradient id="${id}d"><stop offset="0" stop-color="#fffdf0"/><stop offset=".6" stop-color="#fff2c8"/><stop offset="1" stop-color="#ffd98f"/></radialGradient>`
+    + `<radialGradient id="${id}c"><stop offset="0" stop-color="#fff0c4" stop-opacity=".75"/><stop offset=".2" stop-color="#ffe0a4" stop-opacity=".45"/><stop offset=".5" stop-color="#ffc98e" stop-opacity=".16"/><stop offset="1" stop-color="#ffb482" stop-opacity="0"/></radialGradient>`
+    + `<linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff1c8" stop-opacity=".22"/><stop offset="1" stop-color="#fff1c8" stop-opacity="0"/></linearGradient></defs>`;
+  for (let i = 0; i < 14; i++) { const a = -Math.PI + (i + .5) / 14 * Math.PI + R(-.08, .08), L = r * R(7, 13), w = R(.035, .08); s += `<path d="M${n1(x)} ${n1(y)}L${n1(x + Math.cos(a - w) * L)} ${n1(y + Math.sin(a - w) * L)}L${n1(x + Math.cos(a + w) * L)} ${n1(y + Math.sin(a + w) * L)}Z" fill="#fff1c8" opacity="${n2s(R(.025, .055))}"/>`; }
+  s += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r * 9)}" fill="url(#${id}c)"/><circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r)}" fill="url(#${id}d)"/>`;
+  return s;
+}
+// 梢の間から差し込む光の筋（上が明るく、下へ消える）
+function godRays(x0, x1, y0, y1, n, c = '#fff8dc', slant = -.35) {
+  const id = `gr${gid++}`;
+  let s = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".55"/><stop offset=".6" stop-color="${c}" stop-opacity=".18"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>`;
+  for (let i = 0; i < n; i++) { const x = R(x0, x1), w0 = R(1, 3), w1 = w0 * R(2.2, 3.6), dx = (y1 - y0) * slant; s += `<path d="M${n1(x)} ${n1(y0)}L${n1(x + w0)} ${n1(y0)}L${n1(x + dx + w1)} ${n1(y1)}L${n1(x + dx)} ${n1(y1)}Z" fill="url(#${id})" opacity="${n1(R(.25, .6))}"/>`; }
+  return s;
+}
+// 水面に映る雲（上から見下ろす池に、空の雲がゆっくり映り込む）
+function cloudReflections(x0, x1, y0, y1, n, c = '#f4f6e4') {
+  const id = `cr${gid++}`;
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity=".3"/><stop offset=".5" stop-color="${c}" stop-opacity=".12"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>`;
+  for (let i = 0; i < n; i++) { const x = R(x0, x1), y = R(y0, y1), w = R(14, 28); for (let k = 0; k < 3; k++) s += `<ellipse cx="${n1(x + R(-w * .4, w * .4))}" cy="${n1(y + R(-1.5, 1.5))}" rx="${n1(w * R(.45, .7))}" ry="${n1(w * R(.12, .2))}" fill="url(#${id})"/>`; }
+  return s;
+}
+// ---------- 足もとの小物 ----------
+// 巻き貝・二枚貝・ヒトデ・シーグラス
+function beachShell(x, y, s, kind) {
+  if (kind === 0) return `<path d="M${n1(x)} ${n1(y)}q${n1(s * .1)} ${n1(-s * .9)} ${n1(s * .55)} ${n1(-s * .9)}q${n1(s * .45)} 0 ${n1(s * .45)} ${n1(s * .9)}Z" fill="#f3e3cc"/>` + [.25, .5, .75].map((t) => `<path d="M${n1(x + s * .5)} ${n1(y - s * .85)}L${n1(x + s * t * 1.1)} ${n1(y)}" stroke="#d2b894" stroke-width=".1"/>`).join('') + `<path d="M${n1(x)} ${n1(y)}h${n1(s * 1.02)}" stroke="#c7a57c" stroke-width=".14"/>`;
+  if (kind === 1) return `<path d="M${n1(x)} ${n1(y)}q${n1(s * .2)} ${n1(-s * .8)} ${n1(s * .7)} ${n1(-s * .55)}q${n1(s * .4)} ${n1(s * .3)} ${n1(s * .1)} ${n1(s * .55)}Z" fill="#e9cfae"/><path d="M${n1(x + s * .2)} ${n1(y - s * .15)}q${n1(s * .25)} ${n1(-s * .35)} ${n1(s * .45)} ${n1(-s * .1)}" stroke="#b58e66" stroke-width=".12" fill="none"/><circle cx="${n1(x + s * .62)}" cy="${n1(y - s * .45)}" r="${n1(s * .1)}" fill="#fbf3e6"/>`;
+  if (kind === 2) { let d = ''; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5, b = a + Math.PI / 5; d += `${i ? 'L' : 'M'}${n1(x + Math.cos(a) * s)} ${n1(y + Math.sin(a) * s * .6)}L${n1(x + Math.cos(b) * s * .4)} ${n1(y + Math.sin(b) * s * .24)}`; } return `<path d="${d}Z" fill="#e59a7a"/><circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(s * .12)}" fill="#f6c0a0"/>`; }
+  return `<path d="M${n1(x)} ${n1(y)}l${n1(s * .5)} ${n1(-s * .35)}l${n1(s * .45)} ${n1(s * .15)}l${n1(-s * .2)} ${n1(s * .3)}Z" fill="${pick(['#9fd8c8', '#b9e0f0', '#e8d6a8'])}" opacity=".75"/><path d="M${n1(x + s * .2)} ${n1(y - s * .1)}l${n1(s * .3)} ${n1(-s * .15)}" stroke="#fff" stroke-width=".1" opacity=".8"/>`;
+}
+// 砂に残る足あと（波打ちぎわに沿って）
+function footprints(x0, x1, y, n) {
+  let s = '';
+  for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * i / n, yy = y + (i % 2 ? .7 : -.7) + Math.sin(i * .4) * 1.2; s += `<ellipse cx="${n1(x)}" cy="${n1(yy)}" rx=".75" ry=".32" fill="#b99f7c" opacity=".45"/><ellipse cx="${n1(x + .5)}" cy="${n1(yy - .05)}" rx=".22" ry=".18" fill="#b99f7c" opacity=".45"/>`; }
+  return s;
+}
+// 濡れた石畳に落ちる街灯の光と、水たまりの映り込み
+function puddle(x, y, w, c) {
+  const id = `pd${gid++}`;
+  return `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity=".55"/><stop offset=".6" stop-color="${c}" stop-opacity=".18"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs><ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .16)}" fill="#0b0a12" opacity=".45"/><ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w * .9)}" ry="${n1(w * .13)}" fill="url(#${id})"/><path d="M${n1(x - w * .5)} ${n1(y - w * .02)}h${n1(w * .35)}M${n1(x + w * .1)} ${n1(y + w * .03)}h${n1(w * .3)}" stroke="#fff3d6" stroke-width=".12" opacity=".5"/>`;
+}
+// 作家の欄の結び：森の稜線と小屋のシルエット（窓にひとつ灯り）。横長の帯（viewBox 0 0 200 40、下端が地面）
+export function farewellSVG() {
+  reseed(97);
+  // 小屋はスマホでも切れないよう真ん中寄り（x = 104〜124）に建てる
+  const cx = 114, id = `fw${gid++}`;
+  let back = '', front = '';
+  for (let x = -4; x < 204; x += R(2.2, 4)) back += pine(x, 40, R(9, 16), '#141838', '#1d2350');
+  for (let x = -4; x < 204; x += R(3, 5.5)) { if (x > cx - 13 && x < cx + 13) continue; front += pine(x, 41, R(14, 24), '#0a0c20', '#12163a'); }
+  const cabin = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#ffc873" stop-opacity=".35"/><stop offset=".35" stop-color="#ffb45a" stop-opacity=".12"/><stop offset="1" stop-color="#ffb45a" stop-opacity="0"/></radialGradient></defs>`
+    + `<circle cx="${cx - 4}" cy="33" r="14" fill="url(#${id})"/>`
+    + `<path d="M${cx - 10} 41V29L${cx} 21L${cx + 10} 29V41Z" fill="#0a0c20"/><path d="M${cx - 12} 29.6L${cx} 19.6L${cx + 12} 29.6" stroke="#0a0c20" stroke-width="1.6" fill="none"/><path d="M${cx + 5.5} 24.2V19.6H${cx + 8}V26.2" fill="#0a0c20"/>`
+    + `<rect x="${cx - 6}" y="31" width="4" height="4" fill="#ffc873"/><path d="M${cx - 4} 31v4M${cx - 6} 33h4" stroke="#0a0c20" stroke-width=".4"/>`
+    + `<path d="M${cx + 6.7} 19.4q-1 -2 .4 -3.6q1.4 -1.6 .2 -3.6" stroke="#8a90b8" stroke-width=".35" fill="none" opacity=".35"/>`;
+  return `<svg viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${back}${cabin}${front}<rect x="-5" y="40.5" width="210" height="5" fill="#0a0c20"/></svg>`;
+}
+// 月（画面に直接置く、ぼやけない月）。viewBox は -50〜50、月の半径は 10。kind：'full' 満月 / 'crescent' 三日月（欠けた側も地球照でほのかに見える）
+export function moonSVG(kind = 'full', halo = false) {
+  const id = `mn${gid++}`;
+  const maria = [[-3.2, -3.4, 3.4, 2.5, 20], [2.6, -2.4, 2.6, 2.1, -15], [.8, 3, 3.3, 2.3, 10], [-4.4, 2.4, 1.9, 2.8, 0], [5, 1.4, 1.5, 1.9, 30], [-.8, -6.6, 1.6, 1, 0]];
+  const craters = [[-5.8, -5.2, .55], [4.2, 5.6, .7], [-2, 6.8, .45], [6.4, -3.8, .4], [-6.9, 1, .42], [2.2, -7, .35]];
+  const disc = `<circle r="10" fill="url(#${id}b)"/><g filter="url(#${id}s)">${maria.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})" fill="#c9bb98" opacity=".55"/>`).join('')}</g>`
+    + craters.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#d9cca9" opacity=".6"/><path d="M${x - r * .7} ${y + r * .45}A${r} ${r} 0 0 0 ${x + r * .6} ${y + r * .55}" stroke="#fffaf0" stroke-width=".16" fill="none" opacity=".55"/>`).join('')
+    + `<circle r="10" fill="url(#${id}l)"/>`;
+  const defs = `<defs><radialGradient id="${id}b" cx=".4" cy=".38" r=".7"><stop offset="0" stop-color="#fffdf3"/><stop offset=".6" stop-color="#f7efd6"/><stop offset="1" stop-color="#e6d8b2"/></radialGradient>`
+    + `<radialGradient id="${id}l"><stop offset=".72" stop-color="#8a7650" stop-opacity="0"/><stop offset="1" stop-color="#8a7650" stop-opacity=".35"/></radialGradient>`
+    + `<radialGradient id="${id}g"><stop offset=".18" stop-color="#fff3d2" stop-opacity=".5"/><stop offset=".32" stop-color="#fff0cc" stop-opacity=".18"/><stop offset=".6" stop-color="#e8e4ff" stop-opacity=".06"/><stop offset="1" stop-color="#e8e4ff" stop-opacity="0"/></radialGradient>`
+    + `<radialGradient id="${id}h"><stop offset=".84" stop-color="#fff" stop-opacity="0"/><stop offset=".88" stop-color="#ffd6c4" stop-opacity=".07"/><stop offset=".905" stop-color="#fff6e6" stop-opacity=".09"/><stop offset=".935" stop-color="#cfe0ff" stop-opacity=".05"/><stop offset=".97" stop-color="#cfe0ff" stop-opacity="0"/></radialGradient>`
+    + `<filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".7"/></filter><filter id="${id}t" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".55"/></filter>`
+    + (kind === 'crescent' ? `<mask id="${id}m"><circle r="10.2" fill="#fff"/><circle cx="4" cy="-2.7" r="8.9" fill="#000" filter="url(#${id}t)"/></mask>` : '') + '</defs>';
+  const glow = `<circle r="50" fill="url(#${id}g)"${kind === 'crescent' ? ' opacity=".6"' : ''}/>` + (halo ? `<circle r="46" fill="url(#${id}h)"/>` : '');
+  const body = kind === 'crescent'
+    ? `<g opacity=".2"><circle r="10" fill="#9aa4cf"/>${maria.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})" fill="#6f78a6" opacity=".5"/>`).join('')}</g><g mask="url(#${id}m)">${disc}</g>`
+    : disc;
+  return `<svg viewBox="-50 -50 100 100" aria-hidden="true">${defs}${glow}${body}</svg>`;
+}
 function strands(x0, x1, y, sag, n) {
   let s = `<path d="M${n1(x0)} ${n1(y)}Q${n1((x0 + x1) / 2)} ${n1(y + sag * 2)} ${n1(x1)} ${n1(y)}" stroke="#1a1410" stroke-width=".2" fill="none"/>`;
   for (let i = 1; i < n; i++) {
@@ -727,6 +890,8 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   const P = PAL.forest, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   let far = forestFar(fw, 64), mid = '', move = '';
   far += groundPath(-10, fw + 10, 65, 1, '#cad79d', '#b3c581');
+  // 梢の間から差し込む朝の光の筋（遠い森の上に、斜めに）
+  far += godRays(-10, fw + 10, -5, 80, Math.round(fw / 9), '#fff6d2', -.3);
   // 中景：地面、小道、木、根元の茂み、草、花
   mid += groundPath(-5, mw + 5, 76.5, 1.2, '#a3bd6b', '#6a8c42');
   mid += trail(-5, mw + 5, 86.5, 6.5);
@@ -782,6 +947,8 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   const [rg, rd] = lgrad([[0, '#4f5a35', .28], [.6, '#4f5a35', .12], [1, '#4f5a35', 0]]);
   far += `<defs>${rd}</defs>`;
   for (let x = R(0, 10); x < fw; x += R(9, 16)) { const w = R(1.5, 3.5), l = R(-2, 2); far += `<path d="M${n1(x)} -2L${n1(x + w)} -2Q${n1(x + w + l)} 50 ${n1(x + w * .8 + l * 2)} 102L${n1(x + w * .2 + l * 2)} 102Q${n1(x + l)} 50 ${n1(x)} -2Z" fill="url(#${rg})"/>`; }
+  // 水面に映る空の雲（見下ろした池に、白い雲がやわらかく映り込む）
+  far += cloudReflections(-10, fw + 10, 8, 95, Math.round(fw / 14));
   far += caustics(-5, fw, 5, 100, Math.round(fw * 1.2), 'rgba(210,222,170,.35)');
   for (let i = 0; i < fw / 12; i++) far += `<path d="M${n1(R(0, fw))} ${n1(R(10, 90))}q${n1(R(-8, 8))} ${n1(R(4, 10))} ${n1(R(-10, 10))} ${n1(R(10, 20))}" stroke="#5f6a40" stroke-width="${n1(R(.4, 1))}" fill="none" opacity=".45" stroke-linecap="round"/>`;
   for (let i = 0; i < fw / 7; i++) { const x = R(0, fw), y = R(15, 95); far += lily(x, y, R(1.5, 3), pick(['#9fb86a', '#8aa35a', '#b3c97a'])); }
@@ -880,11 +1047,6 @@ function palm(x, base, h, lean, trunkC, c, hi) {
   return s + palmCrown(tx, ty, h * .36, c, hi);
 }
 // 夕焼けの雲：ぼかした帯の重なり。下側が夕日で明るい
-function cloudBand(x, y, w, h, c, lit) {
-  let s = '';
-  for (let i = 0; i < 5; i++) { const cx = x + R(-w * .35, w * .35), rw = w * R(.25, .45), rh = h * R(.5, 1); s += `<ellipse cx="${n1(cx)}" cy="${n1(y + R(-h * .3, h * .2))}" rx="${n1(rw)}" ry="${n1(rh)}" fill="${c}"/><ellipse cx="${n1(cx + rw * .1)}" cy="${n1(y + rh * .55)}" rx="${n1(rw * .85)}" ry="${n1(rh * .35)}" fill="${lit}" opacity=".85"/>`; }
-  return `<g filter="url(#soft)">${s}</g>`;
-}
 // 水面に映る光の道（太陽・月・灯り）：手前ほど幅が広い、短い横線の集まり
 function glitter(x, y0, y1, c, { spread = .45, n = 90, a = .8 } = {}) {
   let s = '';
@@ -946,10 +1108,14 @@ export function sceneCove(W, stops) {
   const P = PAL.dusk, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move), hz = 62;
   let far = '', mid = '', move = '';
   // 奥：夕焼けの雲、低い太陽、霞む岬、光の道と遠い波
-  far += `<defs><filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="1.1"/></filter></defs>`;
-  for (let x = R(-10, 10); x < fw; x += R(26, 46)) far += cloudBand(x, R(12, 40), R(24, 50), R(1.8, 3.6), pick(['#e9b9ae', '#f0c3ad', '#dcaeb6', '#f3cfb3']), pick(['#ffe0b0', '#ffd49a', '#ffe8c4']));
+  // 夕焼けの雲：高いところは淡い藤色、低いところほど夕日に染まる。太陽側の縁が金色に光る（重いぼかしは使わない）
   const sx = at(W, FACTORS.far)(1, W * .62);
-  far += rglow(sx, hz - 6, 40, '#ffe3a6', .6) + `<circle cx="${n1(sx)}" cy="${hz - 6}" r="6.5" fill="#fff0bf" opacity=".6"/><circle cx="${n1(sx)}" cy="${hz - 6}" r="4.8" fill="#fff4cf"/>`;
+  far += streakCloud(-10, fw + 10, 9, 1.1, '#d9c3dc', '#f3d6d8') + streakCloud(-10, fw + 10, 20, 1, '#e0bfcf', '#fbd9c6');
+  for (let x = R(-12, 4); x < fw + 20; x += R(16, 30)) { const y = R(12, 46), k = (y - 12) / 34, big = R(.8, 1.5); far += sunsetCloud(x, y, R(20, 34) * big, R(3, 5) * big, sx, [mixC('#f6e0e2', '#ffe9cc', k), mixC('#dcbccb', '#f2c2ae', k), mixC('#b39bb9', '#cf9ea2', k), '#fff0cf']); }
+  far += streakCloud(-10, fw + 10, hz - 13, 1.4, '#e7b6ae', '#ffcf8f');
+  far += setSun(sx, hz - 6, 4.8);
+  // 遠くを渡る鳥
+  for (let k = 0; k < 5; k++) { const bx = sx + R(-30, 30), by = R(22, 44), bw = R(.7, 1.3); far += `<path d="M${n1(bx - bw)} ${n1(by - bw * .3)}Q${n1(bx - bw * .45)} ${n1(by - bw * .55)} ${n1(bx)} ${n1(by)}Q${n1(bx + bw * .45)} ${n1(by - bw * .55)} ${n1(bx + bw)} ${n1(by - bw * .3)}" stroke="#6f5a6e" stroke-width=".16" fill="none" opacity=".7"/>`; }
   far += mountains(-10, fw + 10, hz, 40, 55, '#b3c6cc', '#eef3f2', { wmin: 30, wmax: 70 });
   far += haze(-10, fw + 10, 38, hz, '#f6dcc6', .05, .6);
   far += mountains(-10, fw + 10, hz + .5, 53, 59, '#8eaeb5', null, { wmin: 22, wmax: 48 });
@@ -988,6 +1154,10 @@ export function sceneCove(W, stops) {
     if (rnd() < .6) mid += rock(x + R(4, 8), y + R(.5, 1.5), R(3, 6), R(1.6, 3), mixC(c, '#8a8278', .3));
   }
   for (let x = R(10, 30); x < mw; x += R(40, 70)) mid += driftwood(x, R(92, 98), R(8, 14), R(-8, 8));
+  // 貝殻・ヒトデ・シーグラス、波打ちぎわの足あとと泡
+  for (let i = 0; i < mw / 7; i++) { const x = R(0, mw), y = R(84.5, 103), k = rnd(); mid += beachShell(x, y, R(1.4, 2.4) * (1 + (y - 84) / 22), k < .45 ? 0 : k < .75 ? 1 : k < .85 ? 2 : 3); }
+  for (let x = R(0, 40); x < mw; x += R(70, 130)) mid += footprints(x, x + R(26, 44), R(82.6, 84), Math.round(R(12, 20)));
+  for (let i = 0; i < mw * .8; i++) mid += `<circle cx="${n1(R(0, mw))}" cy="${n1(R(79.2, 81.2))}" r="${n1(R(.08, .24))}" fill="none" stroke="#fffaf2" stroke-width=".06" opacity=".7"/>`;
   for (let x = R(0, 10); x < mw; x += R(12, 22)) mid += tuft(x, 101 + R(-1, 2), R(3, 5), ['#a39866', '#8a8a5a', '#c2b27a', '#b7a36e'], 7);
   // 手前：浜辺の草と流木（作品と作品のあいだ）
   for (let s = 0; s < stops - 1; s++) {
@@ -1013,10 +1183,12 @@ export function sceneNight(W, stops) {
   reseed(41 + stops);
   const P = PAL.night, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move), hz = 66;
   let far = '', mid = '', move = '';
-  // 奥：星、月と光の輪、岬の町と灯台、海に映る月の道
-  far += stars(fw, Math.round(fw * 1.2));
+  // 奥：星空（天の川と月明かりの薄雲）、岬の町と灯台、海に映る月の道。
+  // 空はぼかさずに焼き、明るい星と三日月は画面に直接置いてくっきり見せる（museum.js）
   const mx = fw * .3;
-  far += rglow(mx, 16, 22, '#fdf1d6', .3) + `<circle cx="${n1(mx)}" cy="16" r="4.5" fill="#fdf1d6"/><circle cx="${n1(mx + 1.8)}" cy="14.8" r="4" fill="#1b1d3c"/>`;
+  const SKY = nightSky(-5, fw + 5, 0, hz - 8, { milky: [fw * .02, 3, fw * .98, 30, 4.5] });
+  const skyArt = SKY.svg + wisps(mx - 24, mx + 36, 9, 30, 6);
+  const skyDom = { moon: { x: mx, y: 16, r: 4.5, kind: 'crescent' }, bright: SKY.bright.filter(([x, y]) => Math.hypot(x - mx, y - 16) > 12) };
   far += `<path d="M-5 106L-5 ${hz - 4}${smoothD(Array.from({ length: 9 }, (_, i) => [-5 + (fw + 10) * i / 8, hz - 6 + R(-3, 2)]))}L${n1(fw + 5)} 106Z" fill="#282c55"/>`;
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
   for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); far += townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); }
@@ -1048,7 +1220,12 @@ export function sceneNight(W, stops) {
   for (let x = R(4, 12); x < mw; x += R(22, 30)) if (clear(x, 2)) {
     const h = R(10, 13);
     mid += `<ellipse cx="${n1(x)}" cy="${n1(96)}" rx="${n1(1.2)}" ry="${n1(7)}" fill="#ffc873" opacity=".12"/>` + streetLamp(x, 88, h);
+    mid += puddle(x + R(-2, 2), R(96, 100), R(6, 9), '#ffc873'); // 街灯の下の、濡れた石畳の水たまり
   }
+  // 石畳の上：ところどころ濡れて光る石、落ちたヤシの葉、散った花びら
+  for (let i = 0; i < mw * .5; i++) { const x = R(0, mw), y = R(88, 104); mid += `<rect x="${n1(x)}" y="${n1(y)}" width="${n1(R(1.5, 3.5))}" height="${n1(R(.6, 1.4))}" rx=".3" fill="${pick(['#3b3749', '#2f2c3b', '#46405a'])}" opacity=".55"/>`; }
+  for (let x = R(8, 30); x < mw; x += R(36, 60)) if (clear(x, 4)) mid += `<g opacity=".9">${frond(x, R(96, 102), R(10, 14), R(-100, -75), '#2a3419', '#35421f', { droop: .15, n: 11 })}</g>`;
+  for (let i = 0; i < mw / 6; i++) mid += `<ellipse cx="${n1(R(0, mw))}" cy="${n1(R(88, 104))}" rx=".35" ry=".2" fill="${pick(['#e9a7b4', '#f4d2dc', '#d98aa0'])}" opacity=".55"/>`;
   for (let i = 0; i < mw * .8; i++) mid += `<rect x="${n1(R(0, mw))}" y="${n1(R(89, 104))}" width="${n1(R(1, 3))}" height=".2" fill="#3a3646" opacity=".6"/>`;
   for (let x = R(-5, 5); x < mw; x += R(10, 16)) mid += shrub(x, 92, R(6, 9), ['#0c1209', '#131b0e', '#1a2413', '#233019'], { leaf: R(.9, 1.2), n: 5 });
   // 手前：暗いヤシの葉の影
@@ -1066,7 +1243,7 @@ export function sceneNight(W, stops) {
   for (let x = -2; x < W + 2; x += R(2.2, 4)) ground += tuft(x, 105 + R(-.5, 1), R(4, 7), ['#0a1008', '#10170c', '#161f10'], 6);
   move += tileGround(W, stops, ground);
   return {
-    sky: 'linear-gradient(#0c0d20 0%, #181c40 40%, #2b3162 70%, #3c3f73 100%)',
+    sky: 'radial-gradient(120% 38% at 50% 66%, rgba(150, 104, 158, .5), rgba(90, 70, 140, .18) 55%, transparent 80%), linear-gradient(#04051a 0%, #0a0d2e 28%, #151a45 50%, #252a5c 64%, #3a3a6c 74%, #2b3162 100%)', skyArt, skyDom,
     far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110],
     curtain: ['#0b100a', '#141d0f', '#1f2b15', '#2f3a1a', '#3f4a22'],
   };
@@ -1197,11 +1374,16 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   const facade0 = workX(1) - W * .36, wallX = (workX(1) + workX(2)) / 2, hz = 64;
   let far = '', mid = '', move = '';
   // 奥：左から右へ、夜から夜明けへ。月と星は左、朝焼けは右
-  const [skG, skD] = lgrad([[0, '#0d1027'], [.3, '#20264f'], [.5, '#5b5a8f'], [.68, '#c79aa8'], [.85, '#f3bf9c'], [1, '#fbd9b0']], [0, 0, 1, 0]);
+  const [skG, skD] = lgrad([[0, '#060920'], [.18, '#0f1535'], [.34, '#20264f'], [.5, '#5b5a8f'], [.68, '#c79aa8'], [.85, '#f3bf9c'], [1, '#fbd9b0']], [0, 0, 1, 0]);
+  const [skV, skVD] = lgrad([[0, '#000010', .45], [.55, '#000010', 0]]);
   const [hzG, hzD] = lgrad([[0, '#ffffff', 0], [1, '#ffd9b3', .55]]);
-  far += `<defs>${skD}${hzD}</defs><rect x="-5" y="-5" width="${n1(fw + 10)}" height="110" fill="url(#${skG})"/><rect x="-5" y="30" width="${n1(fw + 10)}" height="${hz - 28}" fill="url(#${hzG})"/>`;
-  for (let i = 0; i < fw * 1.4; i++) { const x = R(0, fw); if (rnd() > 1.1 - x / fw * 1.2 && x > fw * .5) continue; far += `<circle class="twinkle" style="animation-delay:${n1(-R(0, 4))}s" cx="${n1(x)}" cy="${n1(R(0, 50))}" r="${n1(R(.08, .26))}" fill="#fff6e0" opacity="${n1((1 - x / fw * .9) * 100) / 100}"/>`; }
-  far += rglow(fw * .16, 18, 18, '#fdf3da', .35) + `<circle cx="${n1(fw * .16)}" cy="18" r="4.6" fill="#fbf1d2"/><circle cx="${n1(fw * .16 - 1.2)}" cy="17" r="1" fill="#e9dcb4" opacity=".6"/><circle cx="${n1(fw * .16 + 1.4)}" cy="19.2" r=".7" fill="#e9dcb4" opacity=".6"/>`;
+  // 空はぼかさずに焼く（museum.js が skyArt を奥の層のいちばん下に敷く）。雪山の上には星空とオーロラ、満月は画面に直接置く
+  const peakY = snowPanel(W).y(268);
+  const SKY = nightSky(-5, fw + 5, 0, 52, { density: 1.1, fade: (x) => (x < fw * .42 ? 1 : Math.max(0, 1.1 - x / fw * 1.35)), milky: [-4, 26, W * 1.2, 4, 4] });
+  const skyArt = `<defs>${skD}${skVD}${hzD}</defs><rect x="-5" y="-5" width="${n1(fw + 10)}" height="110" fill="url(#${skG})"/><rect x="-5" y="-5" width="${n1(fw + 10)}" height="60" fill="url(#${skV})"/><rect x="-5" y="30" width="${n1(fw + 10)}" height="${hz - 28}" fill="url(#${hzG})"/>`
+    + SKY.svg + aurora(-5, W * 1.15, peakY + 13, 26);
+  const moonY = Math.min(18, peakY - 9);
+  const skyDom = { moon: { x: fw * .16, y: moonY, r: 4.6, kind: 'full', halo: true }, bright: SKY.bright.filter(([x, y]) => Math.hypot(x - fw * .16, y - moonY) > 13) };
   far += rglow(fw * .98, hz - 2, 30, '#ffd2a6', .6);
   // 小屋の窓から見える山並み（外の雪景色の山は絵なので、それより右から）
   far += mountains(W * 1.1, fw + 10, hz, 38, 52, '#6f7aa3', '#eef1fa', { wmin: 28, wmax: 60 });
@@ -1253,6 +1435,10 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   const wins = winW >= 7 ? mids.slice(1).map((m) => [m - winW / 2, 16, winW, 40]) : [];
   mid += wallWithWindows(wallX, mw + 5, -5, 80, '#5a3e2a', wins);
   for (let x = wallX; x < mw + 5; x += R(4, 6)) mid += `<path d="M${n1(x)} -5V80" stroke="#3f2a1c" stroke-width=".35"/>` + (rnd() < .5 ? `<circle cx="${n1(x + 1)}" cy="${n1(R(5, 75))}" r=".18" fill="#2a1c12"/>` : '');
+  // 板壁の木目（ゆるく波打つ細い線と、ところどころの節）と、板ごとのわずかな色むら
+  for (let x = wallX; x < mw + 5; x += R(4, 6)) { const w = R(3.5, 5.5); if (rnd() < .5) mid += `<rect x="${n1(x)}" y="-5" width="${n1(w)}" height="85" fill="${pick(['#6a4a33', '#4e3524', '#5f412c'])}" opacity=".35"/>`; for (let k = 0; k < 2; k++) { const gx = x + R(.6, w - .6); mid += `<path d="M${n1(gx)} -5C${n1(gx + R(-.6, .6))} 20 ${n1(gx + R(-.6, .6))} 50 ${n1(gx + R(-.4, .4))} 80" stroke="#4a3222" stroke-width=".12" fill="none" opacity=".6"/>`; } if (rnd() < .3) { const ky = R(8, 72), kx = x + R(1, w - 1); mid += `<ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx=".45" ry=".9" fill="#3a2718" opacity=".7"/><ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx=".8" ry="1.6" fill="none" stroke="#4a3222" stroke-width=".1" opacity=".6"/>`; } }
+  // 天井の梁に沿って、暖かい電球の飾り（ゆるく垂れる）
+  { let d = `M${n1(wallX + 3)} 2`, bulbs = ''; for (let x = wallX + 3; x < mw; x += 12) { d += `Q${n1(x + 6)} 6 ${n1(x + 12)} 2`; for (const t of [.25, .5, .75]) { const bx = x + 12 * t, by = 2 + 4 * 2 * t * (1 - t) + .9; bulbs += `<circle cx="${n1(bx)}" cy="${n1(by)}" r="1.6" fill="#ffcf85" opacity=".16"/><circle cx="${n1(bx)}" cy="${n1(by)}" r=".42" fill="#ffe6b0"/>`; } } mid += `<path d="${d}" stroke="#1d140d" stroke-width=".18" fill="none"/>${bulbs}`; }
   mid += wins.map((w) => windowFrame(...w)).join('');
   for (const [wx, wy, ww, wh] of wins) for (const side of [-1, 1]) {
     const cx = side < 0 ? wx - 1 : wx + ww + 1;
@@ -1268,7 +1454,13 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   for (let i = 0; i < (mw - wallX) / 3; i++) { const x = R(wallX, mw), y = R(81, 105); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(2, 4))} ${n1(R(-.3, .3))} ${n1(R(5, 9))} 0" stroke="#7a5638" stroke-width=".18" fill="none" opacity=".45"/>`; }
   mid += `<rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height="1.6" fill="#3a2718"/><rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height=".35" fill="#7a5638" opacity=".7"/>`;
   for (let k = 2; k < stops; k++) mid += rglow(workX(k), 86, 22, '#ffcf85', .16);
-  for (let k = 2; k < stops; k++) { const x = workX(k); mid += `<ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .18)}" ry="3.2" fill="#7a3f33"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .15)}" ry="2.4" fill="none" stroke="#d9a35a" stroke-width=".5" stroke-dasharray="1.2 .8"/>`; }
+  // ラグ：外の縁取り、内側の二重線、菱形の模様、端のフリンジ
+  for (let k = 2; k < stops; k++) {
+    const x = workX(k), rx = W * .18;
+    mid += `<ellipse cx="${n1(x)}" cy="94.4" rx="${n1(rx + .6)}" ry="3.6" fill="#2a1a12" opacity=".35"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx)}" ry="3.2" fill="#7a3f33"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx * .86)}" ry="2.55" fill="#8d4a3a"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .15)}" ry="2.4" fill="none" stroke="#d9a35a" stroke-width=".5" stroke-dasharray="1.2 .8"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx * .6)}" ry="1.7" fill="none" stroke="#e8c18a" stroke-width=".22"/>`;
+    for (let t = -3; t <= 3; t++) mid += `<path d="M${n1(x + t * rx * .13)} 93.1l${n1(rx * .045)} .9l${n1(-rx * .045)} .9l${n1(-rx * .045)} -.9Z" fill="${t % 2 ? '#e2b36f' : '#3f5d59'}" opacity=".8"/>`;
+    for (const side of [-1, 1]) for (let f = -3; f <= 3; f++) mid += `<path d="M${n1(x + side * rx)} ${n1(94 + f * .45)}h${n1(side * .9)}" stroke="#e8d3ad" stroke-width=".14" opacity=".75"/>`;
+  }
   if (mids.length) {
     const m = mids[0], shW = Math.min(22, gap - 2);
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
@@ -1288,7 +1480,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#061a0c', '#6c78a6')) : guard(Z, (k) => pot(x, 98.5, 10 * k, '#8e6e4f'));
   }
   return {
-    sky: '#0d1027',
+    sky: '#0d1027', skyArt, skyDom,
     far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] },
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
