@@ -19,7 +19,7 @@ export const ARTIST = {
 };
 
 // 全収蔵数（まだ公開していない作品も含めた予定数）。部屋ごとの「搬入中」の表示に使う
-export const PLANNED_TOTAL = 20;
+export const PLANNED_TOTAL = 19;
 // 音（曲・環境音・効果音）を使うか。false なら音の選択画面・ビートボタンも出さない
 export const SOUND = true;
 // 森のラジオ：SoundCloud のプレイリスト（非公開のシークレットリンクなら secret も）。null にすると、サイトで作った曲（beat.js）を流す
@@ -35,7 +35,7 @@ export const ROOMS = [
     lead: '夕焼けと珊瑚の浜辺。吊りランプの灯りの下で。' },
   { id: 'night', no: 'IV', ja: '夜の庭', en: 'Night Garden', scene: 'night', frame: 'lightbox', planned: 5,
     lead: 'ホタルとネオンの灯る庭。この先は、もう閉館後。' },
-  { id: 'afterhours', no: 'V', ja: '夜更けの小屋', en: 'Late Night Cabin', scene: 'attic', frame: 'wall', planned: 6,
+  { id: 'afterhours', no: 'V', ja: '夜更けの小屋', en: 'Late Night Cabin', scene: 'attic', frame: 'wall', planned: 5,
     lead: '明かりの消えた屋根裏。懐中電灯で、そっと照らしてみてください。' },
 ];
 
@@ -64,10 +64,10 @@ export const WORKS = [
     note: '桜の咲く通りの花屋。自転車、スケーター、窓の人影、手を振る工事の人。',
   },
   {
-    id: 'giraffe', room: 'water',
-    title: 'Giraffe', ja: 'キリン', year: '', medium: 'Illustration',
-    type: 'image', src: 'assets/art/giraffe.jpg', aspect: 0.8,
-    note: '夕焼けの水辺に立つキリン。手前の大きな葉のすき間から、そっとのぞく。',
+    id: 'cosmic-smoke', room: 'water',
+    title: 'Cosmic Smoke', ja: '宇宙の煙', year: '', medium: 'Animation',
+    type: 'video', src: 'assets/works/cosmic-smoke.mp4', poster: 'assets/works/cosmic-smoke.jpg', aspect: 1,
+    note: 'ひと吸いすると、背中に銀河がひろがる。セーターには太陽と月と土星。',
     tentative: true,
   },
   {
@@ -106,20 +106,6 @@ export const WORKS = [
     note: 'FROM THE TRAP TO A BETTER LIFE。影の街から、夕焼けの摩天楼とスタジオへ歩き出す。',
   },
   {
-    id: 'kannon', room: 'night',
-    title: 'Moonlit Kannon', ja: '月夜の観音', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/kannon.mp4', poster: 'assets/works/kannon.jpg', aspect: 0.8,
-    note: '満月とホタルの野原。白い装束の人の背に、観音さまが光とともに現れる。',
-    tentative: true,
-  },
-  {
-    id: 'cosmic-smoke', room: 'night',
-    title: 'Cosmic Smoke', ja: '宇宙の煙', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/cosmic-smoke.mp4', poster: 'assets/works/cosmic-smoke.jpg', aspect: 1,
-    note: 'ひと吸いすると、背中に銀河がひろがる。セーターには太陽と月と土星。',
-    tentative: true,
-  },
-  {
     id: 'moon-window', room: 'night',
     title: 'Moon Window', ja: '月の窓', year: '', medium: 'Animation',
     type: 'video', src: 'assets/works/moon-window.mp4', poster: 'assets/works/moon-window.jpg', aspect: 0.8,
@@ -134,6 +120,13 @@ export const WORKS = [
     note: '夜の大通りを歩くふたり。ネオンと煙とヤシの木。',
   },
   {
+    id: 'night-piano', room: 'night',
+    title: 'Night Piano', ja: '夜のピアノ', year: '', medium: 'Animation',
+    type: 'video', src: 'assets/works/night-piano.mp4', poster: 'assets/works/night-piano.jpg', aspect: 1,
+    note: '青い夜の部屋で、アップライトピアノに向かう背中。スタンドの灯りと、窓の外の月。',
+    tentative: true,
+  },
+  {
     id: 'mountain-lights', room: 'night',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
     title: 'Mountain Lights', ja: '山の灯り', year: '', medium: 'Animation',
@@ -142,25 +135,11 @@ export const WORKS = [
     tentative: true,
   },
   {
-    id: 'snow-moon', room: 'afterhours',
-    title: 'Snow Moon', ja: '雪の月夜', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/snow-moon.mp4', poster: 'assets/works/snow-moon.jpg', aspect: 0.8,
-    note: '満月の雪山。凍ったつるの下、石の小道の脇の岩で、温かい飲み物をひと口。遠くに赤い車と UFO。',
-    tentative: true,
-  },
-  {
-    id: 'cold-world', room: 'afterhours',
+    id: 'cold-world', room: 'night',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
     title: 'Cold World', ja: 'コールド・ワールド', year: '', medium: 'Cover Art (Motion)', credit: 'BrotherMacX',
     type: 'video', src: 'assets/works/cold-world.mp4', poster: 'assets/works/cold-world.jpg', aspect: 0.8,
     note: '雪の降る夜の摩天楼。屋上で手を合わせ、空を見上げる。足もとには白い百合。',
-  },
-  {
-    id: 'season-attic', room: 'afterhours',
-    title: 'Season. III', ja: '屋根裏', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/season-attic.mp4', poster: 'assets/works/season-attic.jpg', aspect: 1,
-    note: '段ボールの積まれた屋根裏に、地球と惑星が浮かぶ。箱のカウンターは 1515。',
-    tentative: true,
   },
   {
     id: 'yukemuri', room: 'afterhours',
@@ -170,6 +149,20 @@ export const WORKS = [
     note: '月夜の湯けむり。バラクラバの男も、今夜は湯船でひと休み。',
   },
   {
+    id: 'snow-moon', room: 'afterhours',
+    title: 'Snow Moon', ja: '雪の月夜', year: '', medium: 'Animation',
+    type: 'video', src: 'assets/works/snow-moon.mp4', poster: 'assets/works/snow-moon.jpg', aspect: 0.8,
+    note: '満月の雪山。凍ったつるの下、石の小道の脇の岩で、温かい飲み物をひと口。遠くに赤い車と UFO。',
+    tentative: true,
+  },
+  {
+    id: 'season-attic', room: 'afterhours',
+    title: 'Season. III', ja: '屋根裏', year: '', medium: 'Animation',
+    type: 'video', src: 'assets/works/season-attic.mp4', poster: 'assets/works/season-attic.jpg', aspect: 1,
+    note: '段ボールの積まれた屋根裏に、地球と惑星が浮かぶ。箱のカウンターは 1515。',
+    tentative: true,
+  },
+  {
     id: 'season-nap', room: 'afterhours',
     title: 'Season. II', ja: '昼寝', year: '', medium: 'Animation',
     type: 'video', src: 'assets/works/season-nap.mp4', poster: 'assets/works/season-nap.jpg', aspect: 1,
@@ -177,10 +170,10 @@ export const WORKS = [
     tentative: true,
   },
   {
-    id: 'night-piano', room: 'afterhours',
-    title: 'Night Piano', ja: '夜のピアノ', year: '', medium: 'Animation',
-    type: 'video', src: 'assets/works/night-piano.mp4', poster: 'assets/works/night-piano.jpg', aspect: 1,
-    note: '青い夜の部屋で、アップライトピアノに向かう背中。スタンドの灯りと、窓の外の月。',
+    id: 'kannon', room: 'afterhours',
+    title: 'Moonlit Kannon', ja: '月夜の観音', year: '', medium: 'Animation',
+    type: 'video', src: 'assets/works/kannon.mp4', poster: 'assets/works/kannon.jpg', aspect: 0.8,
+    note: '満月とホタルの野原。白い装束の人の背に、観音さまが光とともに現れる。',
     tentative: true,
   },
 ];
