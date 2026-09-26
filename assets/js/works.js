@@ -115,7 +115,7 @@ export const WORKS = [
   {
     id: 'paradise-falls', room: 'night',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
-    title: 'Paradise Falls', ja: 'パラダイス・フォールズ', year: '', medium: 'Animation',
+    title: 'Paradise Falls', ja: 'パラダイス・フォールズ', year: '', medium: 'Cover Art (Motion)', credit: 'Kapsoul feat. BHI',
     type: 'video', src: 'assets/works/paradise.mp4', poster: 'assets/works/paradise.jpg', aspect: 0.8,
     note: '夜の大通りを歩くふたり。ネオンと煙とヤシの木。',
   },
@@ -144,7 +144,7 @@ export const WORKS = [
   {
     id: 'yukemuri', room: 'afterhours',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
-    title: '湯煙商会', ja: 'ゆけむりしょうかい', year: '', medium: 'Poster (Motion)', credit: '湯の町 戸倉上山田',
+    title: '湯煙商会', ja: 'ゆけむりしょうかい', year: '', medium: 'Poster (Motion)', credit: '戸倉上山田 湯煙商会',
     type: 'video', src: 'assets/works/yukemuri.mp4', poster: 'assets/works/yukemuri.jpg', aspect: 0.8,
     note: '月夜の湯けむり。バラクラバの男も、今夜は湯船でひと休み。',
   },
