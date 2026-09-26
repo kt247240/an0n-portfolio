@@ -129,6 +129,8 @@ function loadSVG(d) {
   }
   return d.ready;
 }
+// 点検用（?memdebug のときだけ）：いま持っている背景の元画像の大きさ（MB）
+if (location.search.includes('memdebug')) window.__bitmapMB = () => { let px = 0; SVG_STORE.forEach((d) => { if (d.img && d.pxW) px += d.pxW * d.pxH; }); return Math.round(px * 4 / 1e5) / 10; };
 function dropSVG(d) {
   if (!d) return;
   d.gen = (d.gen || 0) + 1;
@@ -150,7 +152,22 @@ async function drawTile(el, d, t) {
 // ずらすときは、今ある絵をそのまま横へ写し、新しく見えてくる端の帯だけを描き足す（部屋がどれだけ長くてもメモリは画面数枚ぶん）。
 // 画面 1 枚ずつの canvas を並べると、境目のピクセルが透けて細い縦線が出るので、1 枚にしている
 const virtBoxes = new Set();
+let scrollMovedAt = 0, scrollDir = 1; // 最後にスクロールが動いた時刻（立ち止まっているかどうか）と、進んでいる向き
+// スマホ：部屋全体の元画像は持たず、画面 4 枚ぶんの範囲だけを SVG から直接描く（元画像を持ち続けると部屋 1 つで 50〜130MB になり、落ちる）。
+// 描き直しは、立ち止まっているときに、いまの位置を真ん中にして行う（tickTiles）
+async function paintRegion(el) {
+  const d = el._d, w = el._win, ox = w.want, cw = w.cw, H = d.pxH;
+  const img = new Image();
+  const ok = await new Promise((res) => { img.onload = () => res(true); img.onerror = () => res(false); img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgDoc(d.vbW, d.vbH, cw, H, d.body, d.vbW * ox / d.pxW, d.vbW * cw / d.pxW))}`; });
+  if (!ok || !el.isConnected) { img.src = ''; return; }
+  let c = w.c;
+  if (!c) { c = document.createElement('canvas'); c.width = cw; c.height = H; c.style.cssText = `position:absolute;top:0;width:${cw / d.dens}px;height:100%`; el.append(c); w.c = c; }
+  const g = c.getContext('2d'); g.clearRect(0, 0, cw, H); g.drawImage(img, 0, 0, cw, H);
+  img.src = '';
+  w.ox = ox; c.style.left = `${ox / d.dens}px`;
+}
 async function drawWindow(el) {
+  if (COARSE) return paintRegion(el);
   const d = el._d, w = el._win, img = await loadSVG(d);
   if (!img || !el.isConnected || d.img !== img) return;
   const ox = w.want, cw = w.cw, H = d.pxH;
@@ -179,6 +196,7 @@ async function drawWindow(el) {
   }
   w.ox = ox;
   c.style.left = `${ox / d.dens}px`;
+
 }
 async function pumpRaster() {
   rastering = true;
@@ -201,7 +219,7 @@ async function pumpRaster() {
     const n = Math.ceil(d.pxW / tilePx);
     el._d = d;
     el._tiles = Array.from({ length: n }, (_, t) => { const tx = Math.round(d.pxW * t / n); return { tx, tw: Math.round(d.pxW * (t + 1) / n) - tx, canvas: null, queued: false, want: !virt }; });
-    if (virt) { el._win = { c: null, ox: -1, want: 0, cw: Math.min(d.pxW, Math.round(vw * dens * 2.6)), queued: false }; virtBoxes.add(el); tickTiles(); continue; }
+    if (virt) { el._win = { c: null, ox: -1, want: 0, cw: Math.min(d.pxW, Math.round(vw * dens * (COARSE ? 4 : 2.6))), queued: false }; virtBoxes.add(el); tickTiles(); continue; }
     for (const t of el._tiles) { await drawTile(el, d, t); if (!el.isConnected) break; }
   }
   rastering = false;
@@ -212,13 +230,24 @@ function tickTiles() {
   for (const el of virtBoxes) {
     if (!el.isConnected) { virtBoxes.delete(el); continue; }
     const r = el.getBoundingClientRect(), k = r.width / (el._d.cssW || 1) || 1, d = el._d, w = el._win;
-    // いま見えている範囲（層の中の px）。見えている範囲の少し外まで canvas に入っていなければ、画面の真ん中に来るようにずらす
-    const x0 = -r.left / k * d.dens, x1 = (vw - r.left) / k * d.dens, m = vw * .15 / k * d.dens;
-    const inside = w.c && x0 - m >= w.ox && x1 + m <= w.ox + w.cw;
-    if (!inside) {
-      const want = Math.round(Math.max(0, Math.min(d.pxW - w.cw, (x0 + x1) / 2 - w.cw / 2)));
-      if (want !== w.want || !w.c) { w.want = want; if (!w.queued) { w.queued = true; rasterQueue.push({ el, win: true }); added = true; } }
+    // いま見えている範囲（層の中の px）
+    const x0 = -r.left / k * d.dens, x1 = (vw - r.left) / k * d.dens, S = vw / k * d.dens; // S：画面 1 枚ぶん
+    let want = null;
+    if (COARSE) {
+      // スマホ：描いてある範囲（画面 4 枚ぶん）を、進んでいる向きの先に多めにとる（後ろは画面 0.5 枚ぶん）。
+      // 描き直しは立ち止まっているあいだに。次の作品まで歩くあいだ（中景で画面 1.2 枚、手前で 1.7 枚ぶん）は描き直さずに済む
+      const dir = scrollDir, idle = performance.now() - scrollMovedAt > 450;
+      const edge = dir > 0 ? w.ox + w.cw >= d.pxW : w.ox <= 0; // 進む先がもう層の端まで描いてある
+      const ahead = dir > 0 ? w.ox + w.cw - x1 : x0 - w.ox;
+      const place = () => Math.round(Math.max(0, Math.min(d.pxW - w.cw, dir > 0 ? x0 - S * .5 : x1 + S * .5 - w.cw)));
+      if (!w.c || x0 < w.ox || x1 > w.ox + w.cw || (!edge && ahead < S * .6)) want = place(); // 端に近い（歩いている途中でも）
+      else if (idle && !edge && ahead < w.cw - S * 1.8) want = place(); // 立ち止まっているあいだに、先へ多めに描いておく
+    } else {
+      // パソコン：見えている範囲の少し外まで入っていなければ、画面の真ん中に来るようにずらす
+      const m = S * .15;
+      if (!(w.c && x0 - m >= w.ox && x1 + m <= w.ox + w.cw)) want = Math.round(Math.max(0, Math.min(d.pxW - w.cw, (x0 + x1) / 2 - w.cw / 2)));
     }
+    if (want != null && (want !== w.want || !w.c)) { w.want = want; if (!w.queued) { w.queued = true; rasterQueue.push({ el, win: true }); added = true; } }
   }
   if (added && !rastering) pumpRaster();
 }
@@ -1107,9 +1136,13 @@ function manageEntrance() {
 function manageMemory(r) {
   const { top, len } = roomMetrics(r);
   const d = sy < top ? top - sy : sy > top + len ? sy - (top + len) : 0;
-  // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）
-  if (d < vh * (COARSE ? .8 : 1.5)) { if (r.attached) attachNext(r); else attachLayers(r); }
-  else if (d > vh * (COARSE ? 1.05 : 2.5) && r.attached) detachLayers(r);
+  // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）。
+  // 通り過ぎた部屋は、カーテンが閉じきった先（次の部屋に入れ替わったあと）ではもう見えないので、画面 0.3 枚ぶん進んだら手放す
+  const passed = sy > top + len;
+  const near = passed && COARSE ? vh * .12 : vh * (COARSE ? .8 : 1.5), far = passed && COARSE ? vh * .3 : vh * (COARSE ? 1.05 : 2.5);
+  if (d < near) { if (r.attached) attachNext(r); else attachLayers(r); }
+  else if (d > far && r.attached) detachLayers(r);
+
   // 先読みしたまま入らなかった部屋から遠ざかったら、読み込んだ絵を手放す
   if (r.prefetched && !r.attached && d > vh * 3) { r.prefetched = false; svgIds(r).forEach((id) => dropSVG(SVG_STORE.get(id))); }
 }
@@ -1197,7 +1230,7 @@ function frame(now) {
   put(document.documentElement, '--snare', snare < .01 ? '0' : snare.toFixed(2));
   // 勢いよく戻るようにスクロールすると、レコードをスクラッチする（音が出ているときだけ）
   const vel = (SY - lastSY) / dt;
-  if (Math.abs(SY - lastSY) > .5) movedAt = now;
+  if (Math.abs(SY - lastSY) > .5) { movedAt = scrollMovedAt = now; scrollDir = SY > lastSY ? 1 : -1; }
   lastSY = SY;
   if (vel < -vh * 5 && now - scratchAt > 900 && !vOpen) {
     scratchAt = now;
@@ -1220,7 +1253,8 @@ function frame(now) {
     currentRoom = null;
     rooms.forEach((r) => updateRoom(r, now));
     // 0.4 秒ほど立ち止まっていたら、次の部屋の絵を先に読み込む（入口にいるときは最初の部屋）
-    if (now - movedAt > 400 && Math.abs(sy - SY) < .5 && (currentRoom || sy < GEO.entH)) prefetchNext(currentRoom);
+    // （スマホではしない：次の部屋の元画像を持ったまま歩くと、今の部屋のぶんと重なってメモリが足りなくなる）
+    if (!COARSE && now - movedAt > 400 && Math.abs(sy - SY) < .5 && (currentRoom || sy < GEO.entH)) prefetchNext(currentRoom);
     // 右の部屋ナビ・ヘッダーの色
     nav.querySelectorAll('a').forEach((a, i) => a.classList.toggle('on', currentRoom && currentRoom.ri === i));
     const inArtist = sy > GEO.art - vh * .6, inEntrance = sy < GEO.entH - vh * .5;
