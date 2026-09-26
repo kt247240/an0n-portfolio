@@ -258,11 +258,6 @@ footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 2
 .spec .ask.nfs { background: #e4ddcc; color: #5a4a3a; } /* 売約済みの作品は問い合わせボタンを出さない */
 .v-ask.sold .tag::before, .spec .ask.sold::before { content: ""; display: inline-block; width: .55em; height: .55em; margin-right: .45em; border-radius: 50%; background: #d6452f; vertical-align: .08em; } /* 美術館の売約済みの赤い印 */
 .spec .ask.sold { background: #f3ede0; }
-.price-note { max-width: 640px; margin: 5vh auto 0; text-align: center; font-size: 12px; line-height: 1.9; letter-spacing: .06em; opacity: .75; }
-.price-note b { display: block; font-family: "VT323", monospace; font-weight: normal; font-size: 20px; letter-spacing: .14em; margin-bottom: 4px; }
-.price-note span { display: block; }
-#catalog .price-note { color: #3b2a1c; }
-#artist .price-note { color: var(--cream); margin-top: 26px; }
 #v-note { margin: 10px 0 0; font-size: 13px; line-height: 1.9; opacity: .8; }
 .v-nav { position: absolute; right: 34px; bottom: 34px; display: flex; gap: 10px; }
 .v-nav button { width: 50px; height: 50px; border-radius: 50%; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); color: var(--cream); cursor: pointer; font-size: 18px; backdrop-filter: blur(6px); }
@@ -614,8 +609,8 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 .frame-wall .work .canvas { border: 1vh solid #3a2618; box-shadow: inset 0 0 0 .3vh #5a3e2a, .6vh 1.6vh 2.4vh rgba(10, 6, 2, .45); }
 .frame-wall .work .deco.top.wall { bottom: 100%; width: 60%; height: 12vh; }
 .frame-wall .work.near .canvas { box-shadow: inset 0 0 0 .3vh #5a3e2a, .6vh 1.6vh 2.4vh rgba(10, 6, 2, .45), 0 0 8vh rgba(var(--glow), .35); }
-.ib-step { opacity: 0; animation: ibstep 8s ease-out var(--d) infinite; }
-@keyframes ibstep { 0% { opacity: 0; } 4% { opacity: .9; } 70% { opacity: .6; } 100% { opacity: 0; } }
+.ib-star { opacity: 0; animation: ibstar 10.5s cubic-bezier(.3, 0, .7, 1) var(--d) infinite; }
+@keyframes ibstar { 0% { opacity: 0; transform: translate(var(--x0), var(--y0)); } 1.5% { opacity: 1; } 9% { opacity: 0; transform: translate(var(--x1), var(--y1)); } 100% { opacity: 0; transform: translate(var(--x1), var(--y1)); } }
 
 /* =========================================================
    目録：森の標本箱
@@ -725,6 +720,11 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .spec:hover .mount, .spec:focus-visible .mount { box-shadow: 0 14px 26px rgba(40, 25, 10, .26), 0 0 22px rgba(214, 46, 196, .18); }
 
 /* 夜更けの小屋の扉：左の蝶番を軸に内側へひらく（--open: 0 → 1） */
+/* 小屋の前の雪景色（An0n の絵）と、扉の脇に立てかけたスノーボード */
+.snowcut { position: absolute; overflow: hidden; }
+.snowcut img { display: block; max-width: none; user-select: none; }
+.snowcut.flip img { transform: scaleX(-1); }
+.snowcut.board { overflow: visible; transform-origin: 50% 100%; transform: rotate(4deg); }
 .cabin-door { position: absolute; top: 44vh; width: 12vh; height: 38vh; perspective: 60vh; pointer-events: none; --open: 0; }
 .cabin-door .leaf { position: absolute; inset: 0; transform-origin: 0 50%; transform: rotateY(calc(var(--open) * -104deg)); filter: brightness(calc(1 - var(--open) * .35)); }
 .cabin-door .leaf svg, .cabin-door .spill { display: block; width: 100%; height: 100%; }

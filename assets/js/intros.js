@@ -40,11 +40,11 @@ function night() {
   }
   return out;
 }
-// 夜更けの小屋：雪の上に、小屋へ向かう足あとがひとつずつ刻まれていく
+// 夜更けの小屋：雪山の夜空を、流れ星がすっと流れる（雪原は An0n の絵なので、絵の上には何も描かない）
 function attic() {
-  let out = '';
-  for (let i = 0; i < 14; i++) { const x = 40 + i * 9, y = 88 + (i % 2 ? 1.6 : -1.6); out += `<ellipse class="ib-step" style="--d:${(i * .45).toFixed(2)}s" cx="${x}" cy="${y}" rx="1.5" ry=".6" fill="#8d98b8"/>`; }
-  return out;
+  const tail = '<defs><linearGradient id="ib-sg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="12" y2="-5"><stop offset="0" stop-color="#fffbe8"/><stop offset=".25" stop-color="#e8ecff" stop-opacity=".7"/><stop offset="1" stop-color="#c8d2ff" stop-opacity="0"/></linearGradient></defs>';
+  const star = (x0, y0, x1, y1, d) => `<g class="ib-star" style="--x0:${x0}px;--y0:${y0}px;--x1:${x1}px;--y1:${y1}px;--d:${d}s"><path d="M0 0L12 -5" stroke="url(#ib-sg)" stroke-width=".32" stroke-linecap="round"/><circle r=".3" fill="#fffbe8"/></g>`;
+  return tail + star(128, 5, 90, 21, 1.2) + star(112, 10, 80, 23, 6.4);
 }
 
 const BUILD = { forest, jungle, cove, night, attic };

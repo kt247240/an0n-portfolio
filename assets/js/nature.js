@@ -1177,6 +1177,19 @@ function windowFrame(wx, wy, ww, wh, c = '#4a3322') {
   return `<path fill-rule="evenodd" d="M${n1(wx - 1)} ${n1(wy - 1)}h${n1(ww + 2)}v${n1(wh + 2)}h${n1(-ww - 2)}ZM${n1(wx)} ${n1(wy)}v${n1(wh)}h${n1(ww)}v${n1(-wh)}Z" fill="${c}"/><path d="M${n1(wx + ww / 2)} ${n1(wy)}v${n1(wh)}M${n1(wx)} ${n1(wy + wh / 2)}h${n1(ww)}" stroke="${c}" stroke-width=".7"/><rect x="${n1(wx - 1.8)}" y="${n1(wy + wh + .8)}" width="${n1(ww + 3.6)}" height="1" fill="${light(c, .15)}"/>`;
 }
 
+// 小屋の前の雪景色の絵（assets/scene/snow-*.webp。An0n の絵を夜の色にし、空を抜いたもの。幅 1055px）を置く位置と大きさ。
+// s は絵の 1px が画面の高さ 100 に対していくつか。絵の 1322 行目（雪原の下端）を画面の下端に合わせる。
+// スマホでは小屋の外壁までの幅にちょうど収め、広い画面では高さ 100 ほどにして、入ってきたときの画面の真ん中に置く
+export function snowPanel(W) {
+  const facade0 = W * 1.14, IW = 1055;
+  const s = Math.min(100 / 1300, (facade0 - .5) / IW), pw = IW * s;
+  const x = Math.min(facade0 - pw, Math.max(0, W / 2 - pw / 2));
+  const y = (row) => 100.5 - (1322 - row) * s;
+  // 絵の左右には、鏡に映した絵（家・ベンチ・熊を消したもの）を交互に並べて続ける（k が奇数は鏡の絵、0 以外の偶数はそれをさらに裏返したもの）
+  // （見える幅が 1.5 に満たないものは置かない。スマホでは絵 1 枚だけ）
+  const tiles = (x0, x1) => { const ks = []; for (let k = Math.floor((x0 - x) / pw); x + k * pw < x1 - 1.5; k++) if (k && x + (k + 1) * pw > x0 + 1.5) ks.push(k); return ks; };
+  return { x, s, pw, facade0, y, plainY: y(640), farTiles: tiles(0, W * 1.05), midTiles: tiles(0, facade0) };
+}
 export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   reseed(51 + stops);
   const fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
@@ -1190,16 +1203,17 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   for (let i = 0; i < fw * 1.4; i++) { const x = R(0, fw); if (rnd() > 1.1 - x / fw * 1.2 && x > fw * .5) continue; far += `<circle class="twinkle" style="animation-delay:${n1(-R(0, 4))}s" cx="${n1(x)}" cy="${n1(R(0, 50))}" r="${n1(R(.08, .26))}" fill="#fff6e0" opacity="${n1((1 - x / fw * .9) * 100) / 100}"/>`; }
   far += rglow(fw * .16, 18, 18, '#fdf3da', .35) + `<circle cx="${n1(fw * .16)}" cy="18" r="4.6" fill="#fbf1d2"/><circle cx="${n1(fw * .16 - 1.2)}" cy="17" r="1" fill="#e9dcb4" opacity=".6"/><circle cx="${n1(fw * .16 + 1.4)}" cy="19.2" r=".7" fill="#e9dcb4" opacity=".6"/>`;
   far += rglow(fw * .98, hz - 2, 30, '#ffd2a6', .6);
-  far += mountains(-10, fw + 10, hz, 38, 52, '#6f7aa3', '#eef1fa', { wmin: 28, wmax: 60 });
-  far += mountains(-10, fw + 10, hz + 1, 50, 58, '#5a6590', '#dfe4f2', { wmin: 20, wmax: 40 });
-  for (let x = R(-4, 4); x < fw; x += R(3, 6)) far += pine(x, hz + 3 + R(-1, 1), R(8, 13), '#3b4670', '#c9d1ea');
+  // 小屋の窓から見える山並み（外の雪景色の山は絵なので、それより右から）
+  far += mountains(W * 1.1, fw + 10, hz, 38, 52, '#6f7aa3', '#eef1fa', { wmin: 28, wmax: 60 });
+  far += mountains(W * 1.1, fw + 10, hz + 1, 50, 58, '#5a6590', '#dfe4f2', { wmin: 20, wmax: 40 });
+  for (let x = W * 1.1 + R(0, 4); x < fw; x += R(3, 6)) far += pine(x, hz + 3 + R(-1, 1), R(8, 13), '#3b4670', '#c9d1ea');
   far += `<rect x="-5" y="${hz + 2}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="#c9d1e6"/>`;
-  // 中景（外）：雪の地面、雪をかぶった森、小屋へ続く足あと
-  const [snG, snD] = lgrad([[0, '#dfe5f3'], [1, '#b9c3dc']]);
-  mid += `<defs>${snD}</defs><path d="M-5 106L-5 78${smoothD(Array.from({ length: 8 }, (_, i) => [-5 + (wallX + 5) * i / 7, 78 + R(-1.5, 1.5)]))}L${n1(wallX)} 106Z" fill="url(#${snG})"/>`;
-  for (let x = R(-5, 5); x < facade0 - 4; x += R(9, 16)) mid += pine(x, R(78, 81), R(40, 70), pick(['#24344a', '#2b3d52', '#1f2d40']));
-  for (let x = R(-5, 5); x < facade0; x += R(5, 9)) mid += `<ellipse cx="${n1(x)}" cy="${n1(R(80, 84))}" rx="${n1(R(3, 7))}" ry="${n1(R(.6, 1.2))}" fill="#f4f6fc" opacity=".8"/>`;
-  for (let x = W * .3, i = 0; x < workX(1) - 4; x += 2.6, i++) mid += `<ellipse cx="${n1(x)}" cy="${n1(92 + (i % 2 ? 1.1 : -1.1) + Math.sin(x * .05))}" rx=".7" ry=".32" fill="#9aa6c4" opacity=".75"/>`;
+  // 小屋の前の雪景色：An0n の絵を夜の色にしたもの（遠くの山は奥の層、雪原・家・木・ベンチは中景の層に museum.js が置く）。
+  // 広い画面では、絵の左右に鏡に映した絵（家・ベンチ・熊を消したもの）を続ける。ここではその下地の雪原を描く
+  const SP = snowPanel(W), py = SP.plainY;
+  const [snG, snD] = lgrad([[0, '#a3b5f1'], [.35, '#9eb0ec'], [1, '#95a7e2']]);
+  mid += `<defs>${snD}</defs><path d="M-5 106L-5 ${n1(py)}${smoothD(Array.from({ length: 8 }, (_, i) => [-5 + (wallX + 5) * i / 7, py + R(-.8, .8)]))}L${n1(wallX)} 106Z" fill="url(#${snG})"/>`;
+  for (const [y, c] of [[py + 8, '#a6b8f3'], [py + 18, '#9aaceb'], [py + 30, '#a3b5f1'], [py + 42, '#97a9e5']]) mid += `<path d="M-5 106L-5 ${n1(y)}${smoothD(Array.from({ length: 7 }, (_, i) => [-5 + (facade0 + 5) * i / 6, y + R(-2.5, 2.5)]))}L${n1(facade0)} 106Z" fill="${c}"/>`;
   // 小屋の外壁（丸太）と軒、窓の灯り、少し開いた扉
   const logs = [];
   for (let y = -5; y < 82; y += 3.4) logs.push(`<rect x="${n1(facade0)}" y="${n1(y)}" width="${n1(wallX - facade0)}" height="3.1" rx="1.5" fill="${pick(['#6b4a30', '#744f33', '#62432b'])}"/><rect x="${n1(facade0)}" y="${n1(y + .3)}" width="${n1(wallX - facade0)}" height=".7" rx=".35" fill="#8c6644" opacity=".7"/>`);
@@ -1256,11 +1270,12 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     // 鉢植えは、鉢が画面の下に隠れて葉だけが床に落ちて見えないよう、鉢が見える高さに置く
     // 4 つ目のすき間（ビートメイカーが立つところ）は、手前に鉢を置かない
     if (s === 3 || s === 4 || s === 5 || s === birdGap) continue; // レコードプレーヤー・ソファ・木箱の前には鉢を置かない
-    move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#16212f')) : guard(Z, (k) => pot(x, 98.5, 10 * k, '#8e6e4f'));
+    // 外の手前の木は、雪景色の絵の木と同じ色
+    move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#061a0c', '#6c78a6')) : guard(Z, (k) => pot(x, 98.5, 10 * k, '#8e6e4f'));
   }
   return {
     sky: '#0d1027',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140],
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: SP,
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
 }
