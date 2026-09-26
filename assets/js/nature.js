@@ -42,8 +42,17 @@ function gradeRGB([r, g, b], G) {
     c = (c - .5) * G.k + .5;
     c = c + (SHADOW[i] / 255 - c) * G.t * (1 - L);
     return Math.round(Math.min(1, Math.max(0, c)) * 255);
+  }).map((v, i, o) => {
+    if (!G.moon) return v;
+    // 月夜：色を少し抜き、青く暗く沈める（暗いところにはほんの少し青い光が残る）
+    const L2 = (.299 * o[0] + .587 * o[1] + .114 * o[2]) / 255;
+    let c = v / 255;
+    c = L2 + (c - L2) * .7;
+    c = c * MOON[i] + MOON_LIFT[i];
+    return Math.round(Math.min(1, Math.max(0, c)) * 255);
   });
 }
+const MOON = [.4, .46, .7], MOON_LIFT = [.012, .018, .045];
 export function gradeColors(str, G) {
   if (!G) return str;
   return str
@@ -712,7 +721,7 @@ function sceneEntrance(W) {
   };
 }
 
-export function sceneForest(W, stops, { entrance = false } = {}) {
+export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   if (entrance) return sceneEntrance(W);
   reseed(11 + stops);
   const P = PAL.forest, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
@@ -750,6 +759,7 @@ export function sceneForest(W, stops, { entrance = false } = {}) {
   mid += beams(-10, mw, Math.round(mw / 18), '#fffbe0', { opacity: .08 });
   // 手前を横切る茂み（作品と作品のあいだ。作品の前には来ない）
   for (let s = 0; s < stops - 1; s++) {
+    if (s === birdGap) continue; // インコがいるすき間は、手前に茂みを置かない
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 4, 82);
     move += guard(Z, (k) => shrub(x + R(-6, 6), 108, R(34, 42) * k, [P.deep, P.dark, P.mid, P.leaf], { leaf: 4.4 * k }));
     move += guard(Z, (k) => fern(x + R(-14, 14), 110, R(28, 36) * k, R(-30, 30), P.dark, { cls: '' }));
@@ -764,7 +774,7 @@ export function sceneForest(W, stops, { entrance = false } = {}) {
   };
 }
 
-export function sceneJungle(W, stops) {
+export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   reseed(21 + stops);
   const P = PAL.forest, Q = PAL.water, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   let far = '', mid = '', move = '';
@@ -805,6 +815,7 @@ export function sceneJungle(W, stops) {
   for (let x = R(0, 6); x < mw; x += R(14, 20)) mid += `<path d="M${n1(x)} 93H${n1(x + 1.4)}V101H${n1(x)}Z" fill="#4a3322"/>` + ripple(x + .7, 101, 2.4);
   // 手前を横切る茂みとバナナの葉
   for (let s = 0; s < stops - 1; s++) {
+    if (s === birdGap) continue; // インコがいるすき間は、手前に茂みを置かない
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 15, 92);
     move += guard(Z, (k) => shrub(x, 108, R(36, 44) * k, [P.deep, P.dark, P.mid, P.leaf], { leaf: 4.6 * k }));
     move += guard(Z, (k) => bananaLeaf(x - 10, 112, R(34, 44) * k, R(-30, -10), P.mid)) + guard(Z, (k) => bananaLeaf(x + 10, 112, R(30, 40) * k, R(10, 30), P.leaf));
@@ -1166,7 +1177,7 @@ function windowFrame(wx, wy, ww, wh, c = '#4a3322') {
   return `<path fill-rule="evenodd" d="M${n1(wx - 1)} ${n1(wy - 1)}h${n1(ww + 2)}v${n1(wh + 2)}h${n1(-ww - 2)}ZM${n1(wx)} ${n1(wy)}v${n1(wh)}h${n1(ww)}v${n1(-wh)}Z" fill="${c}"/><path d="M${n1(wx + ww / 2)} ${n1(wy)}v${n1(wh)}M${n1(wx)} ${n1(wy + wh / 2)}h${n1(ww)}" stroke="${c}" stroke-width=".7"/><rect x="${n1(wx - 1.8)}" y="${n1(wy + wh + .8)}" width="${n1(ww + 3.6)}" height="1" fill="${light(c, .15)}"/>`;
 }
 
-export function sceneAttic(W, stops) {
+export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   reseed(51 + stops);
   const fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   const workX = (k) => at(W, FACTORS.mid)(k, W / 2);
@@ -1208,7 +1219,10 @@ export function sceneAttic(W, stops) {
   // 中景（内）：板壁と窓（窓の外は奥の空）、床、ラグ、ストーブ、棚
   // 作品と作品のあいだの壁：1 つ目に本棚とストーブ、2 つ目以降は窓（右ほど空が明けていく）
   const mids = []; for (let k = 2; k < stops - 1; k++) mids.push((workX(k) + workX(k + 1)) / 2);
-  const wins = mids.slice(1).map((m) => [m - 8, 16, 16, 40]);
+  // 作品と作品のすき間の幅（作品の枠の外側どうし）。狭い画面では窓や棚を小さくし、入らなければ置かない（絵に重ねない）
+  const zoneHalf = artZone(W, 0, 0, 0)[2], gap = W * FACTORS.mid - zoneHalf * 2;
+  const winW = Math.min(16, gap - 7.5);
+  const wins = winW >= 7 ? mids.slice(1).map((m) => [m - winW / 2, 16, winW, 40]) : [];
   mid += wallWithWindows(wallX, mw + 5, -5, 80, '#5a3e2a', wins);
   for (let x = wallX; x < mw + 5; x += R(4, 6)) mid += `<path d="M${n1(x)} -5V80" stroke="#3f2a1c" stroke-width=".35"/>` + (rnd() < .5 ? `<circle cx="${n1(x + 1)}" cy="${n1(R(5, 75))}" r=".18" fill="#2a1c12"/>` : '');
   mid += wins.map((w) => windowFrame(...w)).join('');
@@ -1227,12 +1241,22 @@ export function sceneAttic(W, stops) {
   mid += `<rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height="1.6" fill="#3a2718"/><rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height=".35" fill="#7a5638" opacity=".7"/>`;
   for (let k = 2; k < stops; k++) mid += rglow(workX(k), 86, 22, '#ffcf85', .16);
   for (let k = 2; k < stops; k++) { const x = workX(k); mid += `<ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .18)}" ry="3.2" fill="#7a3f33"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .15)}" ry="2.4" fill="none" stroke="#d9a35a" stroke-width=".5" stroke-dasharray="1.2 .8"/>`; }
-  if (mids.length) { const m = mids[0]; mid += shelf(m - 11, 26, 22) + shelf(m - 11, 40, 22) + rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V52h1.4V71Z" fill="#1d1916"/>`; }
-  mid += skateboard(wallX + 8, 26, 20, '#d4d0b5', '#382a1d') + skateboard(wallX + 14, 27, 20, '#e3dcc0', '#7f6032');
+  if (mids.length) {
+    const m = mids[0], shW = Math.min(22, gap - 2);
+    if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
+    // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
+    if (gap >= 11) mid += rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V52h1.4V71Z" fill="#1d1916"/>`;
+  }
+  // 壁に掛けたスケートボード：作品の枠にかからないときだけ
+  const sk = [[wallX + 8, 26, '#d4d0b5', '#382a1d'], [wallX + 14, 27, '#e3dcc0', '#7f6032']];
+  if (sk.every(([x]) => clearOfWorks(W, stops, x - 2, 1) && clearOfWorks(W, stops, x + 3, 1))) mid += sk.map(([x, y, c, c2]) => skateboard(x, y, 20, c, c2)).join('');
   // 手前：外は雪の枝、中は鉢植え
   for (let s = 0; s < stops - 1; s++) {
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 0, 84);
-    move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#16212f')) : guard(Z, (k) => pot(x, 108, 10 * k, '#8e6e4f'));
+    // 鉢植えは、鉢が画面の下に隠れて葉だけが床に落ちて見えないよう、鉢が見える高さに置く
+    // 4 つ目のすき間（ビートメイカーが立つところ）は、手前に鉢を置かない
+    if (s === 3 || s === 4 || s === 5 || s === birdGap) continue; // レコードプレーヤー・ソファ・木箱の前には鉢を置かない
+    move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#16212f')) : guard(Z, (k) => pot(x, 98.5, 10 * k, '#8e6e4f'));
   }
   return {
     sky: '#0d1027',

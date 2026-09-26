@@ -20,6 +20,8 @@ export const safeSVG = () => `<svg viewBox="0 0 40 44" aria-hidden="true">
   <path d="M4 3.4H36" stroke="#6b7a6f" stroke-width=".6" opacity=".6"/>
 </svg>`;
 
+import { SOUND } from './works.js';
+
 let data = null, overlay = null, audio = null;
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
@@ -41,6 +43,7 @@ async function unseal(code) {
 
 // ---- 音（ダイヤルのカチ、決めたときのゴトッ、ひらくときのガチャン） ----
 function sound(kind) {
+  if (!SOUND) return;
   try {
     audio = audio || new (window.AudioContext || window.webkitAudioContext)();
     const a = audio, t = a.currentTime, g = a.createGain();
@@ -76,7 +79,7 @@ function build(digits) {
   overlay.innerHTML = `
     <button class="vault-close" aria-label="森へ戻る">×</button>
     <div class="vault-stage">
-      <div class="vault-inside"><div class="vault-glow"></div><img class="vault-prize" alt="金のネックレス"><div class="vault-blunt"><img alt="火のついたブラント"><i class="smoke"></i><i class="smoke"></i><i class="smoke"></i></div></div>
+      <div class="vault-inside"><div class="vault-glow"></div><img class="vault-prize" alt="金のネックレス"></div>
       <div class="vault-door">
         <div class="vault-lamps">${'<i></i>'.repeat(digits)}</div>
         <div class="vault-dialwrap">
@@ -120,10 +123,9 @@ export async function openVault() {
       return;
     }
     opened = true; sound('open');
-    const img = $('.vault-prize'), cig = $('.vault-blunt img');
+    const img = $('.vault-prize');
     img.src = urls[0];
-    if (urls[1]) { cig.src = urls[1]; overlay.classList.add('has-blunt'); }
-    await Promise.all([img.decode(), urls[1] ? cig.decode() : null].map((pr) => pr && pr.catch(() => {})));
+    await img.decode().catch(() => {});
     overlay.classList.add('open');
   };
 

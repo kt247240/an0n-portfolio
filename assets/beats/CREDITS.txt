@@ -1,0 +1,14 @@
+An0n.portfolio — 曲「forest walk」の音の素材 / Sound credits
+
+曲は、下の録音素材を tools/make-beat.mjs で演奏・加工して作ったネタとドラムを、サイト上で切り刻んで鳴らしています。
+The beat is built in the browser from chops of records made with tools/make-beat.mjs from these recordings:
+
+- Versilian Studios Chamber Orchestra 2 – Community Edition (CC0 1.0)
+  Sam Gossner, Simon Dalzell (Ivy Audio), Versilian Studios — https://github.com/sgossner/VSCO-2-CE
+  Upright piano, organ, trumpet, trombone, violin & cello sections, contrabass pizzicato, tambourine
+  → rec-*.mp3, bass.wav, drums/tamb.wav
+
+- Salamander Drumkit v1 — Alexander Holm (CC BY-SA 3.0; later released to the public domain)
+  https://archive.org/details/SalamanderDrumkit
+  → drums/kick.wav, snare.wav, ghost.wav, rim.wav, hat1-3.wav, open.wav
+  These processed drum one-shots are shared under CC BY-SA 3.0.

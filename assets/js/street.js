@@ -15,6 +15,20 @@ export const PROPS = {
       <rect x="48" y="32" width="24" height="17" rx="2" fill="#2a2822"/><circle cx="55" cy="40" r="3" fill="#d8d0bc"/><circle cx="65" cy="40" r="3" fill="#d8d0bc"/><rect x="49" y="45" width="22" height="2" fill="#df7418"/>
       <rect x="50" y="54" width="20" height="3" rx="1.5" fill="#9e9582"/><circle cx="60" cy="63" r="2" fill="#e8483b" class="led"/></svg>`,
   },
+  // 入口の森：小さな木のサイドテーブルに載せたレコードプレーヤー（下の段にはレコード）
+  recordStand: {
+    w: 11, h: 13,
+    svg: () => `<svg viewBox="0 0 60 72"><ellipse cx="30" cy="70.6" rx="25" ry="1.8" fill="#000" opacity=".2"/>
+      <path d="M9 34L10.6 70H13.4L13.6 34ZM46.4 34L46.6 70H49.4L51 34Z" fill="#6b4630"/><path d="M11 34L11.8 70H13.4L13.6 34Z" fill="#7d5438"/>
+      <rect x="10" y="52" width="40" height="2.6" fill="#7d5438"/>
+      ${['#e8483b', '#2f6a44', '#e4c496', '#385871', '#df7418', '#c7b3e6', '#1f1d1a'].map((c, i) => `<rect x="${14 + i * 4.6}" y="${39.5 + (i % 3) * .8}" width="3.6" height="${12.5 - (i % 3) * .8}" fill="${c}" transform="rotate(${i === 6 ? 8 : 0} ${16 + i * 4.6} 52)"/>`).join('')}
+      <rect x="5" y="31" width="50" height="4" rx="1" fill="#8f602e"/><rect x="5" y="31" width="50" height="1.2" rx=".6" fill="#b07a48"/>
+      <rect x="8" y="22" width="44" height="9.4" rx="1.4" fill="#5a3b24"/><rect x="8" y="22" width="44" height="2" rx="1" fill="#7a5234"/>
+      <rect x="9.5" y="20.4" width="41" height="3" rx="1" fill="#26221e"/>
+      <g transform="translate(27 21.4) scale(1 .32)"><g class="spin"><circle r="16" fill="#141210"/><circle r="12.5" fill="none" stroke="#2a2621" stroke-width=".8"/><circle r="9" fill="none" stroke="#2a2621" stroke-width=".8"/><circle r="5" fill="#df7418"/><circle r=".8" fill="#e8e2d2"/><path d="M-1 -16h2v5h-2z" fill="#3a3630"/></g></g>
+      <path d="M47 17.6L45 21L37 21.4" stroke="#d8d0bc" stroke-width=".9" fill="none" stroke-linecap="round"/><circle cx="47" cy="17.6" r="1.6" fill="#bdb5a0"/>
+      <circle cx="47.6" cy="27" r="1.1" fill="#c9a36a"/><rect x="11" y="26.4" width="6" height="1.2" rx=".6" fill="#c9a36a" opacity=".8"/></svg>`,
+  },
   turntable: {
     w: 22, h: 12,
     svg: () => `<svg viewBox="0 0 130 70"><rect x="2" y="30" width="126" height="38" rx="3" fill="#8f602e"/><rect x="2" y="30" width="126" height="6" fill="#a8764a"/>
@@ -39,6 +53,30 @@ export const PROPS = {
   cassettes: {
     w: 13, h: 9,
     svg: () => `<svg viewBox="0 0 70 50">${[['#2a2822', '#e4c496', 0, -3], ['#d8d0bc', '#df7418', 10, 4], ['#385871', '#fffaf2', 20, -2]].map(([c, l, y, r]) => `<g transform="rotate(${r} 35 ${40 - y})"><rect x="6" y="${26 - y}" width="58" height="18" rx="2" fill="${c}"/><rect x="11" y="${29 - y}" width="48" height="8" fill="${l}"/><circle cx="24" cy="${38 - y}" r="2.5" fill="#1a1814"/><circle cx="46" cy="${38 - y}" r="2.5" fill="#1a1814"/></g>`).join('')}</svg>`,
+  },
+  // 小屋の家具：くたっとした一人がけのソファと、真鍮のサイドランプ、読みかけの本
+  armchair: {
+    w: 21, h: 17,
+    svg: () => `<svg viewBox="0 0 100 80"><ellipse cx="44" cy="78.6" rx="42" ry="2" fill="#000" opacity=".25"/>
+      <path d="M12 72V78M70 72V78" stroke="#2e1f14" stroke-width="3"/>
+      <path d="M8 30Q8 14 24 13H58Q74 14 74 30V52H8Z" fill="#8a4a32"/><path d="M8 30Q8 14 24 13H40V52H8Z" fill="#9b573b"/>
+      ${[26, 42, 58].map((x) => `<circle cx="${x}" cy="28" r=".9" fill="#5e2f1f"/><circle cx="${x}" cy="40" r=".9" fill="#5e2f1f"/>`).join('')}
+      <path d="M4 44Q4 38 10 38H72Q78 38 78 44V72H4Z" fill="#7a3f2a"/>
+      <path d="M13 46H69Q72 46 72 50V56H10V50Q10 46 13 46Z" fill="#a1603f"/><path d="M13 46H69Q72 46 72 48H10Q10 46 13 46Z" fill="#b8734e"/>
+      <path d="M0 42Q0 34 7 34Q14 34 14 42V72H0Z" fill="#8f4b33"/><path d="M68 42Q68 34 75 34Q82 34 82 42V72H68Z" fill="#6f3825"/>
+      <path d="M18 36Q24 30 34 33L32 44Q24 42 18 44Z" fill="#d9c49f"/><path d="M20 38L31 36" stroke="#b09a74" stroke-width=".6"/>
+      <g transform="translate(90 0)"><path d="M0 78V26" stroke="#b08a4a" stroke-width="1.6"/><path d="M-5 78H5" stroke="#8a6a36" stroke-width="2.4"/>
+      <path d="M-7 26L-4 12H4L7 26Z" fill="#e8d7b0"/><path d="M-7 26H7" stroke="#cbb58a" stroke-width="1"/><ellipse cx="0" cy="27" rx="6" ry="1.2" fill="#ffe2a8" class="lit"/></g></svg>`,
+  },
+  // 本とレコードを積んだ低い木箱
+  bookcrate: {
+    w: 13, h: 9.3,
+    svg: () => `<svg viewBox="0 0 70 50"><ellipse cx="35" cy="49" rx="33" ry="1.6" fill="#000" opacity=".25"/>
+      <rect x="4" y="20" width="62" height="29" rx="1.5" fill="#8f602e"/><rect x="4" y="20" width="62" height="3" fill="#a8764a"/>
+      <path d="M4 34H66" stroke="#6b4630" stroke-width="1"/>${[8, 22, 36, 50].map((x) => `<rect x="${x}" y="25" width="10" height="4" rx="1" fill="#5a3b24"/>`).join('')}
+      ${['#e8483b', '#2f6a44', '#e4c496', '#385871', '#c7b3e6'].map((c, i) => `<rect x="${9 + i * 4}" y="${3 + (i % 2) * 2}" width="3.4" height="${17 - (i % 2) * 2}" fill="${c}"/>`).join('')}
+      <g transform="rotate(-10 44 14)"><rect x="32" y="9" width="24" height="3.2" fill="#df7418"/><rect x="33" y="12.2" width="22" height="3" fill="#d9c49f"/><rect x="34" y="15.2" width="20" height="3" fill="#385871"/></g>
+      <circle cx="60" cy="16" r="3.6" fill="#141210"/><circle cx="60" cy="16" r="1.2" fill="#df7418"/></svg>`,
   },
   sneakers: {
     w: 12, h: 30, hang: true,

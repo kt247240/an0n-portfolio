@@ -1,7 +1,8 @@
 // =========================================================
 // 森の美術館 — スクロールで森の小道を歩き、作品の前で立ち止まる
 // =========================================================
-import { ARTIST, ROOMS, WORKS } from './works.js';
+import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
+import { createRadio } from './radio.js';
 import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
@@ -178,15 +179,17 @@ const rooms = ROOMS.map((room, ri) => {
   el.id = `room-${room.id}`;
   el.innerHTML = `<div class="sticky">
       <div class="sky"></div>
-      <div class="plane far"></div><div class="plane mid"></div>
+      <div class="plane far"></div>${room.scene === 'jungle' ? '<div class="water-glow" aria-hidden="true"><i class="tint"></i><canvas class="caust"></canvas><i class="haze"></i></div>' : ''}<div class="plane mid"></div>
       <div class="plane props" aria-hidden="true"></div>
       <div class="flash" aria-hidden="true"></div>
       <div class="neon" aria-hidden="true"></div><div class="grain-under" aria-hidden="true"></div>
+      <div class="lightplay" aria-hidden="true"><i class="l1"></i><i class="l2"></i></div><div class="hush" aria-hidden="true"></div><div class="nextglow" aria-hidden="true"></div>
       ${gradeColors(introSVG(room.scene), GRADES[room.scene])}
       <div class="plane art"></div>
       <div class="plane move"></div>
       <div class="frame"></div>
       <div class="curtain" aria-hidden="true"></div>
+      <div class="curtain curtain-leave" aria-hidden="true"></div>
       <div class="veil"></div>
     </div>`;
   roomsEl.append(el);
@@ -209,10 +212,35 @@ function frameDeco(kind) {
   }
 }
 
+// 入口のランプで夜にしたとき、朝〜夕方の部屋（森・水辺・夕凪）も夜の色で描く。
+// 膜を重ねるのではなく、背景の絵そのものを月夜の色に変換して描き直すので、メモリは増えない
+// （作品と、水辺の光る水は背景とは別の層なので、色は変わらない）
+const NIGHTABLE = ['forest', 'jungle', 'cove'];
+let forestNight = false;
+const gradeOf = (scene) => (forestNight && NIGHTABLE.includes(scene) ? { ...GRADES[scene], moon: true } : GRADES[scene]);
+function setForestNight(on) {
+  if (forestNight === on) return;
+  forestNight = on;
+  document.body.classList.toggle('forest-night', on); // 夜のまま小屋まで行くと、ビートメイカーの SP-404 が光る
+  // 葉のカーテンは部屋どうしで受け渡しているので、いったん全部外す（次に閉じるときに新しい色で作り直す）
+  const clearC = (c) => { if (!c) return; const box = c.box || $('.curtain', c.el); if (box) box.innerHTML = ''; c.leafEls = null; c.curShown = -1; };
+  clearC(entranceCurtain); rooms.forEach((r) => { clearC(r); clearC(r.leaveC); });
+  rooms.filter((r) => NIGHTABLE.includes(r.room.scene)).forEach((r) => {
+    const was = r.attached, old = r.svgRange;
+    if (was) detachLayers(r);
+    buildRoomScene(r);
+    if (was) attachLayers(r);
+    if (old) for (let i = old[0]; i < old[1]; i++) SVG_STORE.delete(`s${i}`); // 前の色の絵の元データは捨てる
+  });
+}
 function buildRoomScene(r) {
-  const S = SCENES[r.room.scene](W, r.stops);
+  const svgFrom = svgSeq;
+  const S = SCENES[r.room.scene](W, r.stops, { birdGap: BIRD_SPOTS[r.room.id] ? Math.floor(BIRD_SPOTS[r.room.id][0]) : -1 });
   r.sceneData = S;
-  GRADE = GRADES[r.room.scene];
+  const moonlit = forestNight && NIGHTABLE.includes(r.room.scene);
+  r.el.classList.toggle('moonlit', moonlit);
+  if (moonlit) S.glowDefault = [255, 208, 150]; // 夜は、作品のうしろの光を暖かいスポットライトの色に
+  GRADE = gradeOf(r.room.scene);
   $('.sky', r.el).style.background = gradeColors(S.sky, GRADE);
   // 背景の絵は HTML として用意だけしておき、部屋に近づいたときに付ける（attachLayers）
   // 奥の層は、描くときに一度だけ薄くぼかしておく（被写界深度。スクロール中の負担はない）
@@ -239,7 +267,7 @@ function buildRoomScene(r) {
       if (W < 70) h = Math.min(h, 46);
       el.className = 'work';
       const standing = ['easel', 'lamp', 'lightbox', 'post'].includes(r.room.frame);
-      el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), GRADES[r.room.scene])}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w)}</button>`;
+      el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), gradeOf(r.room.scene))}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w)}</button>`;
       // 台座・柱が、作品の大きさによらず地面（遊歩道・桟橋・砂浜）まで届くように
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
       if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
@@ -265,6 +293,7 @@ function buildRoomScene(r) {
     $('.vault-safe', art).addEventListener('click', () => openVault());
   }
   buildProps(r);
+  r.svgRange = [svgFrom, svgSeq];
   // はじめは絵も動画も外しておき、近づいたら付ける
   r.attached = true; detachLayers(r);
 }
@@ -276,10 +305,12 @@ const STREET = {
   water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
-  afterhours: { intro: 'turntable', introAt: 3.5, pool: [] },
+  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
 function propHTML(kind, scene) {
   if (kind === 'rock') return { html: ROCK.svg(Math.floor(Math.random() * 2)), cls: 'rock', w: ROCK.w, bottom: 5 };
+  if (kind === 'armchair' || kind === 'bookcrate') return { html: PROPS[kind].svg(), cls: '', w: PROPS[kind].w, bottom: kind === 'armchair' ? 7.4 : 7.8 };
+  if (kind === 'recordStand') return { html: PROPS.recordStand.svg(), cls: '', w: PROPS.recordStand.w, bottom: 8 }; // 上にインコがとまるので高さを決めておく
   const P = PROPS[kind];
   return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : 7 + Math.random() * 3 };
 }
@@ -288,14 +319,30 @@ function buildProps(r) {
   if (!cfg) return;
   const spots = cfg.intro ? [cfg.introAt != null ? [cfg.introAt, W / 2, cfg.intro] : [0, W * .16, cfg.intro]] : [];
   if (cfg.pool.length) for (let i = 1; i < r.items.length; i++) spots.push([i + .5, W / 2, cfg.pool[(i - 1) % cfg.pool.length]]);
+  (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + dx, kind])); // dx：金庫などとぶつからないよう横にずらす（vh）
   L.innerHTML = spots.map(([s, x, kind]) => {
     const p = propHTML(kind, r.room.scene);
-    p.html = gradeColors(p.html, GRADES[r.room.scene]);
+    p.html = gradeColors(p.html, gradeOf(r.room.scene));
     const pos = p.bottom == null ? 'top:0' : `bottom:${p.bottom}vh`;
-    const egg = ['boombox', 'sneakers', 'turntable'].includes(kind) ? ` data-egg="${kind}"` : '';
+    const eggKind = kind === 'recordStand' ? 'turntable' : kind;
+    const egg = ['boombox', 'sneakers', 'turntable'].includes(eggKind) ? ` data-egg="${eggKind}"` : '';
     return `<div class="prop ${p.cls}${egg ? ' egg-prop' : ''}"${egg} style="left:${(s * W * FACTORS.mid + x) * U}px;${pos};width:${p.w}vh">${p.html}</div>`;
-  }).join('') + roomEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid);
+  }).join('') + roomEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid) + birdHTML(r);
 }
+// インコ：入口の看板の上にいて、森の奥の部屋でもときどき見かける（同じ鳥がついてくる）
+// [部屋, 作品と作品のあいだの位置, 横のずれ（vh）, 足もとの高さ（vh）, 左右反転]
+const BIRD_SPOTS = { dapple: [1.5, 3, 15.6, false], water: [2.5, -2, 12.4, true] };
+function birdHTML(r) {
+  const b = BIRD_SPOTS[r.room.id]; if (!b) return '';
+  const [s, dx, bottom, flip] = b;
+  return `<button class="prop bird-prop${flip ? ' flip' : ''}" aria-label="インコ" style="left:${(s * W * FACTORS.mid + W / 2 + dx) * U}px;bottom:${bottom}vh"><img src="assets/bird.webp" alt="" draggable="false"></button>`;
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('.bird-prop, .sign-bird'); if (!b) return;
+  e.stopPropagation();
+  // タップすると小さく跳ねる
+  b.classList.remove('hop'); void b.getBoundingClientRect(); b.classList.add('hop');
+}, true);
 
 /* ---------- 入口 ---------- */
 const entrance = $('#entrance');
@@ -314,7 +361,7 @@ function buildCatalog() {
   const grid = $('#catalog-grid');
   grid.innerHTML = ROOMS.map((room) => {
     const specs = WORKS.map((w, i) => [w, i]).filter(([w]) => w.room === room.id).map(([w, i]) => `<button class="spec" data-i="${i}" data-id="${w.id}" aria-label="${esc(w.title)} を見る" style="--ar:${w.aspect}">
-        <span class="mount">${w.type === 'video' ? `<img src="${esc(w.poster)}" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="${esc(w.src)}"></video>` : `<img src="${esc(w.src)}" alt="" loading="lazy">`}</span><i class="pin" aria-hidden="true"></i></button>`).join('');
+        <span class="mount">${w.type === 'video' ? `<img src="${esc(w.poster)}" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="${esc(w.src)}"></video>` : `<img src="${esc(w.src)}" alt="" loading="lazy">`}</span><i class="pin" aria-hidden="true"></i><i class="ask${w.sold ? ' sold' : w.nfs ? ' nfs' : ''}" aria-hidden="true">${w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'ASK'}</i></button>`).join('');
     return `<section class="specimen" data-room="${room.id}" aria-label="${esc(room.ja)}"><div class="box"><div class="bed">${specs}<span class="pressed">${pressedSpecimen(room.scene)}</span></div></div></section>`;
   }).join('');
   grid.addEventListener('click', (e) => {
@@ -364,11 +411,19 @@ function updateCurtain(r, cur) {
   const c = Math.round(cur * 400) / 400;
   if (c === r.curShown) return;
   r.curShown = c;
-  const box = $('.curtain', r.el);
+  const box = r.box || $('.curtain', r.el);
   box.style.visibility = c > 0 ? 'visible' : 'hidden';
   // 葉のカーテンは閉じかけている間だけ付ける（開いたら外してメモリを空ける）
   if (c <= 0) { if (r.leafEls) { box.innerHTML = ''; r.leafEls = null; } return; }
-  if (!r.leafEls) { box.innerHTML = r.curtainHTML; r.leafEls = [...box.children]; hydrate(box); }
+  if (!r.leafEls) {
+    // 前の部屋（や入口）で閉じきっている同じ葉があれば、焼いた絵ごと引き継ぐ（同じ葉を 2 回焼かない）
+    const donor = [entranceCurtain, ...rooms.map((x) => x.leaveC)].find((d) => d && d !== r && d.leaves === r.leaves && d.leafEls && d.curShown >= 1);
+    if (donor) {
+      donor.leafEls.forEach((el) => box.append(el));
+      r.leafEls = donor.leafEls; donor.leafEls = null; donor.curShown = -1;
+      donor.box = donor.box || $('.curtain', donor.el); donor.box.innerHTML = ''; donor.box.style.visibility = 'hidden';
+    } else { box.innerHTML = r.curtainHTML; r.leafEls = [...box.children]; hydrate(box); }
+  }
   const o = 1 - c;
   r.leaves.forEach((q, i) => {
     const k = ease(clamp(o * (1 + q.delay) - q.delay));
@@ -377,13 +432,89 @@ function updateCurtain(r, cur) {
   });
 }
 
+// 水辺の水：奥へ歩くほど、淡い緑に光り、水底の光の網目（揺らめき）が浮かび上がる。
+// 水面（空と奥の層）と、睡蓮・桟橋（中景）のあいだに重ねるので、睡蓮や作品にはかからない
+let causticURL = null; // 光の網目の元になる小さな正方形（256px の canvas 1 枚）
+function causticTile() {
+  if (causticURL) return causticURL;
+  // 継ぎ目なく並べられる光の網目：ばらまいた点のまわりの境目（2 番目に近い点との距離の差が小さいところ）を光らせる
+  const N = TILE, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), img = g.createImageData(N, N), pts = [], TAU = Math.PI * 2;
+  for (let i = 0; i < 20; i++) pts.push([Math.random() * N, Math.random() * N]);
+  // 周期 N でくり返す揺れ（タイルの継ぎ目が出ないように）
+  const ph = Array.from({ length: 6 }, () => Math.random() * TAU), wave = (v, k, i) => Math.sin(TAU * k * v / N + ph[i]);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    // 線をうねらせる（ゆるい曲がりと、細かい曲がり）
+    const q = N / 192, wx = x + (wave(y, 2, 0) * 7 + wave(y + x, 5, 1) * 2.2) * q, wy = y + (wave(x, 2, 2) * 7 + wave(x - y, 4, 3) * 2.2) * q;
+    let d1 = 1e9, d2 = 1e9;
+    for (const [px, py] of pts) for (let ox = -N; ox <= N; ox += N) for (let oy = -N; oy <= N; oy += N) {
+      const d = Math.hypot(wx - px - ox, wy - py - oy);
+      if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+    }
+    // 明るさと太さにムラ（光が集まるところは太く明るく、ほかは細く淡く）
+    const m = .5 + .5 * wave(x, 1, 4) * wave(y, 1, 5), w = (1.1 + 1.9 * m) * q, e = d2 - d1;
+    const v = Math.exp(-((e / w) ** 2)) * (.55 + .45 * m) + Math.exp(-e / (7 * q)) * .14, i = (y * N + x) * 4;
+    img.data[i] = 236; img.data[i + 1] = 255; img.data[i + 2] = 214; img.data[i + 3] = Math.min(255, v * 255);
+  }
+  g.putImageData(img, 0, 0);
+  return (causticURL = c);
+}
+// 光の網目は、画面の半分ほどの解像度の canvas 1 枚に毎フレーム描く（大きな層を 3D で傾けると、
+// iPhone はそれを丸ごと画像として持つので数百 MB になり落ちる。canvas なら 1MB 未満）。
+// 奥へ倒した水平な水面に見えるよう、横に細い帯ごとに網目の大きさを変える：手前は大きく、奥ほど小さく詰まり、薄れる
+const WQ = Math.min(devicePixelRatio || 1, 2), TILE = 256; // canvas は画面と同じ細かさ（最大 2 倍）。1 枚だけなので約 5MB
+function drawWater(el, t, wx) {
+  const cv = el._cv, g = el._g, Wc = cv.width, Hc = cv.height;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, Wc, Hc);
+  const yh = -.42 * Hc, span = Hc - yh, SQ = .5, bands = 44; // 地平線は画面の上の外。SQ は網目のつぶれ具合（水面の傾き）
+  const layers = [[34, 2, 1.4, .8 + .2 * Math.sin(t * .7)], [52, -1.5, -1.8, .42 + .16 * Math.sin(t * .5 + 1.3)]];
+  for (const [size, vx, vy, alpha] of layers) {
+    const k = size * U * WQ / TILE; // 手前での網目の大きさ（タイルに対する倍率）
+    for (let i = 0; i < bands; i++) {
+      const y0 = Hc * (i / bands) ** 1.25, y1 = Hc * ((i + 1) / bands) ** 1.25, ym = (y0 + y1) / 2;
+      const s = (ym - yh) / span, depth = Math.min(1, ym / Hc);
+      const a = alpha * Math.min(1, Math.max(0, (depth - .04) / .6)) ** 1.3; // 奥ほど薄く
+      if (a < .01) continue;
+      const sx = k * s, sy = k * s * SQ;
+      // 水面上の位置：奥ほど同じ画面の高さで遠くまで見えるので、縦は対数で進む
+      const V0 = (span / (k * SQ)) * Math.log((y0 - yh) / span) + t * vy * U * WQ / k;
+      const U0 = (wx * WQ + t * vx * U * WQ) / sx;
+      g.globalAlpha = a;
+      g.setTransform(sx, 0, 0, sy, -U0 * sx, y0 - V0 * sy);
+      g.fillRect(U0, V0, Wc / sx, (y1 - y0) / sy + 1);
+    }
+  }
+  g.globalAlpha = 1;
+}
+function updateWater(r, p, cam, mx, now) {
+  const el = r.water || (r.water = $('.water-glow', r.el)); if (!el) return;
+  // 歩いた分だけ明るくする。ただしスクロールにぴったり付けず、少し遅れてふわっと追いかける（フェード）
+  const target = smooth(.03, .88, p), dt = Math.min(.1, (now - (el._t ?? now)) / 1000); el._t = now;
+  el._k = el._k == null ? target : el._k + (target - el._k) * (1 - Math.exp(-dt / (REDUCED ? .05 : 1.1)));
+  if (Math.abs(el._k - target) < .002) el._k = target;
+  const k = el._k, ease = k * k * (3 - 2 * k);
+  if (Math.abs(ease - (el._shown ?? -1)) > .002) {
+    el._shown = ease;
+    el.style.opacity = Math.min(1, ease * 1.15).toFixed(3); // 先に水の色が明るくなり
+    el.style.setProperty('--caust', smooth(.2, 1, ease).toFixed(3)); // あとから光の網目が浮かぶ
+  }
+  const cv = el._cv || (el._cv = $('.caust', el));
+  if (k <= .01 || !r.live) { if (cv.width) { cv.width = 0; cv.height = 0; el._g = null; } return; } // 見えないときは canvas を空にする
+  const Wc = Math.round(vw * WQ), Hc = Math.round(vh * WQ);
+  if (cv.width !== Wc || cv.height !== Hc) { cv.width = Wc; cv.height = Hc; el._g = null; }
+  if (!el._g) { el._g = cv.getContext('2d'); el._g.imageSmoothingQuality = 'high'; el._g.fillStyle = el._g.createPattern(causticTile(), 'repeat'); }
+  // 横に歩くと、水面は奥の層と一緒に流れる
+  const t = REDUCED ? 0 : now / 1000, wx = (cam * W * FACTORS.far) * U + mx * FACTORS.far * 2 * U;
+  drawWater(el, t, wx);
+}
+
 function updateRoom(r, now) {
   manageMemory(r);
   const { top, len } = roomMetrics(r);
   const p = clamp((sy - top) / len);
   const onScreen = sy + vh > top && sy < top + len + vh;
   if (onScreen !== r.live) { r.live = onScreen; r.el.classList.toggle('live', onScreen); }
-  if (!onScreen) { pauseRoomVideos(r); updateCurtain(r, 0); r.curS = null; return; }
+  if (!onScreen) { pauseRoomVideos(r); updateCurtain(r, 0); if (r.leaveC) updateCurtain(r.leaveC, 0); r.curS = null; return; }
   const t = clamp((p * 1.08 - .04) * (r.stops - 1), 0, r.stops - 1);
   r.c = dwell(t);
   const mx = mouse.x * 1.2, my = mouse.y;
@@ -410,23 +541,41 @@ function updateRoom(r, now) {
   const mxc = r.room.scene === 'attic' && cam >= 1.5 && cam < 2.6 ? Math.max(mx, 0) : mx;
   const tr = (sel, f, extra = '') => { $(sel, r.el).style.transform = `translate3d(${(-(cam * W * f) - mxc * f * 2) * U}px, ${(my * f * -1.2 + bob * f) * U}px, 0)${extra}`; };
   tr('.far', FACTORS.far); tr('.mid', FACTORS.mid); tr('.props', FACTORS.mid); tr('.art', FACTORS.mid); tr('.move', FACTORS.move);
+  if (r.room.scene === 'jungle') updateWater(r, p, cam, mxc, now);
   // 部屋の出入りで、手前の植物をくぐる
   const enter = 1 - smooth(0, .035, p), leave = smooth(.95, 1, p);
   // 葉のカーテンは、スクロールに遅れてゆっくりひらく／閉じる（速くスワイプしても葉がふわっと動く）
   const dtc = Math.min(.1, (now - (r.lastNow ?? now)) / 1000); r.lastNow = now;
-  const target = Math.max(enter, leave);
+  // 入るときのカーテン（この部屋の葉）はゆっくり追いかけてひらく。
+  // 出るときは、次の部屋の葉のカーテンがスクロールどおりに閉じる。閉じきったところで次の部屋（真下に重ねてある）に入れ替わり、
+  // そのまま同じ葉がひらくので、部屋の切り替わりが見えない（最後の部屋だけは自分の葉で閉じる）
+  const next = rooms[rooms.indexOf(r) + 1];
+  const target = next ? enter : Math.max(enter, leave);
   r.curS = r.curS == null ? target : r.curS + (target - r.curS) * (1 - Math.exp(-dtc / .9));
   if (Math.abs(r.curS - target) < .015) r.curS = target; // ほぼ開いた（閉じた）ら、そこで止める（端に葉が残らないように）
   // 作品の前では、手前の植物が少しひらいて作品に場所をゆずる
   const at = 1 - smooth(.05, .35, Math.abs(r.c - Math.round(r.c)));
   const focus = r.c > .5 ? at : 0;
   r.el.style.setProperty('--focus', focus.toFixed(3));
+  // 光の流れ・次の部屋の気配は、部屋の中にいる間だけ（葉のカーテンが開いている間）。いま見ている部屋だけに付けて軽く
+  r.el.classList.toggle('lit', p > .015 && p < .985);
+  r.el.style.setProperty('--p', p.toFixed(3));
+  // 部屋の終わりが近づくと、次の部屋の光の色が右からこぼれてくる（葉のカーテンが閉じると引く）
+  r.el.style.setProperty('--nextk', (next ? smooth(.76, .93, p) * (1 - smooth(.965, .995, p)) : 0).toFixed(3));
   r.el.classList.toggle('focus', focus > .6);
-  const fs = 1 + r.curS * (enter >= leave ? .45 : .6) + focus * .05;
+  const fs = 1 + Math.max(r.curS * .45, leave * .6) + focus * .05;
   $('.frame', r.el).style.transform = `translate3d(${-mx * 2.4 * U}px, ${-my * 1.6 * U}px, 0) scale(${fs + kick * .006})`;
   // 部屋の出入りで、葉のカーテンが閉じて開く
-  updateCurtain(r, r.curS);
-  $('.veil', r.el).style.opacity = r.curS * .35;
+  // 真上の部屋（入口）がまだ見えている間は、自分のカーテンを作らない（閉じきったら、その葉を引き継ぐ）
+  const above = rooms.indexOf(r) ? rooms[rooms.indexOf(r) - 1].el : entrance;
+  if (above.classList.contains('gone')) updateCurtain(r, r.curS);
+  if (next && next.leaves) {
+    r.leaveC = r.leaveC || { el: r.el, box: $('.curtain-leave', r.el), leafEls: null, curShown: -1 };
+    r.leaveC.leaves = next.leaves; r.leaveC.curtainHTML = next.curtainHTML;
+    // 隠した部屋（次の部屋に入れ替わった後）では作らない。作ると、閉じた葉だけが上へ流れていき、下の端がまっすぐ見える
+    updateCurtain(r.leaveC, r.el.classList.contains('gone') ? 0 : leave);
+  }
+  $('.veil', r.el).style.opacity = Math.max(r.curS, next ? 0 : leave) * .35;
   // 部屋の入口のアニメーション（部屋の名前の代わり）
   const intro = $('.room-intro', r.el);
   const to = 1 - smooth(.12, .5, r.c);
@@ -473,26 +622,40 @@ function updateEntrance() {
   const len = entrance.offsetHeight - vh, p = clamp(sy / len);
   const mx = mouse.x, my = mouse.y;
   $('.far', entrance).style.transform = `translate3d(${-mx * .6 * U}px, ${-my * .4 * U}px, 0) scale(${1 + p * .08})`;
-  $('.mid', entrance).style.transform = `translate3d(${-mx * 1.4 * U}px, ${-my * .8 * U}px, 0) scale(${1 + p * .4})`;
+  // 地面（中景）は、看板の足もとを中心に寄っていく。看板の足もとの地面は動かないので、画面に立てたままの看板が地面から離れない
+  const sign = $('.sign', entrance);
+  if (!sign._foot) { const cs = getComputedStyle(sign); sign._foot = [(parseFloat(cs.left) + parseFloat(cs.width) / 2) / U, 100 - parseFloat(cs.bottom) / U - .6]; }
+  const [FX, FY] = sign._foot, zoom = .22;
+  const midEl = $('.mid', entrance);
+  midEl.style.transformOrigin = `${FX * U}px ${FY * U}px`;
+  midEl.style.transform = `translate3d(${-mx * 1.4 * U}px, ${-my * .8 * U}px, 0) scale(${1 + p * zoom})`;
+  sign.style.translate = $('.sign-bird', entrance).style.translate = `${-mx * 1.4 * U}px ${-my * .8 * U}px`; // マウスの視差だけは地面と一緒に
   $('.frame', entrance).style.transform = `translate3d(${-mx * 3 * U}px, ${-my * 2 * U}px, 0) scale(${1 + p * 1.7})`;
   // 案内人は小道の中心線の上を、奥へ歩いていく（中景と同じ拡大・視差をかけて、道から外れないように）
-  const t0 = .507, tg = t0 - Math.min(p, .9) * .42, [X, Y] = ENTRANCE_PATH(W)(tg), s = 1 + p * .4, ox = (W + 40) / 2;
+  const t0 = .507, tg = t0 - Math.min(p, .9) * .42, [X, Y] = ENTRANCE_PATH(W)(tg), s = 1 + p * zoom;
   // 中景の 1 点 (x, y) が、いま画面のどこに見えるか（中景と同じ拡大・視差）
-  const onGround = (x, y) => [ox + (x - ox) * s - mx * 1.4, 70 + (y - 70) * s - my * .8];
+  const onGround = (x, y) => [FX + (x - FX) * s - mx * 1.4, FY + (y - FY) * s - my * .8];
   const guide = $('.guide', entrance), feetY = 100 - parseFloat(getComputedStyle(guide).bottom) / U;
-  const [xs, ys] = onGround(X, Y), k = (Y - 64) / (ENTRANCE_PATH(W)(t0)[1] - 64) * s;
+  const [xs, ys] = onGround(X, Y), k = (Y - 64) / (ENTRANCE_PATH(W)(t0)[1] - 64) * (1 + p * .4);
   guide.style.transform = `translate(-50%, 0) translate(${(xs - W / 2) * U}px, ${(ys - feetY) * U}px) scale(${k})`;
   guide.style.opacity = 1 - smooth(.6, .85, p);
   // 足取り：進んだ距離に合わせてコマを送る（止まれば足も止まる）。最初は両足がそろったコマで立っている
   const WALK_FRAMES = 23, frameNo = (11 + Math.floor(p * 7 * WALK_FRAMES)) % WALK_FRAMES;
   if (frameNo !== guide._frame) { guide._frame = frameNo; guide.firstElementChild.style.backgroundPosition = `${(frameNo / (WALK_FRAMES - 1)) * 100}% 0`; }
-  // 看板とラジカセも地面に置いたもの：足もと（下端の中央）を中景と同じように動かす
+  // レコードプレーヤーとランプは地面に置いたもの：足もと（下端の中央）を中景と同じように動かす
   // transform は揺れ・ホバーの演出に使うので、translate / scale のプロパティで動かす
-  for (const el of [$('.sign', entrance), $('#boombox')]) {
+  // 看板は画面の同じ位置に立てたまま（足もとの草むらで地面に刺さって見える）
+  for (const el of [$('#player'), $('#lamp')]) {
     if (!el._foot) { const cs = getComputedStyle(el); el._foot = [(parseFloat(cs.left) + el.offsetWidth / 2) / U, 100 - parseFloat(cs.bottom) / U]; }
     const [fx, fy] = el._foot, [gx, gy] = onGround(fx, fy);
+    // 位置は地面についていくが、大きさは変えない（奥へ進むにつれて看板が大きくなって見えないように）
     el.style.translate = `${(gx - fx) * U}px ${(gy - fy) * U}px`;
-    el.style.scale = `${s}`;
+  }
+  // 夜の森：暗さと灯りの中心を、ランプのかさの位置に合わせる
+  if (entrance.classList.contains('night')) {
+    const b = $('#lamp').getBoundingClientRect();
+    entrance.style.setProperty('--lx', `${(b.left + b.width / 2).toFixed(1)}px`);
+    entrance.style.setProperty('--ly', `${(b.top + b.height * .16).toFixed(1)}px`);
   }
   // 案内人が奥へ消えたら、最初の部屋と同じ葉のカーテンが左右から閉じる。
   // 閉じきったところで最初の部屋（入口の真下に重ねてある）へ入れ替わるので、つなぎ目は見えない
@@ -591,6 +754,13 @@ function setViewer(w) {
   }
   const room = ROOMS.find((r) => r.id === w.room);
   $('#v-meta').textContent = w.credit || '';
+  // 価格はすべて ASK：Instagram の DM か、作品名入りのメッセージ（メール）で問い合わせ
+  const ig = ARTIST.links.find((l) => l.label === 'Instagram'), mail = ARTIST.links.find((l) => l.label === 'Mail');
+  const ask = $('.v-ask', viewer);
+  ask.classList.toggle('sold', !!w.sold); ask.classList.toggle('nfs', !!w.nfs);
+  ask.querySelector('.tag').textContent = w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'Price: ASK';
+  ask.querySelector('.dm').href = ig ? ig.href : '#';
+  ask.querySelector('.msg').href = mail ? `${mail.href}?subject=${encodeURIComponent(`Inquiry: ${w.title}`)}&body=${encodeURIComponent(`${w.title}${w.ja ? `（${w.ja}）` : ''}\n${location.origin}${location.pathname}#w=${w.id}\n\n`)}` : '#';
   viewer.dataset.scene = room.scene;
   vParts = [];
   if (glowOf.has(w.id)) vTarget = glowOf.get(w.id);
@@ -711,7 +881,7 @@ let resizeT = 0;
 // 描き直すのは、画面の幅か 100vh が本当に変わったとき（向きの変更・ウィンドウの大きさの変更）だけ
 addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => {
   if (innerWidth === vw && Math.abs(measureVH() - vh) < 2) return;
-  [$('.sign', entrance), $('#boombox')].forEach((el) => { el._foot = null; });
+  [$('.sign', entrance), $('#player'), $('#lamp')].forEach((el) => { el._foot = null; });
   rebuild();
 }, 200); });
 /* ---------- メモリを守る：近くの部屋の絵だけを付ける ----------
@@ -729,6 +899,7 @@ function detachLayers(r) {
   r.attached = false;
   Object.keys(r.layerHTML).forEach((sel) => { $(sel, r.el).innerHTML = ''; });
   $('.curtain', r.el).innerHTML = ''; r.leafEls = null; r.curShown = -1;
+  if (r.leaveC) { r.leaveC.box.innerHTML = ''; r.leaveC.leafEls = null; r.leaveC.curShown = -1; }
   r.el.querySelectorAll('.work video[src]').forEach((v) => { v.pause(); v.dataset.vsrc = v.getAttribute('src'); v.removeAttribute('src'); v.load(); });
 }
 function attachEntrance() {
@@ -751,8 +922,8 @@ function manageMemory(r) {
   const { top, len } = roomMetrics(r);
   const d = sy < top ? top - sy : sy > top + len ? sy - (top + len) : 0;
   // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）
-  if (d < vh * (COARSE ? 1.1 : 1.5)) attachLayers(r);
-  else if (d > vh * (COARSE ? 1.3 : 2.5) && r.attached) detachLayers(r);
+  if (d < vh * (COARSE ? .8 : 1.5)) attachLayers(r);
+  else if (d > vh * (COARSE ? 1.05 : 2.5) && r.attached) detachLayers(r);
 }
 
 function rebuild() {
@@ -767,24 +938,58 @@ function rebuild() {
    ビート（音は最初は OFF。ボタンかラジカセで ON）
    ========================================================= */
 let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0;
-const beat = createBeat({
+// SoundCloud のラジオがあればそれを、なければサイトで作った曲を流す（どちらも同じ形で扱える）
+const beat = RADIO ? createRadio(RADIO) : createBeat({
   onKick: () => { kick = 1; },
   onSnare: () => { snare = 1; },
   files: Object.fromEntries(ROOMS.filter((r) => r.beat).map((r) => [r.scene, r.beat])),
 });
 const beatBtn = $('#beat');
 function toggleBeat() {
+  if (!SOUND) return false;
   const on = beat.toggle();
   beatBtn.setAttribute('aria-pressed', on);
-  beatBtn.setAttribute('aria-label', on ? 'ビートを止める' : 'ビートを流す');
+  beatBtn.setAttribute('aria-label', on ? (RADIO ? 'ラジオを止める' : 'ビートを止める') : (RADIO ? 'ラジオを流す' : 'ビートを流す'));
   document.body.classList.toggle('beat-on', on);
 }
 beatBtn.addEventListener('click', toggleBeat);
-$('#boombox').innerHTML = PROPS.boombox.svg();
+if (!SOUND) document.body.classList.add('no-sound'); // ビートボタン・音の選択・ラジカセの「▶」を出さない
+$('#player').innerHTML = PROPS.recordStand.svg();
 initEggs({ parts, toggleBeat, isBeatOn: () => beat.playing, works: WORKS, openViewer, beat });
 
 
-$('#boombox').addEventListener('click', toggleBeat);
+$('#player').addEventListener('click', toggleBeat); // 音を使うときは、レコードプレーヤーで曲を流す
+
+/* ---------- 入口のフロアランプ：押すと灯りがともり、入口の森が夜になる ---------- */
+{
+  const lamp = $('#lamp');
+  lamp.innerHTML = `<svg viewBox="0 0 40 150" aria-hidden="true"><defs>
+    <linearGradient id="lampLit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7b8"/><stop offset="1" stop-color="#ffc56e"/></linearGradient>
+    <linearGradient id="lampCone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd690" stop-opacity=".55"/><stop offset="1" stop-color="#ffd690" stop-opacity="0"/></linearGradient></defs>
+    <path class="cone" d="M5 38H35L52 148H-12Z" fill="url(#lampCone)"/>
+    <ellipse cx="20" cy="147.4" rx="12" ry="2.2" fill="#000" opacity=".22"/>
+    <path d="M9.5 147Q20 139.5 30.5 147Z" fill="#3b3028"/><path d="M11.5 146Q20 141 28.5 146" stroke="#5a4a3b" stroke-width=".8" fill="none"/>
+    <rect x="19" y="36" width="2" height="106" fill="#9a7a45"/><rect x="19.6" y="36" width=".6" height="106" fill="#c9a86a" opacity=".6"/>
+    <rect x="18.2" y="92" width="3.6" height="2.6" rx="1" fill="#7a5d33"/>
+    <path d="M8 8H32L36.5 38H3.5Z" fill="#eadfc6"/>
+    <path d="M8 8H32L32.5 11.4H7.5Z" fill="#d6c6a4"/><path d="M3.5 38H36.5" stroke="#cbb993" stroke-width="1.1"/>
+    ${[12, 17, 22, 27].map((x) => `<path d="M${x} 11.4L${x - (x - 20) * .12 - (20 - x) * .1} 37.5" stroke="#d9cbac" stroke-width=".35"/>`).join('')}
+    <g class="lit"><path d="M8 8H32L36.5 38H3.5Z" fill="url(#lampLit)"/><ellipse cx="20" cy="38.4" rx="16.2" ry="1.6" fill="#fff4d6"/></g>
+  </svg>`;
+  // 空の星と月（夜のときだけ見える）
+  const stars = Array.from({ length: 70 }, () => `<circle cx="${(Math.random() * 100).toFixed(1)}" cy="${(Math.random() * 62).toFixed(1)}" r="${(.08 + Math.random() * .18).toFixed(2)}" fill="#fff" opacity="${(.4 + Math.random() * .6).toFixed(2)}"/>`).join('');
+  $('.night-sky', entrance).innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">${stars}<circle cx="72" cy="16" r="6" fill="#fff3cf" opacity=".08"/><circle cx="72" cy="16" r="3.2" fill="#f4ecd2"/></svg>`;
+  // ホタル
+  $('.fireflies', entrance).innerHTML = Array.from({ length: 14 }, () => `<i style="left:${(8 + Math.random() * 84).toFixed(1)}%;top:${(45 + Math.random() * 45).toFixed(1)}%;--dx:${(Math.random() * 8 - 4).toFixed(1)}vh;--dy:${(Math.random() * 6 - 4).toFixed(1)}vh;--d:${(4 + Math.random() * 5).toFixed(1)}s;--b:${(1.6 + Math.random() * 2.4).toFixed(1)}s;animation-delay:${(-Math.random() * 6).toFixed(1)}s,${(-Math.random() * 3).toFixed(1)}s"></i>`).join('');
+  lamp.addEventListener('click', () => {
+    const on = !entrance.classList.contains('night');
+    entrance.classList.toggle('night', on);
+    setForestNight(on); // この先の朝〜夕方の部屋も夜に
+    lamp.setAttribute('aria-pressed', on);
+    lamp.setAttribute('aria-label', on ? 'ランプを消して、朝の森にもどす' : 'ランプをつけて、夜の森にする');
+    lamp.classList.remove('bump'); void lamp.offsetWidth; lamp.classList.add('bump');
+  });
+}
 
 /* =========================================================
    メインループ
@@ -812,8 +1017,12 @@ function frame(now) {
     manageEntrance();
     if (sy < entrance.offsetHeight) updateEntrance();
     // 入口を過ぎたら隠す（真下の最初の部屋が、同じ閉じたカーテンのまま現れる）
-    const gone = sy >= entrance.offsetHeight - vh - 1;
+    // 判定は、実際のスクロール位置となめらかにした位置の先に進んでいる方で（速いスワイプで、流れていく部屋の下の端が見えないように）
+    const sd = Math.max(sy, scrollY);
+    const gone = sd >= entrance.offsetHeight - vh - 1;
     entrance.classList.toggle('gone', gone);
+    // 部屋も同じ：次の部屋の葉のカーテンが閉じきったら、この部屋を隠す（真下の次の部屋が同じカーテンのまま現れる）
+    rooms.forEach((r, i) => { if (rooms[i + 1]) r.el.classList.toggle('gone', sd >= r.el.offsetTop + r.el.offsetHeight - vh - 1); });
     if (gone && entranceCurtain.leafEls) updateCurtain(entranceCurtain, 0);
     currentRoom = null;
     rooms.forEach((r) => updateRoom(r, now));
@@ -889,10 +1098,23 @@ function openFromHash() {
   setTimeout(() => openViewer(w), 700);
 }
 const ready = Promise.race([Promise.all([document.fonts.ready, new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = 'assets/guide-walk.webp'; })]), new Promise((r) => setTimeout(r, 3500))]);
+// 入口の儀式：サインが書き終わったら、音あり／音なしのアイコンを出し、選んでから森に入る
+// （音を鳴らすには一度さわってもらう必要があるので、この一押しで最初から環境音とビートを鳴らせる）
+function enterForest(withSound) {
+  if (document.body.classList.contains('loaded')) return;
+  if (withSound && !beat.playing) toggleBeat();
+  document.body.classList.remove('choosing');
+  document.body.classList.add('loaded');
+  setTimeout(() => causticTile(), 2500); // 水辺の光の網目は、森を歩きはじめたころに先に作っておく（水辺に着いたときに引っかからないように）
+  setTimeout(() => $('#loader')?.remove(), 1600);
+  openFromHash();
+}
+$('#enter-sound').addEventListener('click', () => enterForest(true));
+$('#enter-silent').addEventListener('click', () => enterForest(false));
 ready.then(() => {
   setTimeout(() => {
-    document.body.classList.add('loaded');
-    setTimeout(() => $('#loader').remove(), 1600);
-    openFromHash();
+    if (!SOUND) { enterForest(false); return; } // 音を使わないときは、サインが書き終わったらそのまま森へ
+    document.body.classList.add('choosing');
+    $('#enter-sound').focus({ preventScroll: true });
   }, REDUCED ? 0 : 1500);
 });
