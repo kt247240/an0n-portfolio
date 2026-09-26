@@ -3,6 +3,7 @@
 // =========================================================
 import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
+import { paceScroll } from './pace.js';
 import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
@@ -711,7 +712,6 @@ function updateRoom(r, now) {
     const v = el.querySelector('video');
     if (v) {
       if (d < 1.1) {
-        if (scrollFast && !v.getAttribute('src')) return; // 速く通り過ぎている間は読み込まない（表紙の絵は見えている）
         if (!v.getAttribute('src') && v.dataset.vsrc) { v.src = v.dataset.vsrc; delete v.dataset.vsrc; }
         if (v.paused) v.play().catch(() => {});
       } else {
@@ -737,7 +737,7 @@ function updateRoom(r, now) {
 function pauseRoomVideos(r) { r.el.querySelectorAll('video').forEach((v) => { if (!v.paused) v.pause(); }); }
 
 
-let currentRoom = null, scrollFast = false;
+let currentRoom = null;
 const entranceCurtain = { el: entrance, leaves: null, curtainHTML: '', leafEls: null, curShown: -1 };
 function updateEntrance() {
   const len = GEO.entH - vh, p = clamp(sy / len);
@@ -1081,9 +1081,7 @@ function manageMemory(r) {
   const { top, len } = roomMetrics(r);
   const d = sy < top ? top - sy : sy > top + len ? sy - (top + len) : 0;
   // スマホは、次の部屋を 1 画面手前で用意し、通り過ぎた部屋はカーテンが閉じたらすぐ手放す（2 部屋ぶんが重なる時間を短く）
-  // 速くスクロールしている間は、画面に入るぎりぎりまで用意しない（通り過ぎるだけの部屋を用意しない）
-  const ahead = scrollFast ? vh * .15 : vh * (COARSE ? .8 : 1.5);
-  if (d < ahead) { if (r.attached) attachNext(r); else attachLayers(r); }
+  if (d < vh * (COARSE ? .8 : 1.5)) { if (r.attached) attachNext(r); else attachLayers(r); }
   else if (d > vh * (COARSE ? 1.05 : 2.5) && r.attached) detachLayers(r);
   // 先読みしたまま入らなかった部屋から遠ざかったら、読み込んだ絵を手放す
   if (r.prefetched && !r.attached && d > vh * 3) { r.prefetched = false; svgIds(r).forEach((id) => dropSVG(SVG_STORE.get(id))); }
@@ -1100,7 +1098,7 @@ function rebuild() {
 /* =========================================================
    ビート（音は最初は OFF。ボタンかラジカセで ON）
    ========================================================= */
-let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0, fxDirty = true, movedAt = 0, fastUntil = 0;
+let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0, fxDirty = true, movedAt = 0;
 // SoundCloud のラジオがあればそれを、なければサイトで作った曲を流す（どちらも同じ形で扱える）
 const beat = RADIO ? createRadio(RADIO) : createBeat({
   onKick: () => { kick = 1; },
@@ -1173,10 +1171,6 @@ function frame(now) {
   // 勢いよく戻るようにスクロールすると、レコードをスクラッチする（音が出ているときだけ）
   const vel = (SY - lastSY) / dt;
   if (Math.abs(SY - lastSY) > .5) movedAt = now;
-  // 速くスクロールしている間（と止まってから少しの間）は、新しい読み込みを始めない（動画・次の部屋の絵）。
-  // 通り過ぎるだけのものを次々に読み込むと、iPhone ではメモリが積み上がって落ちる
-  if (Math.abs(vel) > vh * 2.2) fastUntil = now + 350;
-  scrollFast = now < fastUntil;
   lastSY = SY;
   if (vel < -vh * 5 && now - scratchAt > 900 && !vOpen) {
     scratchAt = now;
@@ -1286,6 +1280,11 @@ function enterForest(withSound) {
   setTimeout(() => $('#loader')?.remove(), 1600);
   openFromHash();
 }
+// 歩く速さ：速くはじいても、1 秒に画面 1.6 枚ぶんまでしか進まない（作品を開いているとき・金庫・入口の儀式のあいだは、ふつうのスクロール）
+paceScroll({
+  maxSpeed: () => vh * 1.6,
+  active: (e) => !vOpen && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault'),
+});
 $('#enter-sound').addEventListener('click', () => enterForest(true));
 $('#enter-silent').addEventListener('click', () => enterForest(false));
 ready.then(() => {
