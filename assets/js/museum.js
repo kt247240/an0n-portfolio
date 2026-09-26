@@ -613,7 +613,12 @@ function updateRoom(r, now) {
   const p = clamp((sy - top) / len);
   const onScreen = sy + vh > top && sy < top + len + vh;
   if (onScreen !== r.live) { r.live = onScreen; r.el.classList.toggle('live', onScreen); }
-  if (!onScreen) { pauseRoomVideos(r); updateCurtain(r, 0); if (r.leaveC) updateCurtain(r.leaveC, 0); r.curS = null; return; }
+  if (!onScreen) {
+    pauseRoomVideos(r); updateCurtain(r, 0); if (r.leaveC) updateCurtain(r.leaveC, 0); r.curS = null;
+    // 水辺の光る水の canvas も空にする（部屋を離れたあとも画像を持ち続けないように）
+    const cv = r.water?._cv; if (cv?.width) { cv.width = 0; cv.height = 0; r.water._g = null; }
+    return;
+  }
   const t = clamp((p * 1.08 - .04) * (r.stops - 1), 0, r.stops - 1);
   r.c = dwell(t);
   const mx = mouse.x * 1.2, my = mouse.y;

@@ -148,7 +148,9 @@ body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 .room-title .count { font-size: 11px; letter-spacing: .35em; margin: 14px 0 0; opacity: .85; }
 .scene-cove .room-title, .scene-forest .room-title { text-shadow: 0 2px 30px rgba(60, 40, 20, .45); }
 
-.work { position: absolute; top: 46%; transform: translate(-50%, -50%); transform-origin: 50% 50%; will-change: transform, opacity; }
+.work { position: absolute; top: 46%; transform: translate(-50%, -50%); transform-origin: 50% 50%; }
+/* 描画メモリを別に持たせるのは、いま画面にある部屋の作品だけ（全部に付けると、見えていない作品の分までメモリを取る） */
+.room.live .work { will-change: transform, opacity; }
 .work .canvas { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: #111; cursor: zoom-in; transition: box-shadow .8s; box-sizing: content-box; }
 .work .canvas img, .work .canvas video { width: 100%; height: 100%; object-fit: contain; }
 .work .halo { position: absolute; left: 50%; top: 50%; width: 170%; height: 150%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(var(--glow), .5), rgba(var(--glow), 0)); opacity: .45; transition: opacity 1s; pointer-events: none; }
@@ -810,6 +812,8 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 #rooms > .room:nth-child(1) { z-index: 25; } #rooms > .room:nth-child(2) { z-index: 24; } #rooms > .room:nth-child(3) { z-index: 23; }
 #rooms > .room:nth-child(4) { z-index: 22; } #rooms > .room:nth-child(5) { z-index: 21; } #rooms > .room:nth-child(6) { z-index: 20; }
 .room.gone .sticky, .room.gone .curtain { visibility: hidden !important; }
+/* 画面から外れた部屋は、重ね板（暗がり・光・ネオンなど）ごと描画から外す。見えないまま描画メモリを持ち続けないように */
+.room:not(.live) > .sticky { display: none; }
 #entrance .curtain { z-index: 6; }
 
 /* 作家の場面：キャラクターは置かず、Instagram への入口だけを静かに中央に */
