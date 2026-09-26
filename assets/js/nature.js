@@ -911,7 +911,13 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
     mid += tree(x, base, R(92, 106), { trunkC: pick([P.trunk, '#7a5638', '#5c4027', '#86623f']), tones: [P.dark, P.mid, P.leaf, P.fresh], w: R(2.6, 4.4) });
     if (rnd() < .6) mid += shrub(x + R(-4, 4), base + .6, R(7, 11), [P.dark, P.mid, P.leaf, P.fresh], { leaf: R(1.1, 1.4), n: 4 });
   }
-  for (let x = R(0, 10); x < mw; x += R(14, 24)) mid += fern(x, 85, R(8, 12), R(-50, 50), pick([P.leaf, P.olive, P.fresh]), { cls: '' });
+  // 小道ぎわのシダ：根もとに影と草を添えて、地面から生えて見えるように（葉だけが浮いて見えないように）
+  for (let x = R(0, 10); x < mw; x += R(14, 24)) {
+    const y = R(85.6, 86.6), h = R(8, 12);
+    mid += `<ellipse cx="${n1(x)}" cy="${n1(y + .3)}" rx="${n1(h * .42)}" ry="${n1(h * .07)}" fill="#3f5a2a" opacity=".35"/>`;
+    mid += fern(x, y, h, R(-50, 50), pick([P.leaf, P.olive, P.fresh]), { cls: '' });
+    mid += tuft(x + R(-1, 1), y + .4, R(2.2, 3.2), [P.mid, P.leaf, P.fresh], 5);
+  }
   mid += grassEdge(-5, mw + 5, 86.8, [P.leaf, P.fresh, P.olive, '#8fb24e'], 2.2);
   mid += grassEdge(-5, mw + 5, 93.6, [P.mid, P.leaf, P.fresh, P.olive], 3.2);
   mid += litter(-5, mw, 79, 86, Math.round(mw * 1.1), ['#8a6a3a', '#a5813e', '#6f7d2e', '#b8923e', '#5c6a2a']);
@@ -1227,7 +1233,12 @@ export function sceneNight(W, stops) {
   for (let x = R(8, 30); x < mw; x += R(36, 60)) if (clear(x, 4)) mid += `<g opacity=".9">${frond(x, R(96, 102), R(10, 14), R(-100, -75), '#2a3419', '#35421f', { droop: .15, n: 11 })}</g>`;
   for (let i = 0; i < mw / 6; i++) mid += `<ellipse cx="${n1(R(0, mw))}" cy="${n1(R(88, 104))}" rx=".35" ry=".2" fill="${pick(['#e9a7b4', '#f4d2dc', '#d98aa0'])}" opacity=".55"/>`;
   for (let i = 0; i < mw * .8; i++) mid += `<rect x="${n1(R(0, mw))}" y="${n1(R(89, 104))}" width="${n1(R(1, 3))}" height=".2" fill="#3a3646" opacity=".6"/>`;
-  for (let x = R(-5, 5); x < mw; x += R(10, 16)) mid += shrub(x, 92, R(6, 9), ['#0c1209', '#131b0e', '#1a2413', '#233019'], { leaf: R(.9, 1.2), n: 5 });
+  // 遊歩道の植え込み：石の植木枡（土が見える）に、こんもりした低い茂み。枝葉だけが石畳の上に浮いて見えないように、根もとを枡に入れる
+  for (let x = R(-5, 5); x < mw; x += R(10, 16)) {
+    const w = R(5, 7.5), y = 93 + R(-.6, .6);
+    mid += `<path d="M${n1(x - w / 2)} ${n1(y - 1.8)}h${n1(w)}l.35 2.4h${n1(-w - .7)}Z" fill="#2c2937"/><path d="M${n1(x - w / 2 - .35)} ${n1(y + .6)}h${n1(w + .7)}v.5h${n1(-w - .7)}Z" fill="#1b1924"/><rect x="${n1(x - w / 2 - .3)}" y="${n1(y - 2.3)}" width="${n1(w + .6)}" height=".7" rx=".2" fill="#3b3748"/><rect x="${n1(x - w / 2 + .3)}" y="${n1(y - 1.7)}" width="${n1(w - .6)}" height=".5" fill="#17130f"/>`;
+    mid += shrub(x, y - 1.6, R(4.5, 6), ['#0c1209', '#131b0e', '#1a2413', '#233019', '#2b3a1f'], { leaf: R(1.1, 1.4), n: 7, spread: 62 });
+  }
   // 手前：暗いヤシの葉の影
   for (let s = 0; s < stops - 1; s++) {
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 15, 92);

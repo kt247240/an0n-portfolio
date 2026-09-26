@@ -1341,9 +1341,9 @@ function enterForest(withSound) {
   setTimeout(() => $('#loader')?.remove(), 1600);
   openFromHash();
 }
-// 歩く速さ：速くはじいても、1 秒に画面 1.6 枚ぶんまでしか進まない（作品を開いているとき・金庫・入口の儀式のあいだは、ふつうのスクロール）
+// 歩く速さ：速くはじいても、1 秒に画面 1.9 枚ぶんまでしか進まない（作品を開いているとき・金庫・入口の儀式のあいだは、ふつうのスクロール）
 paceScroll({
-  maxSpeed: () => vh * 1.6,
+  maxSpeed: () => vh * 1.9,
   active: (e) => !vOpen && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault'),
 });
 $('#enter-sound').addEventListener('click', () => enterForest(true));
