@@ -813,13 +813,16 @@ function forestFar(fw, horizon = 64) {
   return far;
 }
 // 森の額縁：上に梢、両脇に幹と茂みとシダ、上の角から垂れる枝、下に草
-function forestFrame(W, P, zones, { big = 1, split = false } = {}) {
+function forestFrame(W, P, zones, { big = 1, split = false, sides = true } = {}) {
   let s = '', g = '';
   const T = [P.deep, P.dark, P.mid, P.leaf];
   for (const side of [-1, 1]) {
     const ex = side < 0 ? 0 : W;
-    s += guard(zones, (k) => edgeTrunk(ex + side * R(0, 1.5), R(5.5, 7.5) * k * big, pick(['#4a3322', '#3f2c1d']), side * -R(0, 2)), { min: .55 });
-    s += guard(zones, (k) => sprig(ex - side * R(1, 3), R(30, 52), R(14, 19) * k * big, -side * R(40, 65), [P.dark, P.mid, P.leaf, P.fresh], { leaf: 4 * k * big, n: 6, stem: '#3a2a1a' }));
+    // 両脇の幹と、そこから伸びる枝（部屋の中では画面についてきて作品にかぶるので、部屋では置かない）
+    if (sides) {
+      s += guard(zones, (k) => edgeTrunk(ex + side * R(0, 1.5), R(5.5, 7.5) * k * big, pick(['#4a3322', '#3f2c1d']), side * -R(0, 2)), { min: .55 });
+      s += guard(zones, (k) => sprig(ex - side * R(1, 3), R(30, 52), R(14, 19) * k * big, -side * R(40, 65), [P.dark, P.mid, P.leaf, P.fresh], { leaf: 4 * k * big, n: 6, stem: '#3a2a1a' }));
+    }
     s += guard(zones, (k) => sprig(ex - side * R(2, 12), -5, R(26, 36) * k * big, 180 + side * R(8, 28), [P.dark, P.mid, P.leaf, P.fresh], { leaf: 4.2 * k * big, cls: 'hang', stem: '#2d3a22' }));
     s += guard(zones, (k) => sprig(ex - side * R(10, 22), -5, R(18, 26) * k * big, 180 + side * R(5, 20), [P.mid, P.leaf, P.fresh, P.lime], { leaf: 3.2 * k * big, cls: 'hang', stem: '#2d3a22' }));
     g += guard(zones, (k) => shrub(ex - side * R(4, 10), 107, R(30, 38) * k * big, T, { leaf: 3.8 * k * big }));
@@ -936,7 +939,7 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
     move += guard(Z, (k) => fern(x + R(-14, 14), 110, R(28, 36) * k, R(-30, 30), P.dark, { cls: '' }));
     move += guard(Z, (k) => sprig(x + R(-10, 10), -6, R(28, 36) * k, 180 + R(-20, 20), [P.deep, P.dark, P.mid, P.leaf], { leaf: 5 * k, cls: 'hang', stem: '#233a26' }));
   }
-  const [frame, ground] = forestFrame(W, P, [artZone(W, W / 2, 4, 82)], { split: true });
+  const [frame, ground] = forestFrame(W, P, [artZone(W, W / 2, 4, 82)], { split: true, sides: false });
   move += tileGround(W, stops, ground);
   return {
     sky: 'linear-gradient(#eef1d6 0%, #f3e8c6 52%, #dfe6b5 100%)',
