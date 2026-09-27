@@ -642,6 +642,23 @@ function updateSwimmers(r, now, focus) {
   });
 }
 // 部屋の中の小さな動き：夜の庭の観覧車と水たまりの光、小屋の火と窓の外の雪
+// 寄せる波の絵（横に繰り返せる 48×6 の絵）。上は海の水に溶け、先は波打った泡のふち。泡には小さな穴（レースのよう）と、水の上の細い泡の筋
+let swashCache = {};
+function swashURL(scene) {
+  if (swashCache[scene]) return swashCache[scene];
+  const Wt = 48, f = (x) => 3.5 + .42 * Math.sin(x / Wt * Math.PI * 4) + .26 * Math.sin(x / Wt * Math.PI * 10 + 1) + .12 * Math.sin(x / Wt * Math.PI * 22 + 2);
+  const band = (x) => .42 + .2 * Math.sin(x / Wt * Math.PI * 6 + .5) + .1 * Math.sin(x / Wt * Math.PI * 18);
+  const xs = Array.from({ length: 97 }, (_, i) => i * Wt / 96), n = (v) => v.toFixed(2);
+  const edge = xs.map((x) => `${n(x)} ${n(f(x))}`).join('L');
+  const sheet = `M0 0H${Wt}V${n(f(Wt))}L${[...xs].reverse().map((x) => `${n(x)} ${n(f(x))}`).join('L')}Z`;
+  const foam = `M${xs.map((x) => `${n(x)} ${n(f(x) - band(x))}`).join('L')}L${[...xs].reverse().map((x) => `${n(x)} ${n(f(x) + .12)}`).join('L')}Z`;
+  let holes = '', streaks = '';
+  for (let i = 0; i < 44; i++) { const x = (i * 1.09 + Math.sin(i * 7.3) * .4 + Wt) % Wt, y = f(x) - band(x) * (.3 + .4 * ((Math.sin(i * 3.1) + 1) / 2)); holes += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(.12 + .1 * ((Math.sin(i * 5.7) + 1) / 2))}" ry=".07" fill="#b9d6cf" opacity=".75"/>`; }
+  for (let i = 0; i < 9; i++) { const x = (i * 5.4 + 2 + Math.sin(i * 2.3)) % Wt, y = f(x) - 1 - (i % 3) * .55; streaks += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(1.1 + (i % 4) * .5)}" ry=".08" fill="#fbf6ea" opacity=".45"/>`; }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wt} 6" preserveAspectRatio="none" width="480" height="60"><defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9d0cb" stop-opacity="0"/><stop offset=".45" stop-color="#b3d6cf" stop-opacity=".35"/><stop offset=".62" stop-color="#c4ded6" stop-opacity=".55"/></linearGradient></defs>`
+    + `<path d="${sheet}" fill="url(#w)"/>${streaks}<path d="${foam}" fill="#fbf6ea" opacity=".9"/>${holes}<path d="M${edge}" stroke="#fffaf2" stroke-width=".06" fill="none" opacity=".6"/></svg>`;
+  return (swashCache[scene] = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(svg, gradeOf(scene)))}`);
+}
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
   if (D.ferris) {
@@ -653,7 +670,13 @@ function buildLiving(r) {
   }
   if (D.puddles) P.insertAdjacentHTML('beforeend', D.puddles.map(([x, y, w], i) => `<i class="living puddle-shine" style="left:${((x - w * .9) * U).toFixed(1)}px;top:${((y - w * .13) * U).toFixed(1)}px;width:${(w * 1.8).toFixed(2)}vh;height:${(w * .26).toFixed(2)}vh;animation-delay:${-(i * .7)}s"></i>`).join(''));
   if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
-  if (D.foam) { const mw = W + (r.stops - 1) * W * FACTORS.mid + 40; P.insertAdjacentHTML('beforeend', `<i class="living foam" style="left:-5vh;top:${(D.foam - 1.2) * U}px;width:${mw + 10}vh"></i><i class="living foam f2" style="left:-5vh;top:${(D.foam + .2) * U}px;width:${mw + 10}vh"></i>`); }
+  if (D.foam) {
+    // 波打ちぎわ：寄せては返す 2 枚の波（奥の水から砂を上って、薄く引いていく）と、引いたあとに光る濡れた砂。
+    // 波の絵は 1 枚の横に繰り返す絵（48vh 幅）。動きは要素ごとの transform と opacity だけ
+    const mw = W + (r.stops - 1) * W * FACTORS.mid + 40, tile = swashURL(r.room.scene);
+    const sheet = (cls, pos) => `<i class="living swash${cls}" style="left:-5vh;top:${((D.foam - 1.6) * U).toFixed(1)}px;width:${mw + 10}vh;height:6vh;background-image:url(&quot;${tile}&quot;);background-size:48vh 6vh;background-position:${pos}vh 0"></i>`;
+    P.insertAdjacentHTML('beforeend', `<i class="living wetshine" style="left:-5vh;top:${((D.foam + .8) * U).toFixed(1)}px;width:${mw + 10}vh;height:3.2vh"></i>` + sheet('', 0) + sheet(' s2', -19));
+  }
   if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
   if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, fw = 4.8 * k * .9; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - fw / 2) * U).toFixed(1)}px;top:${((y - sh + sh * .3 + sh * .42 - fw * 13 / 8 + .3) * U).toFixed(1)}px;width:${fw.toFixed(2)}vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));

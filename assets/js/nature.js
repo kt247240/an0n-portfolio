@@ -1443,9 +1443,10 @@ function waveLines(x0, x1, y0, y1, c, n) {
 function shoreline(x0, x1, y, foam, wet) {
   const pts = []; for (let x = x0; x <= x1 + 10; x += R(8, 16)) pts.push([x, y + R(-1.2, 1.2)]);
   const top = `M${n1(pts[0][0])} ${n1(pts[0][1])}${smoothD(pts)}`;
-  let s = `<path d="${top}L${n1(x1 + 10)} ${n1(y + 5)}L${n1(x0)} ${n1(y + 5)}Z" fill="${wet}"/>`;
-  s += `<path class="shimmer" d="${top}" stroke="${foam}" stroke-width=".7" fill="none" opacity=".85"/>`;
-  s += `<path d="M${pts.map((p) => `${n1(p[0])} ${n1(p[1] - 1.4 + R(-.4, .4))}`).join('L')}" stroke="${foam}" stroke-width=".3" fill="none" opacity=".45" stroke-dasharray="3 2"/>`;
+  // 波打ちぎわ：線は引かない。濡れた砂は水ぎわほど暗く、水の色がうっすら残る。寄せては返す波と泡は museum.js が動かす
+  const [g, gd] = lgrad([[0, '#a9c4bc', .55], [.35, wet], [1, wet]]);
+  let s = `<defs>${gd}</defs><path d="${top}L${n1(x1 + 10)} ${n1(y + 5)}L${n1(x0)} ${n1(y + 5)}Z" fill="url(#${g})"/>`;
+  pts.forEach(() => R(-.4, .4)); // もとの点線のぶんの乱数（ほかの小物の位置を変えないために、呼ぶ回数だけ合わせる）
   return s;
 }
 // なめらかな岩：影の面と、上の明るい面
@@ -1514,8 +1515,9 @@ export function sceneCove(W, stops) {
   mid += `<defs>${dd}</defs><path d="M-5 106L-5 83${smoothD(Array.from({ length: 10 }, (_, i) => [-5 + (mw + 10) * i / 9, 83 + R(-.8, .8)]))}L${n1(mw + 5)} 106Z" fill="url(#${dg})"/>`;
   // 濡れた砂に映る夕焼け、波が引いたあとのレースのような泡の線
   mid += `<rect x="-5" y="80.6" width="${n1(mw + 10)}" height="3.2" fill="#f0c3ad" opacity=".28"/>`;
-  for (let x = R(-5, 5); x < mw; x += R(6, 14)) mid += `<path d="M${n1(x)} ${n1(R(81, 83))}h${n1(R(3, 9))}" stroke="#fff6ea" stroke-width=".22" opacity=".55" stroke-linecap="round"/>`;
-  for (let k = 0; k < 2; k++) { let d = `M-5 ${n1(79.6 + k * 1.2)}`; for (let x = -5; x < mw + 5; x += 3) d += `Q${n1(x + 1.5)} ${n1(79.6 + k * 1.2 + R(-.5, .5))} ${n1(x + 3)} ${n1(79.6 + k * 1.2 + R(-.3, .3))}`; mid += `<path d="${d}" stroke="#fffaf2" stroke-width=".3" fill="none" opacity="${k ? .35 : .6}"/>`; }
+  // （泡の線・砂の上の白い線はやめた：線に見えてチープなので。波と泡は動く絵で。乱数の呼び出しだけ残して、ほかの小物の位置を変えない）
+  for (let x = R(-5, 5); x < mw; x += R(6, 14)) { R(81, 83); R(3, 9); }
+  for (let k = 0; k < 2; k++) for (let x = -5; x < mw + 5; x += 3) { R(-.5, .5); R(-.3, .3); }
   // 乾いた砂の上：小石、貝のかけら、打ち上げられた海藻
   // 看板（流木の台）の下の縁に切られる帯（台の真下で、地面の y が 92 より上）には、砂の上の小物を置かない：
   // 板の下から半分だけのぞいて、台の下にもぐり込んでいるように見えるので

@@ -941,9 +941,13 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* 灯台の光が回る */
 .lighthouse { will-change: transform; animation: spin 9s linear infinite; }
 /* 夕凪の波打ちぎわ：泡の線が寄せて引く */
-.foam { height: .45vh; border-radius: 50%; background: repeating-linear-gradient(90deg, rgba(255, 250, 242, 0) 0 1.2vh, rgba(255, 250, 242, .75) 2vh 4.2vh, rgba(255, 250, 242, 0) 5vh 7vh); box-shadow: 0 0 .6vh rgba(255, 250, 242, .35); -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); animation: surf 5.2s ease-in-out infinite alternate; }
-.foam.f2 { opacity: .55; animation-duration: 6.8s; animation-delay: -2s; }
-@keyframes surf { from { transform: translateY(-1.1vh); opacity: .35; } to { transform: translateY(1.2vh); opacity: .9; } }
+/* 波打ちぎわ：寄せては返す波（奥から砂を上り、少しとどまって、薄くなりながら引く）。2 枚目は周期をずらす */
+.swash { position: absolute; display: block; background-repeat: repeat-x; transform-origin: 50% 0; opacity: 0; animation: swash 7.6s cubic-bezier(.42, .02, .38, 1) infinite; }
+.swash.s2 { animation-duration: 9.8s; animation-delay: -4.6s; }
+@keyframes swash { 0% { transform: translateY(-1.9vh) scaleY(.5); opacity: 0; } 14% { opacity: .95; } 46% { transform: translateY(1.5vh) scaleY(1); opacity: 1; } 58% { transform: translateY(1.25vh) scaleY(.96); opacity: .85; } 100% { transform: translateY(-1.7vh) scaleY(.55); opacity: 0; } }
+/* 波が引いたあとの濡れた砂：夕日が映ってふっと光り、乾くように消える */
+.wetshine { position: absolute; display: block; background: linear-gradient(rgba(255, 214, 190, 0), rgba(255, 214, 190, .34) 45%, rgba(255, 214, 190, 0)); opacity: 0; animation: wetshine 7.6s ease-out infinite; }
+@keyframes wetshine { 0%, 48% { opacity: 0; } 60% { opacity: .9; } 100% { opacity: 0; } }
 /* 観覧車の灯りが順にまたたく */
 /* マグの湯気 */
 .steam { width: 2vh; height: 4vh; }
@@ -954,7 +958,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
 .flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
 @keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
-@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .foam, .steam i, .flyer.koijump svg { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
 
 /* 長押し：作品だけが照らされる */
 .room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }
