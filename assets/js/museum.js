@@ -5,7 +5,7 @@ import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
-import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG } from './nature.js';
+import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
 import { introSVG } from './intros.js';
@@ -357,7 +357,7 @@ const rooms = ROOMS.map((room, ri) => {
   el.id = `room-${room.id}`;
   el.innerHTML = `<div class="sticky">
       <div class="sky"></div>
-      <div class="plane far"></div>${room.scene === 'jungle' ? '<div class="water-glow" aria-hidden="true"><i class="tint"></i><canvas class="caust"></canvas><i class="haze"></i></div>' : ''}<div class="plane mid"></div>
+      <div class="plane far"></div><div class="plane drift" aria-hidden="true"></div>${room.scene === 'jungle' ? '<div class="water-glow" aria-hidden="true"><i class="tint"></i><canvas class="caust"></canvas><i class="haze"></i></div>' : ''}<div class="plane mid"></div>
       <div class="plane props" aria-hidden="true"></div>
       <div class="flash" aria-hidden="true"></div>
       <div class="neon" aria-hidden="true"></div><div class="grain-under" aria-hidden="true"></div>
@@ -377,17 +377,50 @@ const rooms = ROOMS.map((room, ri) => {
 
 function frameDeco(kind) {
   switch (kind) {
-    case 'hang': return `<svg class="deco top" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M28 2.6L34 30M72 3.2L66 30" stroke="#efe6d2" stroke-width=".5"/><path d="M-22 1.6Q20 -2.6 50 1.2T122 4.6L122 5.8Q88 4.2 50 4T-22 6.2Z" fill="#5a3b2a"/><path d="M-22 2.6Q20 -1.6 50 2.1T122 5" stroke="#8a6440" stroke-width=".5" fill="none"/><path d="M84 3.6Q88 0 92 -3L93 -2.4Q90 1 86 4.4Z" fill="#5a3b2a"/><circle cx="28" cy="2.8" r=".9" fill="#d9ccae"/><circle cx="72" cy="3.4" r=".9" fill="#d9ccae"/></svg>`;
-    // 水辺：桟橋の上に据えた木の台。中が詰まっているので、作品の下に水は見えない
-    case 'easel': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="pedestal" x1="0" x2="1"><stop offset="0" stop-color="#b58a5a"/><stop offset=".5" stop-color="#96704a"/><stop offset="1" stop-color="#6e4f31"/></linearGradient></defs><path d="M27 0H73V36H27Z" fill="url(#pedestal)"/>${[36, 45, 54, 63].map((x) => `<path d="M${x} 3V35" stroke="#6e4f31" stroke-width=".5" opacity=".55"/>`).join('')}<path d="M23 0H77V2.6H23Z" fill="#c9a276"/><path d="M23 2.6H77V3.4H23Z" fill="#5a3b2a" opacity=".5"/><path d="M25 35H75V38H25Z" fill="#5a3b2a"/></svg>`;
+    // 森：太い枝から縄で吊るす。枝には樹皮の筋と節、苔、葉の小枝。縄は撚りと結び目
+    case 'hang': return `<svg class="deco top" viewBox="0 0 100 30" preserveAspectRatio="none">
+      <path d="M28 3.4L34 30M72 4L66 30" stroke="#e6d8bb" stroke-width=".9"/><path d="M28 3.4L34 30M72 4L66 30" stroke="#b9a27c" stroke-width=".9" stroke-dasharray=".6 1.1"/>
+      <path d="M-22 1Q20 -3.4 50 1T122 4.8L122 7.4Q88 5.6 50 5.4T-22 8.2Z" fill="#5a3b2a"/><path d="M-22 2.4Q20 -1.6 50 2.4T122 5.6" stroke="#8a6440" stroke-width=".6" fill="none" opacity=".8"/><path d="M-22 6.6Q20 3.6 50 4.6T122 6.6" stroke="#3b2416" stroke-width=".5" fill="none" opacity=".7"/>
+      <path d="M8 2.2q3 -.6 6 .2M40 1.6q4 -.5 8 .3M58 2.2q4 -.4 7 .4M92 4q3 -.6 6 .1" stroke="#3b2416" stroke-width=".35" fill="none" opacity=".6"/><ellipse cx="18" cy="3.6" rx="1.3" ry=".8" fill="#3b2416" opacity=".7"/><ellipse cx="80" cy="5" rx="1.1" ry=".7" fill="#3b2416" opacity=".7"/>
+      <path d="M84 3.8Q88 0 92 -3L93 -2.4Q90 1 86 4.6Z" fill="#5a3b2a"/><path d="M12 2.6Q9 -1 5 -3.4L4 -2.6Q8 0 10 3.2Z" fill="#5a3b2a"/>
+      <ellipse cx="34" cy="1.2" rx="4" ry="1.1" fill="#5f7d2e" opacity=".8"/><ellipse cx="33" cy=".6" rx="2" ry=".5" fill="#8fb24e" opacity=".6"/><ellipse cx="62" cy="1.6" rx="3" ry=".9" fill="#5f7d2e" opacity=".8"/>
+      <g fill="#47733c"><ellipse cx="7" cy="-1.5" rx="1.7" ry=".8" transform="rotate(-40 7 -1.5)"/><ellipse cx="4.6" cy="-2.6" rx="1.5" ry=".7" transform="rotate(-70 4.6 -2.6)"/><ellipse cx="90" cy="-1" rx="1.7" ry=".8" transform="rotate(40 90 -1)"/><ellipse cx="92.6" cy="-2.4" rx="1.5" ry=".7" transform="rotate(70 92.6 -2.4)"/></g>
+      <g fill="#769721" opacity=".9"><ellipse cx="7.4" cy="-1.8" rx=".8" ry=".35" transform="rotate(-40 7.4 -1.8)"/><ellipse cx="90.4" cy="-1.3" rx=".8" ry=".35" transform="rotate(40 90.4 -1.3)"/></g>
+      <path d="M26.4 2.6q1.6 2 3.2 0M26.4 4q1.6 2 3.2 0M70.4 3.2q1.6 2 3.2 0M70.4 4.6q1.6 2 3.2 0" stroke="#e6d8bb" stroke-width=".9" fill="none"/><circle cx="28" cy="3.4" r="1.1" fill="#d9ccae"/><circle cx="72" cy="4" r="1.1" fill="#d9ccae"/><circle cx="34" cy="29" r="1.2" fill="#d9ccae"/><circle cx="66" cy="29" r="1.2" fill="#d9ccae"/></svg>`;
+    // 水辺：桟橋の上に据えた木の台。天板は面取り、板は木目と節、鉄の帯金、根もとに苔とシダ（中が詰まっているので、作品の下に水は見えない）
+    case 'easel': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="pedestal" x1="0" x2="1"><stop offset="0" stop-color="#b58a5a"/><stop offset=".5" stop-color="#96704a"/><stop offset="1" stop-color="#6e4f31"/></linearGradient></defs>
+      <ellipse cx="50" cy="38.6" rx="34" ry="1.6" fill="#1f2a18" opacity=".35"/>
+      <path d="M27 0H73V36H27Z" fill="url(#pedestal)"/>${[36, 45, 54, 63].map((x) => `<path d="M${x} 3.6V34.6" stroke="#5a3f28" stroke-width=".6" opacity=".7"/>`).join('')}
+      ${[30.5, 33, 39, 42.5, 48, 51, 57, 60, 66, 69.5].map((x, i) => `<path d="M${x} 6C${x + .5} 14 ${x - .5} 22 ${x + .3} 32" stroke="${i % 2 ? '#7d5a38' : '#b08a5a'}" stroke-width=".3" fill="none" opacity=".55"/>`).join('')}
+      <ellipse cx="40" cy="14" rx=".9" ry="1.6" fill="#5a3f28" opacity=".8"/><ellipse cx="40" cy="14" rx="1.5" ry="2.4" fill="none" stroke="#7d5a38" stroke-width=".2" opacity=".6"/><ellipse cx="66" cy="26" rx=".8" ry="1.3" fill="#5a3f28" opacity=".8"/>
+      <path d="M26.2 9.5H73.8V11.5H26.2Z" fill="#3a3630"/><path d="M26.2 27H73.8V29H26.2Z" fill="#3a3630"/>${[28.5, 71.5].map((x) => `<circle cx="${x}" cy="10.5" r=".45" fill="#8a8072"/><circle cx="${x}" cy="28" r=".45" fill="#8a8072"/>`).join('')}
+      <path d="M23 0H77V2.6H23Z" fill="#c9a276"/><path d="M23 0H77V.8H23Z" fill="#dcbb8e"/><path d="M23 2.6H77V3.6H23Z" fill="#5a3b2a" opacity=".6"/>
+      <path d="M25 34.6H75V38H25Z" fill="#5a3b2a"/><path d="M25 34.6H75V35.3H25Z" fill="#7d5a38"/>
+      <ellipse cx="29" cy="35.2" rx="4" ry="1.4" fill="#5f7d2e" opacity=".85"/><ellipse cx="28" cy="34.6" rx="2" ry=".6" fill="#8fb24e" opacity=".5"/><ellipse cx="70" cy="35.4" rx="3.2" ry="1.2" fill="#5f7d2e" opacity=".85"/><ellipse cx="46" cy="35" rx="2.4" ry=".8" fill="#4f6a2a" opacity=".7"/>
+      <g fill="#5a8a48"><path d="M23.5 38.2q-1.5 -4 -4.5 -6q1.6 3.4 2.6 6.4Z"/><path d="M22.5 38.4q-3 -3.2 -6.5 -3.4q2.6 1.8 4.6 4Z"/><path d="M76.5 38.2q1.5 -4 4.5 -6q-1.6 3.4 -2.6 6.4Z"/><path d="M77.5 38.4q3 -3.2 6.5 -3.4q-2.6 1.8 -4.6 4Z"/></g><g fill="#699053"><path d="M24 38q-.6 -3 -2.4 -4.6q.8 2.6 1.4 4.8Z"/><path d="M76 38q.6 -3 2.4 -4.6q-.8 2.6 -1.4 4.8Z"/></g></svg>`;
     case 'lamp': return `<svg class="deco top lamp" viewBox="0 0 40 60" preserveAspectRatio="xMidYMax meet"><path d="M20 -200V26" stroke="#3a3a3a" stroke-width=".4"/><path d="M13 26Q20 19 27 26L25 36H15Z" fill="#f2b441"/><path d="M14 29H26M14.5 32H25.5" stroke="#d98f2b" stroke-width=".5"/></svg>`;
-    // 夜更けの小屋：壁の釘から紐で吊るし、上に小さな真鍮の額灯
-    case 'wall': return `<svg class="deco top wall" viewBox="0 0 60 30" preserveAspectRatio="xMidYMax meet"><path d="M30 6L12 30M30 6L48 30" stroke="#2a1e14" stroke-width=".5"/><circle cx="30" cy="5.5" r="1.2" fill="#9a8a6a"/><path d="M22 1H38L36 4H24Z" fill="#b8925e"/><path d="M24 4L14 16H46L36 4Z" fill="rgba(255,220,160,.22)"/></svg>`;
-    // 夜の海辺：遊歩道に据えた石の台座の上に立て、足もとを灯りで照らす
-    case 'lightbox': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="plinth" x1="0" x2="1"><stop offset="0" stop-color="#2a2632"/><stop offset=".45" stop-color="#1d1a24"/><stop offset="1" stop-color="#121017"/></linearGradient></defs><ellipse cx="50" cy="37.5" rx="44" ry="2.6" fill="#ffc873" opacity=".16"/><path d="M26 0H74V35H26Z" fill="url(#plinth)"/><path d="M22 0H78V2.4H22Z" fill="#34303e"/><path d="M22 2.4H78V3.2H22Z" fill="#0d0b11" opacity=".6"/><path d="M23 34H77V37.5H23Z" fill="#1a1720"/><path d="M26 3.2H27.2V34H26Z" fill="#3c3848" opacity=".7"/></svg>`;
-    // 夕凪の浜：流木の 2 本の柱を砂に立て、作品を縄で結ぶ。下は流木の板を渡してふさぐ（海から出て見えないように）
-    // 板は隙間のない 1 枚（溝だけ）にして、後ろの海や砂が透けないように。柱の足もとは砂に埋まる（砂の山）
-    case 'post': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><ellipse cx="50" cy="38" rx="50" ry="2.4" fill="#6b5a44" opacity=".22"/><path d="M11 0H89V36H11Z" fill="#7d6a52"/>${[0, 1, 2, 3, 4, 5].map((k) => `<path d="M11 ${k * 6}H89V${k * 6 + 5.4}H11Z" fill="${['#b39c7c', '#a58e70', '#bba585'][k % 3]}"/>`).join('')}<path d="M8 0Q7 20 9 38H14Q13 20 13.5 0ZM86.5 0Q87 20 86 38H91Q93 20 92 0Z" fill="#9a8466"/><path d="M10 2Q9.5 20 10.5 36M88.5 2Q89 20 88 36" stroke="#c2ab8a" stroke-width=".6" fill="none"/><path d="M2 39.5Q11 34.5 20 39.5ZM80 39.5Q89 34.5 98 39.5Z" fill="#d6c3a0"/><path d="M2 39.5Q11 36.2 20 39.5ZM80 39.5Q89 36.2 98 39.5Z" fill="#c7b28d" opacity=".6"/></svg><svg class="deco top post" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M8 20Q7 8 9 0H14Q13 8 13.5 20ZM86.5 20Q87 8 86 0H91Q93 8 92 20Z" fill="#9a8466"/><path d="M5 3Q50 7 95 3" stroke="#8a7458" stroke-width="2.2" fill="none"/><path d="M30 5L33 20M70 5L67 20" stroke="#efe6d2" stroke-width=".6"/></svg>`;
+    // 夜更けの小屋：壁の真鍮の釘から撚った紐で吊るし、上に真鍮の額灯（笠に光の帯、下に小さな電球）
+    case 'wall': return `<svg class="deco top wall" viewBox="0 0 60 30" preserveAspectRatio="xMidYMax meet">
+      <path d="M30 6L12 30M30 6L48 30" stroke="#2a1e14" stroke-width=".7"/><path d="M30 6L12 30M30 6L48 30" stroke="#5a4a36" stroke-width=".7" stroke-dasharray=".7 .9"/>
+      <circle cx="30" cy="5.6" r="1.5" fill="#6a5a3a"/><circle cx="30" cy="5.4" r="1.1" fill="#b8925e"/><circle cx="29.6" cy="5" r=".4" fill="#e6d3a6"/>
+      <path d="M29.4 -6H30.6V1H29.4Z" fill="#8a6a3a"/><path d="M21 1H39L37.2 4.4H22.8Z" fill="#b8925e"/><path d="M21 1H39V1.9H21Z" fill="#d4b884"/><path d="M22.8 4.4H37.2V5.2H22.8Z" fill="#7a5a30"/>
+      <ellipse cx="30" cy="5.6" rx="1.6" ry=".7" fill="#ffe6b0"/><path d="M24 4.6L14 16H46L36 4.6Z" fill="rgba(255,220,160,.22)"/><path d="M26 4.6L22 10H38L34 4.6Z" fill="rgba(255,230,180,.16)"/></svg>`;
+    // 夜の海辺：遊歩道に据えた黒い石の台座。真鍮の縁、天板の下の光の帯、二段の足もと、磨いた面の映り込み
+    case 'lightbox': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="plinth" x1="0" x2="1"><stop offset="0" stop-color="#2a2632"/><stop offset=".45" stop-color="#1d1a24"/><stop offset="1" stop-color="#121017"/></linearGradient><linearGradient id="plinthGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".35"/><stop offset="1" stop-color="#ffe7a8" stop-opacity="0"/></linearGradient></defs>
+      <ellipse cx="50" cy="38.2" rx="46" ry="2.8" fill="#ffc873" opacity=".16"/>
+      <path d="M26 0H74V34H26Z" fill="url(#plinth)"/><path d="M26 3.6H74V12H26Z" fill="url(#plinthGlow)"/>
+      <path d="M31 6V31" stroke="#3c3848" stroke-width=".5" opacity=".6"/><path d="M69 6V31" stroke="#0d0b11" stroke-width=".5" opacity=".8"/><path d="M34 8C33.6 16 34.4 24 34 30" stroke="#3c3848" stroke-width="2" opacity=".18"/>
+      <path d="M22 0H78V2.4H22Z" fill="#34303e"/><path d="M22 0H78V.7H22Z" fill="#b89a5a"/><path d="M22 2.4H78V3.2H22Z" fill="#0d0b11" opacity=".7"/><path d="M26.4 3.2H73.6V3.9H26.4Z" fill="#ffe7a8" opacity=".9"/>
+      <path d="M25 33H75V35.6H25Z" fill="#1a1720"/><path d="M25 33H75V33.6H25Z" fill="#b89a5a" opacity=".8"/><path d="M22 35.6H78V38H22Z" fill="#120f16"/><path d="M22 35.6H78V36.1H22Z" fill="#3c3848"/>
+      <circle cx="28.5" cy="1.2" r=".5" fill="#d4b884"/><circle cx="71.5" cy="1.2" r=".5" fill="#d4b884"/><circle cx="28.5" cy="34.3" r=".5" fill="#d4b884"/><circle cx="71.5" cy="34.3" r=".5" fill="#d4b884"/></svg>`;
+    // 夕凪の浜：流木の 2 本の柱を砂に立て、作品を縄で結ぶ。下は流木の板（木目・節・縄の縛り）でふさぎ、柱の足もとは砂の山に貝と流木のかけら
+    case 'post': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><ellipse cx="50" cy="38" rx="50" ry="2.4" fill="#6b5a44" opacity=".22"/><path d="M11 0H89V36H11Z" fill="#7d6a52"/>${[0, 1, 2, 3, 4, 5].map((k) => `<path d="M11 ${k * 6}H89V${k * 6 + 5.4}H11Z" fill="${['#b39c7c', '#a58e70', '#bba585'][k % 3]}"/>`).join('')}
+      ${[0, 1, 2, 3, 4, 5].map((k) => `<path d="M14 ${k * 6 + 1.6}q20 -.5 40 .3t32 -.2M18 ${k * 6 + 3.8}q24 .5 50 -.2" stroke="#8f7a5e" stroke-width=".3" fill="none" opacity=".55"/>`).join('')}
+      <ellipse cx="30" cy="9.5" rx="1.2" ry=".8" fill="#7a664c"/><ellipse cx="30" cy="9.5" rx="2" ry="1.3" fill="none" stroke="#8f7a5e" stroke-width=".25"/><ellipse cx="64" cy="27.4" rx="1" ry=".7" fill="#7a664c"/><ellipse cx="72" cy="15.6" rx=".9" ry=".6" fill="#7a664c"/>
+      <path d="M8 0Q7 20 9 38H14Q13 20 13.5 0ZM86.5 0Q87 20 86 38H91Q93 20 92 0Z" fill="#9a8466"/><path d="M10 2Q9.5 20 10.5 36M88.5 2Q89 20 88 36" stroke="#c2ab8a" stroke-width=".6" fill="none"/><path d="M12.6 4Q12.2 20 12.8 34M87.6 4Q87.4 20 87.8 34" stroke="#7a664c" stroke-width=".4" fill="none" opacity=".7"/>
+      ${[4, 30].map((y) => `<path d="M7.6 ${y}h7M7.6 ${y + 1.4}h7M7.6 ${y + 2.8}h7M85.6 ${y}h7M85.6 ${y + 1.4}h7M85.6 ${y + 2.8}h7" stroke="#e6d8bb" stroke-width=".9"/><path d="M7.6 ${y + .7}h7M7.6 ${y + 2.1}h7M85.6 ${y + .7}h7M85.6 ${y + 2.1}h7" stroke="#b39c7c" stroke-width=".4" opacity=".7"/>`).join('')}
+      <path d="M2 39.5Q11 34.5 20 39.5ZM80 39.5Q89 34.5 98 39.5Z" fill="#d6c3a0"/><path d="M2 39.5Q11 36.2 20 39.5ZM80 39.5Q89 36.2 98 39.5Z" fill="#c7b28d" opacity=".6"/>
+      <path d="M4.5 39.2q.3 -1.6 1.4 -1.6q1 0 1.1 1.6Z" fill="#f3e3cc"/><path d="M5 39.2h2" stroke="#c7a57c" stroke-width=".25"/><path d="M15.5 39.3l.9 -1.2l1.2 .2l.6 1Z" fill="#e59a7a"/><path d="M93 39.1q.4 -1.4 1.5 -1.3q.9 .2 .9 1.3Z" fill="#e9cfae"/><path d="M83 39.3l3 -.8l2.5 .8Z" fill="#a8927a"/><path d="M84 38.7q1 -.5 3.4 -.3" stroke="#c9b59a" stroke-width=".3" fill="none"/></svg><svg class="deco top post" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M8 20Q7 8 9 0H14Q13 8 13.5 20ZM86.5 20Q87 8 86 0H91Q93 8 92 20Z" fill="#9a8466"/><path d="M5 3Q50 7 95 3L95 5.4Q50 9.2 5 5.4Z" fill="#8f7a5e"/><path d="M5 3Q50 7 95 3L95 3.9Q50 7.6 5 3.9Z" fill="#b39c7c"/><path d="M6.5 2.2q3 6 3 9M92.5 2.2q-3 6 -3 9M6.2 3.6L11.6 9.4M12.4 3L7.2 9.2M93.6 3.6L88.2 9.4M87.4 3L92.6 9.2" stroke="#e6d8bb" stroke-width=".9" fill="none"/><path d="M6.2 3.6L11.6 9.4M12.4 3L7.2 9.2M93.6 3.6L88.2 9.4M87.4 3L92.6 9.2" stroke="#b39c7c" stroke-width=".35" fill="none" opacity=".7"/><path d="M30 6L34 20M70 6L66 20" stroke="#e6d8bb" stroke-width=".8"/><path d="M30 6L34 20M70 6L66 20" stroke="#b39c7c" stroke-width=".8" stroke-dasharray=".6 1"/><circle cx="30" cy="5.8" r="1" fill="#e6d8bb"/><circle cx="70" cy="5.8" r="1" fill="#e6d8bb"/><path d="M89 9.6v4.4" stroke="#7a664c" stroke-width=".35"/><circle cx="89" cy="15.6" r="1.8" fill="#c97a66"/><path d="M87.3 15.2h3.4" stroke="#f3e3cc" stroke-width=".6"/></svg>`;
     default: return '';
   }
 }
@@ -512,9 +545,81 @@ function propHTML(kind, scene) {
   const P = PROPS[kind];
   return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : 7 + Math.random() * 3 };
 }
+// スクロールに合わせて動く生きもの：水辺の鯉（歩くと先へ泳ぐ）、夕凪のカモメ（夕日のほうへ渡る）、森の白い蝶（ひらひらと先へ）
+// [種類, 数, 高さの範囲（vh）, 大きさ（vh）, 歩く速さ（vh／立ち止まる場所 1 つぶん）, 向き（1＝右へ）, 置く層（奥＝swim、中景＝props。蝶は木の前を飛ぶので中景）]
+const SWIMMERS = {
+  water: [['koi', 4, [44, 94], [5, 7], [34, 60], 1, 'drift'], ['dragonfly', 2, [38, 60], [1.6, 2.1], [12, 20], 1, 'props']],
+  dusk: [['gull', 4, [12, 38], [3, 4.4], [40, 70], -1, 'drift']],
+  dapple: [['butterfly', 3, [64, 92], [2, 2.8], [30, 50], 1, 'props']],
+  night: [['boat', 2, [68.5, 71.5], [3, 4.2], [6, 10], -1, 'drift']],
+};
+const NO_TURN = new Set(['gull', 'boat']); // 横向きの影絵は回さず、進む向きに反転するだけ
+function buildSwimmers(r) {
+  const cfgs = SWIMMERS[r.room.id]; if (!cfgs) return;
+  r.swimmers = [];
+  for (const [kind, n, ys, ws, sp, dir, plane] of cfgs) {
+    const L = $(`.${plane}`, r.el), f = plane === 'drift' ? FACTORS.far : FACTORS.mid, fw = W + (r.stops - 1) * W * f + 40;
+    for (let i = 0; i < n; i++) {
+      const w = ws[0] + Math.random() * (ws[1] - ws[0]);
+      const el = document.createElement('div'); el.className = `swimmer ${kind}`; el.style.width = `${w}vh`; el.innerHTML = gradeColors(swimmerSVG(kind, i), gradeOf(r.room.scene));
+      L.append(el);
+      const x0 = Math.random() * fw, y0 = ys[0] + Math.random() * (ys[1] - ys[0]);
+      r.swimmers.push({ el, L, kind, i, n, x0, y0, x: x0, y: y0, a: dir > 0 ? 90 : -90, w, sp: sp[0] + Math.random() * (sp[1] - sp[0]), ph: Math.random() * 10, dir, fw, f, gather: kind === 'koi' || kind === 'butterfly', gy: kind === 'koi' ? [76, 92] : [86, 94], lastRipple: 0 });
+    }
+  }
+}
+// 泳ぐ・飛ぶ：歩いた分だけ先へ進み、立ち止まっている間もゆっくり動く。作品の前で立ち止まると、鯉と蝶はその足もとへ集まってくる
+function updateSwimmers(r, now, focus) {
+  if (!r.swimmers) return;
+  const t = REDUCED ? 0 : now / 1000, dt = Math.min(.1, (now - (r.swimT ?? now)) / 1000); r.swimT = now;
+  const k = 1 - Math.exp(-dt / 1.4), stop = Math.round(r.c);
+  r.swimmers.forEach((s) => {
+    let dx, dy; const i = s.i;
+    if (s.gather && focus > .6) {
+      // 作品の足もと：奥の層での作品の位置 = 歩いた分のずれ + 画面の真ん中
+      const tx = r.c * W * s.f + W / 2 + (i - (s.n - 1) / 2) * 7 + Math.sin(t * .5 + s.ph) * 2, ty = s.gy[0] + (s.gy[1] - s.gy[0]) * ((i * .37 + .2) % 1) + Math.sin(t * .8 + s.ph) * 1;
+      dx = tx - s.x; dy = ty - s.y;
+    } else {
+      // トンボはその場でホバリング（小さくふらつく）。ほかは先へ進む
+      const hov = s.kind === 'dragonfly' ? Math.sin(t * 2.3 + s.ph) * 2.5 : 0;
+      const wx = (((s.x0 + s.dir * (r.c * s.sp + t * (s.kind === 'boat' ? .25 : 1.2)) + hov) % s.fw) + s.fw) % s.fw, wy = s.y0 + Math.sin(t * .7 + s.ph) * (s.kind === 'boat' ? .25 : 1.4) + (s.kind === 'dragonfly' ? Math.sin(t * 3.1 + s.ph) * 1.2 : 0);
+      dx = wx - s.x; dy = wy - s.y;
+      if (Math.abs(dx) > s.fw / 2) { s.x = wx; dx = 0; } // 端で折り返すときは飛ぶ
+    }
+    const mx = dx * k, my = dy * k; s.x += mx; s.y += my;
+    if (Math.hypot(mx, my) > .01) { const ta = Math.atan2(my, mx) * 180 / Math.PI + 90; let da = ((ta - s.a + 540) % 360) - 180; s.a += da * Math.min(1, dt * 4); }
+    const wob = Math.sin(t * 1.1 + s.ph) * 6;
+    // 鳥は作品と同じ横向きの影絵なので回さず、進む向きに反転して少し傾けるだけ
+    const turn = NO_TURN.has(s.kind) ? `scaleX(${s.dir}) rotate(${(wob * (s.kind === 'boat' ? .15 : .5)).toFixed(1)}deg)` : `rotate(${(s.a + wob).toFixed(1)}deg)`;
+    put(s.el, 'transform', `translate3d(${(s.x * U).toFixed(1)}px, ${(s.y * U).toFixed(1)}px, 0) ${turn}`);
+    // 鯉が通ったあとに波紋（動いているときだけ、1 匹あたり 1.3 秒に 1 つ。同時に多く残さない）
+    if (s.kind === 'koi' && !REDUCED && now - s.lastRipple > 1300 && Math.hypot(mx, my) > .02 && s.L.querySelectorAll('.ripple').length < 8) {
+      s.lastRipple = now;
+      const rp = document.createElement('i'); rp.className = 'ripple'; rp.style.left = `${(s.x + s.w / 2) * U}px`; rp.style.top = `${(s.y + s.w * .6) * U}px`;
+      rp.addEventListener('animationend', () => rp.remove(), { once: true }); s.L.append(rp);
+    }
+  });
+}
+// 部屋の中の小さな動き：夜の庭の観覧車と水たまりの光、小屋の火と窓の外の雪
+function buildLiving(r) {
+  const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
+  if (D.ferris) { const { x, y, r: rr } = D.ferris, R2 = rr + 1.5; S.insertAdjacentHTML('beforeend', `<div class="living ferris" style="left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh">${gradeColors(ferrisSVG(rr), gradeOf(r.room.scene))}</div>`); }
+  if (D.puddles) P.insertAdjacentHTML('beforeend', D.puddles.map(([x, y, w], i) => `<i class="living puddle-shine" style="left:${((x - w * .9) * U).toFixed(1)}px;top:${((y - w * .13) * U).toFixed(1)}px;width:${(w * 1.8).toFixed(2)}vh;height:${(w * .26).toFixed(2)}vh;animation-delay:${-(i * .7)}s"></i>`).join(''));
+  if (D.stove) { const [x, y] = D.stove; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - 2.4) * U).toFixed(1)}px;top:${((y - 3.2 - 7.8) * U).toFixed(1)}px;width:4.8vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
+  if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
+}
+// 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける
+const IDLE = { dapple: ['bird', 'props', [-.36, .62], [.45, .05], 2.6], water: ['dragonfly', 'props', [-.45, .5], [.45, .38], 2.2], dusk: ['bird', 'props', [-.34, .84], [.5, .1], 2.8], night: ['star', 'drift', [.1, .06], [-.4, .3], 1.4], afterhours: ['spark', 'props', [.3, .78], [.34, .55], 1.8] };
+function fireIdle(r, stop) {
+  const cfg = IDLE[r.room.id]; if (!cfg || REDUCED) return;
+  const [kind, plane, from, to, dur] = cfg, L = $(`.${plane}`, r.el), f = plane === 'drift' ? FACTORS.far : FACTORS.mid, cx = stop * W * f + W / 2;
+  const el = document.createElement('div'); el.className = `flyer ${kind}`; el.innerHTML = gradeColors(flyerSVG(kind), gradeOf(r.room.scene));
+  el.style.cssText = `--x0:${((cx + from[0] * W) * U).toFixed(0)}px;--y0:${(from[1] * 100 * U).toFixed(0)}px;--x1:${((cx + to[0] * W) * U).toFixed(0)}px;--y1:${(to[1] * 100 * U).toFixed(0)}px;--d:${dur}s`;
+  el.addEventListener('animationend', () => el.remove(), { once: true }); L.append(el);
+}
 function buildProps(r) {
   const L = $('.props', r.el), cfg = STREET[r.room.id];
-  if (!cfg) return;
+  if (!cfg) { buildSwimmers(r); buildLiving(r); return; }
   // 部屋の入口の小物は左寄りに。狭い画面でも画面の外にはみ出さないように（小物の幅の半分 + 余白より内側）
   const introX = (kind) => Math.max(W * .16, (PROPS[kind]?.w || 0) / 2 + 3);
   const spots = cfg.intro ? [cfg.introAt != null ? [cfg.introAt, W / 2, cfg.intro] : [0, introX(cfg.intro), cfg.intro]] : [];
@@ -528,6 +633,7 @@ function buildProps(r) {
     const egg = ['boombox', 'sneakers', 'turntable'].includes(eggKind) ? ` data-egg="${eggKind}"` : '';
     return `<div class="prop ${p.cls}${egg ? ' egg-prop' : ''}"${egg} style="left:${(s * W * FACTORS.mid + x) * U}px;${pos};width:${p.w}vh">${p.html}</div>`;
   }).join('') + roomEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid) + birdHTML(r);
+  buildSwimmers(r); buildLiving(r); // 小物を置いたあとに足す（innerHTML で消えないように）
 }
 // インコ：入口の看板の上にいて、森の奥の部屋でもときどき見かける（同じ鳥がついてくる）
 // [部屋, 作品と作品のあいだの位置, 横のずれ（vh）, 足もとの高さ（vh）, 左右反転]
@@ -775,7 +881,7 @@ function updateRoom(r, now) {
   // マウスや傾きで背景が右へずれると外の雪がのぞくので、室内にいる間はその向きのずれを止める
   const mxc = r.room.scene === 'attic' && cam >= 1.5 && cam < 2.6 ? Math.max(mx, 0) : mx;
   const tr = (sel, f, extra = '') => put(q(r, sel), 'transform', `translate3d(${((-(cam * W * f) - mxc * f * 2) * U).toFixed(2)}px, ${((my * f * -1.2 + bob * f) * U).toFixed(2)}px, 0)${extra}`);
-  tr('.far', FACTORS.far); tr('.mid', FACTORS.mid); tr('.props', FACTORS.mid); tr('.art', FACTORS.mid); tr('.move', FACTORS.move);
+  tr('.far', FACTORS.far); tr('.drift', FACTORS.far); tr('.mid', FACTORS.mid); tr('.props', FACTORS.mid); tr('.art', FACTORS.mid); tr('.move', FACTORS.move);
   if (r.room.scene === 'jungle') updateWater(r, p, cam, mxc, now);
   // 部屋の出入りで、手前の植物をくぐる
   const enter = 1 - smooth(0, .035, p), leave = smooth(.95, 1, p);
@@ -803,6 +909,9 @@ function updateRoom(r, now) {
   // 部屋の終わりが近づくと、次の部屋の光の色が右からこぼれてくる（葉のカーテンが閉じると引く）
   put(q(r, '.nextglow'), '--nextk', (next ? smooth(.76, .93, p) * (1 - smooth(.965, .995, p)) : 0).toFixed(3));
   r.el.classList.toggle('focus', focus > .6);
+  updateSwimmers(r, now, focus);
+  // 立ち止まって 2.5 秒たったら、その場所で 1 回だけ小さな動き
+  if (focus > .6) { const k = Math.round(r.c); if (r.idleAt !== k) { r.idleAt = k; r.idleSince = now; r.idleFired = false; } else if (!r.idleFired && now - r.idleSince > 2500) { r.idleFired = true; fireIdle(r, k); } } else r.idleAt = -1;
   const fs = 1 + Math.max(r.curS * .45, leave * .6) + focus * .05;
   put(q(r, '.frame'), 'transform', `translate3d(${(-mx * 2.4 * U).toFixed(2)}px, ${(-my * 1.6 * U).toFixed(2)}px, 0) scale(${(fs + kick * .006).toFixed(4)})`);
   // 部屋の出入りで、葉のカーテンが閉じて開く
@@ -862,7 +971,25 @@ function pauseRoomVideos(r) { r.el.querySelectorAll('video').forEach((v) => { if
 let currentRoom = null;
 const entranceCurtain = { el: entrance, leaves: null, curtainHTML: '', leafEls: null, curShown: -1 };
 if (location.search.includes('memdebug')) { window.__rooms = rooms; window.__entC = entranceCurtain; } // 点検用
+// 入口で動くもの：遠くの空を渡る小鳥の群れ、小道のわきの花にとまる白い蝶。中景と同じ拡大・視差で動く
+let entLife = null;
+function buildEntranceLife() {
+  const L = $('.life', entrance); if (!L || entLife) return;
+  L.innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="swimmer gull ent-bird" style="width:${(1.3 + Math.random() * .7).toFixed(2)}vh">${swimmerSVG('gull', i)}</div>`).join('')
+    + [0, 1, 2].map((i) => `<div class="swimmer butterfly" style="width:1.6vh">${swimmerSVG('butterfly', i)}</div>`).join('');
+  const birds = [...L.querySelectorAll('.ent-bird')].map((el, i) => ({ el, x0: Math.random() * W, y0: 22 + Math.random() * 14, sp: 1.6 + Math.random() * .8, ph: Math.random() * 6 }));
+  const flies = [...L.querySelectorAll('.butterfly')].map((el, i) => ({ el, x0: i < 2 ? W * (.12 + Math.random() * .18) : W * (.68 + Math.random() * .2), y0: 86 + Math.random() * 8, ph: Math.random() * 6 }));
+  entLife = { L, birds, flies };
+}
+function updateEntranceLife(origin, transform) {
+  if (!entLife) return;
+  const t = REDUCED ? 0 : performance.now() / 1000;
+  entLife.L.style.transformOrigin = origin; entLife.L.style.transform = transform;
+  for (const b of entLife.birds) { const x = ((b.x0 + t * b.sp) % (W + 20)) - 10, y = b.y0 + Math.sin(t * .6 + b.ph) * 1.2; put(b.el, 'transform', `translate3d(${(x * U).toFixed(1)}px, ${(y * U).toFixed(1)}px, 0)`); }
+  for (const f of entLife.flies) { const x = f.x0 + Math.sin(t * .5 + f.ph) * 4, y = f.y0 + Math.sin(t * 1.3 + f.ph) * 1.5 - Math.abs(Math.sin(t * .5 + f.ph)) * 3; put(f.el, 'transform', `translate3d(${(x * U).toFixed(1)}px, ${(y * U).toFixed(1)}px, 0) rotate(${(90 + Math.cos(t * .5 + f.ph) * 25).toFixed(1)}deg)`); }
+}
 function updateEntrance() {
+  buildEntranceLife();
   const len = GEO.entH - vh, p = clamp(sy / len);
   const mx = mouse.x, my = mouse.y;
   $('.far', entrance).style.transform = `translate3d(${-mx * .6 * U}px, ${-my * .4 * U}px, 0) scale(${1 + p * .08})`;
@@ -873,6 +1000,7 @@ function updateEntrance() {
   const midEl = $('.mid', entrance);
   midEl.style.transformOrigin = `${FX * U}px ${FY * U}px`;
   midEl.style.transform = `translate3d(${-mx * 1.4 * U}px, ${-my * .8 * U}px, 0) scale(${1 + p * zoom})`;
+  updateEntranceLife(midEl.style.transformOrigin, midEl.style.transform);
   sign.style.translate = $('.sign-bird', entrance).style.translate = `${-mx * 1.4 * U}px ${-my * .8 * U}px`; // マウスの視差だけは地面と一緒に
   $('.frame', entrance).style.transform = `translate3d(${-mx * 3 * U}px, ${-my * 2 * U}px, 0) scale(${1 + p * 1.7})`;
   // 案内人は小道の中心線の上を、奥へ歩いていく（中景と同じ拡大・視差をかけて、道から外れないように）

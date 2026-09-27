@@ -509,7 +509,9 @@ export function farewellSVG() {
     + `<circle cx="${cx - 4}" cy="33" r="14" fill="url(#${id})"/>`
     + `<path d="M${cx - 10} 41V29L${cx} 21L${cx + 10} 29V41Z" fill="#0a0c20"/><path d="M${cx - 12} 29.6L${cx} 19.6L${cx + 12} 29.6" stroke="#0a0c20" stroke-width="1.6" fill="none"/><path d="M${cx + 5.5} 24.2V19.6H${cx + 8}V26.2" fill="#0a0c20"/>`
     + `<rect x="${cx - 6}" y="31" width="4" height="4" fill="#ffc873"/><path d="M${cx - 4} 31v4M${cx - 6} 33h4" stroke="#0a0c20" stroke-width=".4"/>`
-    + `<path d="M${cx + 6.7} 19.4q-1 -2 .4 -3.6q1.4 -1.6 .2 -3.6" stroke="#8a90b8" stroke-width=".35" fill="none" opacity=".35"/>`;
+    + [0, 1, 2].map((k) => `<circle class="fw-puff" style="--d:${n1(-k * 2.3)}s" cx="${cx + 6.7}" cy="18.6" r=".7" fill="#8a90b8" opacity="0"/>`).join('')
+    + Array.from({ length: 7 }, (_, k) => `<circle class="fw-fly" style="--d:${n1(-k * 1.7)}s;--dx:${n1(R(-6, 6))}px;--dy:${n1(R(-4, 2))}px" cx="${n1(R(10, 190))}" cy="${n1(R(28, 39))}" r=".38" fill="#d9e28a"/>`).join('')
+    + `<path class="fw-star" d="M0 -.25H9V.25H0Z" fill="#fff"/>`;
   return `<svg viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${back}${cabin}${front}<rect x="-5" y="40.5" width="210" height="5" fill="#0a0c20"/></svg>`;
 }
 // 月（画面に直接置く、ぼやけない月）。viewBox は -50〜50、月の半径は 10。kind：'full' 満月 / 'crescent' 三日月（欠けた側も地球照でほのかに見える）
@@ -659,9 +661,9 @@ function mushroom(x, y, sz, cap = '#c9543a') {
     <path d="M${n1(x - sz * .62)} ${n1(y - sz * .72)}Q${n1(x - sz * .5)} ${n1(y - sz * 1.55)} ${n1(x)} ${n1(y - sz * 1.55)}Q${n1(x - sz * .2)} ${n1(y - sz * 1.2)} ${n1(x - sz * .62)} ${n1(y - sz * .72)}Z" fill="${light(cap, .15)}"/>
     <circle cx="${n1(x - sz * .18)}" cy="${n1(y - sz * 1.15)}" r="${n1(sz * .09)}" fill="#fff4e0"/><circle cx="${n1(x + sz * .24)}" cy="${n1(y - sz * 1.02)}" r="${n1(sz * .07)}" fill="#fff4e0"/>`;
 }
-function dapple(x0, x1, y0, y1, n, c = '#fff6c8', a = .3) {
+function dapple(x0, x1, y0, y1, n, c = '#fff6c8', a = .3, { rx = [1, 4.5], ry = [.3, .9] } = {}) {
   let s = '';
-  for (let i = 0; i < n; i++) s += `<ellipse cx="${n1(R(x0, x1))}" cy="${n1(R(y0, y1))}" rx="${n1(R(1, 4.5))}" ry="${n1(R(.3, .9))}" fill="${c}" opacity="${a}"/>`;
+  for (let i = 0; i < n; i++) s += `<ellipse cx="${n1(R(x0, x1))}" cy="${n1(R(y0, y1))}" rx="${n1(R(rx[0], rx[1]))}" ry="${n1(R(ry[0], ry[1]))}" fill="${c}" opacity="${a}"/>`;
   return s;
 }
 // 森の小道（横に続く土の帯）
@@ -803,6 +805,119 @@ const clearOfWorks = (W, stops, x, m = 0) => { for (let s = 1; s < stops; s++) {
 // move の各すき間（stop s と s+1 の間）から見た、両どなりの作品の枠
 const moveZones = (W, s, y0, y1) => [artZone(W, at(W, FACTORS.move)(s, W / 2), y0, y1), artZone(W, at(W, FACTORS.move)(s + 1, W / 2), y0, y1)];
 
+// ---------- 森の描き込み：倒木、切り株、つた、洞のふくろう、地面の霧、うさぎ、鹿、蝶 ----------
+// 倒木：横たわる丸太。右の切り口に年輪、上に苔ときのこ、両端に草
+function fallenLog(x, y, len, r, c = '#6b4a2e', { tilt = R(-4, 4) } = {}) {
+  track(x - len * .55, y - r * 2.4); track(x + len * .55, y + r * .8);
+  const cl = light(c, .14), cd = dark(c, .22);
+  let s = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(tilt)})">`;
+  s += `<ellipse cx="0" cy="${n1(r * .5)}" rx="${n1(len * .56)}" ry="${n1(r * .55)}" fill="#2f4a22" opacity=".35"/>`;
+  s += `<path d="M${n1(-len / 2)} ${n1(-r)}Q${n1(-len * .25)} ${n1(-r * 1.2)} 0 ${n1(-r * 1.05)}T${n1(len / 2)} ${n1(-r * .95)}L${n1(len / 2)} ${n1(r)}Q0 ${n1(r * 1.15)} ${n1(-len / 2)} ${n1(r)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(-len / 2)} ${n1(r * .2)}Q0 ${n1(r * .45)} ${n1(len / 2)} ${n1(r * .15)}L${n1(len / 2)} ${n1(r)}Q0 ${n1(r * 1.15)} ${n1(-len / 2)} ${n1(r)}Z" fill="${cd}"/>`;
+  s += `<path d="M${n1(-len * .45)} ${n1(-r * .75)}Q0 ${n1(-r * .95)} ${n1(len * .45)} ${n1(-r * .7)}" stroke="${cl}" stroke-width="${n1(r * .18)}" fill="none" opacity=".6"/>`;
+  for (let i = 0; i < len / 2.2; i++) { const bx = R(-len * .45, len * .38), by = R(-r * .6, r * .7); s += `<path d="M${n1(bx)} ${n1(by)}q${n1(R(1.2, 2.6))} ${n1(R(-.3, .3))} ${n1(R(2.6, 4.5))} 0" stroke="${rnd() < .5 ? cd : cl}" stroke-width=".22" fill="none" stroke-linecap="round" opacity=".7"/>`; }
+  const ex = len / 2;
+  s += `<ellipse cx="${n1(ex)}" cy="0" rx="${n1(r * .42)}" ry="${n1(r)}" fill="#d9b98a"/>`;
+  for (let k = .8; k > .15; k -= .22) s += `<ellipse cx="${n1(ex)}" cy="0" rx="${n1(r * .42 * k)}" ry="${n1(r * k)}" stroke="#a8875a" stroke-width=".18" fill="none"/>`;
+  for (let k = 0; k < 4; k++) { const mx = R(-len * .42, len * .3), mw = R(2, 4.5); s += `<ellipse cx="${n1(mx)}" cy="${n1(-r * .95)}" rx="${n1(mw)}" ry="${n1(r * .3)}" fill="${pick(['#5f7d2e', '#6f8a3a', '#7a9a3c'])}" opacity=".85"/><ellipse cx="${n1(mx - mw * .3)}" cy="${n1(-r * 1.05)}" rx="${n1(mw * .5)}" ry="${n1(r * .16)}" fill="#a5c23e" opacity=".45"/>`; }
+  s += mushroom(R(-len * .3, len * .15), -r * .95, R(1.1, 1.6), pick(['#b8604a', '#c98a5a', '#d4b884']));
+  if (rnd() < .6) s += mushroom(R(-len * .1, len * .3), -r * .9, R(.7, 1), pick(['#b8604a', '#d4b884']));
+  s += tuft(-len / 2 + R(-.5, .5), r * .7, r * 1.5, ['#47733c', '#5f7d2e', '#769721'], 6) + tuft(len / 2 + R(0, 1), r * .8, r * 1.3, ['#47733c', '#5f7d2e', '#769721'], 5);
+  return s + '</g>';
+}
+// 切り株：年輪の見える切り口、根もとに苔と草
+function stump(x, y, r, c = '#6b4a2e') {
+  track(x - r * 1.9, y - r * 1.8); track(x + r * 1.9, y + r * .6);
+  const h = r * 1.1, cd = dark(c, .22), cl = light(c, .12);
+  let s = `<ellipse cx="${n1(x)}" cy="${n1(y + r * .25)}" rx="${n1(r * 1.6)}" ry="${n1(r * .45)}" fill="#2f4a22" opacity=".35"/>`;
+  s += `<path d="M${n1(x - r * 1.3)} ${n1(y + .1)}Q${n1(x - r * .75)} ${n1(y - r * .35)} ${n1(x - r * .9)} ${n1(y - h)}L${n1(x + r * .9)} ${n1(y - h)}Q${n1(x + r * .75)} ${n1(y - r * .35)} ${n1(x + r * 1.3)} ${n1(y + .1)}Q${n1(x)} ${n1(y + r * .4)} ${n1(x - r * 1.3)} ${n1(y + .1)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(x + r * .15)} ${n1(y - h)}L${n1(x + r * .9)} ${n1(y - h)}Q${n1(x + r * .75)} ${n1(y - r * .35)} ${n1(x + r * 1.3)} ${n1(y + .1)}Q${n1(x + r * .7)} ${n1(y + r * .35)} ${n1(x + r * .15)} ${n1(y + r * .35)}Z" fill="${cd}"/>`;
+  for (let k = 0; k < 5; k++) { const bx = x + R(-r * .8, r * .8); s += `<path d="M${n1(bx)} ${n1(y - h * .15)}q.2 -${n1(h * .3)} 0 -${n1(h * .7)}" stroke="${rnd() < .5 ? cd : cl}" stroke-width=".22" fill="none" opacity=".7"/>`; }
+  s += `<ellipse cx="${n1(x)}" cy="${n1(y - h)}" rx="${n1(r * .9)}" ry="${n1(r * .36)}" fill="#dcbd8e"/>`;
+  for (let k = .78; k > .12; k -= .2) s += `<ellipse cx="${n1(x + r * .06)}" cy="${n1(y - h)}" rx="${n1(r * .9 * k)}" ry="${n1(r * .36 * k)}" stroke="#a8875a" stroke-width=".17" fill="none"/>`;
+  s += `<ellipse cx="${n1(x - r * .55)}" cy="${n1(y - h * .4)}" rx="${n1(r * .5)}" ry="${n1(r * .32)}" fill="#6f8a3a" opacity=".8"/><ellipse cx="${n1(x - r * .7)}" cy="${n1(y - h * .5)}" rx="${n1(r * .25)}" ry="${n1(r * .14)}" fill="#a5c23e" opacity=".45"/>`;
+  s += tuft(x - r * 1.25, y + .3, r * .9, ['#47733c', '#5f7d2e', '#769721'], 6) + tuft(x + r * 1.3, y + .3, r * .8, ['#47733c', '#5f7d2e', '#769721'], 5);
+  if (rnd() < .7) s += mushroom(x + r * R(1.2, 1.7), y + .2, R(.8, 1.2), pick(['#b8604a', '#c98a5a']));
+  return s;
+}
+// 幹に巻きつくつた（下から上へ、左右に揺れながら。葉は下向き）
+function ivy(x, y0, y1, w, tones) {
+  const n = Math.round((y1 - y0) / 2.6);
+  let d = `M${n1(x)} ${n1(y1)}`, leaves = '';
+  for (let i = 1; i <= n; i++) {
+    const t = i / n, yy = y1 - (y1 - y0) * t, xx = x + Math.sin(t * 8 + x) * w * .42;
+    d += `L${n1(xx)} ${n1(yy)}`;
+    const sz = R(1.5, 2.3) * (1 - t * .35);
+    leaves += oval(xx + R(-.3, .3), yy, sz, sz * .48, (i % 2 ? 1 : -1) * R(70, 130), pick(tones), { rib: false });
+  }
+  return `<path d="${d}" stroke="#3d5a2a" stroke-width=".32" fill="none" stroke-linecap="round"/>` + leaves;
+}
+// 幹の洞（うろ）
+function hollow(x, y, w) {
+  const h = w * 1.5;
+  let s = `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(h)}" fill="#2a1a10"/><path d="M${n1(x - w)} ${n1(y)}Q${n1(x - w * .6)} ${n1(y - h * 1.1)} ${n1(x)} ${n1(y - h)}Q${n1(x + w * .6)} ${n1(y - h * 1.1)} ${n1(x + w)} ${n1(y)}" stroke="#8f602e" stroke-width="${n1(w * .25)}" fill="none" opacity=".8"/>`;
+  s += `<path d="M${n1(x - w)} ${n1(y)}Q${n1(x)} ${n1(y + h * 1.15)} ${n1(x + w)} ${n1(y)}Q${n1(x)} ${n1(y + h * .7)} ${n1(x - w)} ${n1(y)}Z" fill="#5a3f25"/>`;
+  return s;
+}
+// 地面近くの霧：ぼかしは使わず、丸いグラデーションを横に並べる
+function mist(x0, x1, y, h, c = '#eef2da', a = .5) {
+  const id = `mi${gid++}`;
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${n1(a * 100) / 100}"/><stop offset=".55" stop-color="${c}" stop-opacity="${n1(a * 45) / 100}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient></defs>`;
+  for (let x = x0; x < x1; x += R(9, 16)) s += `<ellipse cx="${n1(x)}" cy="${n1(y + R(-h * .25, h * .25))}" rx="${n1(R(14, 26))}" ry="${n1(h * R(.6, 1.1))}" fill="url(#${id})"/>`;
+  return s;
+}
+// 小道のわきにすわるうさぎ（左向き）
+function rabbit(x, y, s, c = '#bfa98c') {
+  track(x - s * 1.2, y - s * 2.5); track(x + s * 1.3, y + s * .3);
+  const cd = dark(c, .15), cl = light(c, .22), ear = (dx, a) => { const ex = x - s * .6 + s * dx, ey = y - s * 1.9; return `<ellipse cx="${n1(ex)}" cy="${n1(ey)}" rx="${n1(s * .14)}" ry="${n1(s * .52)}" fill="${c}" transform="rotate(${a} ${n1(ex)} ${n1(ey)})"/><ellipse cx="${n1(ex)}" cy="${n1(ey)}" rx="${n1(s * .06)}" ry="${n1(s * .36)}" fill="#d9bdb2" transform="rotate(${a} ${n1(ex)} ${n1(ey)})"/>`; };
+  let o = `<ellipse cx="${n1(x)}" cy="${n1(y + .2)}" rx="${n1(s * 1.15)}" ry="${n1(s * .25)}" fill="#2f4a22" opacity=".3"/>`;
+  o += ear(-.08, -16) + ear(.16, 4);
+  o += `<ellipse cx="${n1(x + s * .15)}" cy="${n1(y - s * .6)}" rx="${n1(s * .95)}" ry="${n1(s * .62)}" fill="${c}"/>`;
+  o += `<circle cx="${n1(x + s * .55)}" cy="${n1(y - s * .5)}" r="${n1(s * .42)}" fill="${cd}" opacity=".55"/>`;
+  o += `<circle cx="${n1(x - s * .6)}" cy="${n1(y - s * 1.15)}" r="${n1(s * .44)}" fill="${c}"/><ellipse cx="${n1(x - s * .6)}" cy="${n1(y - s * .95)}" rx="${n1(s * .3)}" ry="${n1(s * .2)}" fill="${cl}"/>`;
+  o += `<circle cx="${n1(x - s * .78)}" cy="${n1(y - s * 1.22)}" r="${n1(s * .065)}" fill="#1a1208"/><circle cx="${n1(x - s * 1.02)}" cy="${n1(y - s * 1.05)}" r="${n1(s * .05)}" fill="#b9948a"/>`;
+  o += `<circle cx="${n1(x + s * 1.08)}" cy="${n1(y - s * .68)}" r="${n1(s * .2)}" fill="${cl}"/>`;
+  o += `<ellipse cx="${n1(x - s * .3)}" cy="${n1(y - s * .1)}" rx="${n1(s * .4)}" ry="${n1(s * .14)}" fill="${cd}"/>`;
+  return o;
+}
+// 遠くに立つ鹿（霞んだシルエット。h = 肩までの高さ、左向き）
+function deer(x, y, h, c) {
+  const L = h * 1.15, cd = dark(c, .08);
+  let s = '';
+  for (const [dx, dy] of [[-L * .36, 0], [-L * .26, .25], [L * .3, 0], [L * .4, .25]]) s += `<path d="M${n1(x + dx)} ${n1(y - h * .6)}L${n1(x + dx - h * .02)} ${n1(y + dy)}L${n1(x + dx + h * .06)} ${n1(y + dy)}L${n1(x + dx + h * .1)} ${n1(y - h * .6)}Z" fill="${cd}"/>`;
+  s += `<ellipse cx="${n1(x)}" cy="${n1(y - h * .74)}" rx="${n1(L * .5)}" ry="${n1(h * .26)}" fill="${c}"/>`;
+  s += `<path d="M${n1(x - L * .42)} ${n1(y - h * .9)}Q${n1(x - L * .52)} ${n1(y - h * 1.1)} ${n1(x - L * .6)} ${n1(y - h * 1.32)}L${n1(x - L * .42)} ${n1(y - h * 1.34)}Q${n1(x - L * .36)} ${n1(y - h * 1.05)} ${n1(x - L * .28)} ${n1(y - h * .78)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(x - L * .62)} ${n1(y - h * 1.36)}L${n1(x - L * .82)} ${n1(y - h * 1.27)}Q${n1(x - L * .84)} ${n1(y - h * 1.2)} ${n1(x - L * .74)} ${n1(y - h * 1.19)}L${n1(x - L * .42)} ${n1(y - h * 1.3)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(x - L * .5)} ${n1(y - h * 1.35)}l${n1(-h * .05)} ${n1(-h * .15)}l${n1(h * .1)} ${n1(h * .1)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(x - L * .57)} ${n1(y - h * 1.36)}q${n1(h * .03)} ${n1(-h * .2)} ${n1(h * .14)} ${n1(-h * .32)}M${n1(x - L * .55)} ${n1(y - h * 1.5)}l${n1(h * .1)} ${n1(-h * .04)}M${n1(x - L * .52)} ${n1(y - h * 1.58)}l${n1(-h * .07)} ${n1(-h * .08)}" stroke="${c}" stroke-width="${n1(h * .035)}" fill="none" stroke-linecap="round"/>`;
+  s += `<ellipse cx="${n1(x + L * .5)}" cy="${n1(y - h * .84)}" rx="${n1(h * .06)}" ry="${n1(h * .09)}" fill="${c}"/>`;
+  return s;
+}
+// 蝶（上から見た形。0° が上向き）
+function butterfly(x, y, s, c = '#f2c14e', a = R(-30, 30)) {
+  track(x, y, s * 1.5);
+  const cd = dark(c, .09);
+  let b = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})">`;
+  for (const d of [-1, 1]) b += `<path d="M0 0Q${n1(d * s * 1.25)} ${n1(-s * 1.55)} ${n1(d * s * 1.4)} ${n1(-s * .3)}Q${n1(d * s * 1.1)} ${n1(s * .1)} 0 0Z" fill="${d < 0 ? c : cd}"/><path d="M0 ${n1(s * .1)}Q${n1(d * s * 1.15)} ${n1(s * .1)} ${n1(d * s * .9)} ${n1(s * .95)}Q${n1(d * s * .4)} ${n1(s * 1.05)} 0 ${n1(s * .1)}Z" fill="${cd}"/>`;
+  b += `<ellipse cx="0" cy="${n1(s * .1)}" rx="${n1(s * .1)}" ry="${n1(s * .65)}" fill="#6b6a5a"/><path d="M0 ${n1(-s * .5)}l${n1(-s * .3)} ${n1(-s * .5)}M0 ${n1(-s * .5)}l${n1(s * .3)} ${n1(-s * .5)}" stroke="#6b6a5a" stroke-width="${n1(s * .04)}" fill="none"/></g>`;
+  return b;
+}
+// 木立の奥の下草の帯（幹のあいだの平らな帯を埋める）：ゆるく波打つ低い茂みの面に、ところどころ丸い茂みとシダ
+function understory(x0, x1, y, tones, hazeC) {
+  const T = tones.map((c) => mixC(c, hazeC, .3));
+  let x = x0, d = `M${n1(x0)} ${n1(y + 3)}L${n1(x0)} ${n1(y - 1)}`;
+  while (x < x1) { const w = R(3, 7), h = R(1.2, 3.2); d += `Q${n1(x + w / 2)} ${n1(y - h - w * .25)} ${n1(x + w)} ${n1(y - h * R(.2, .6))}`; x += w; }
+  let s = `<path d="${d}L${n1(x)} ${n1(y + 3)}Z" fill="${T[1]}"/>`;
+  x = x0; d = `M${n1(x0)} ${n1(y + 3)}L${n1(x0)} ${n1(y + .4)}`;
+  while (x < x1) { const w = R(2.5, 6), h = R(.8, 2.2); d += `Q${n1(x + w / 2)} ${n1(y + .6 - h - w * .2)} ${n1(x + w)} ${n1(y + .6 - h * R(.2, .5))}`; x += w; }
+  s += `<path d="${d}L${n1(x)} ${n1(y + 3)}Z" fill="${T[2]}"/>`;
+  for (let bx = x0 + R(2, 8); bx < x1; bx += R(9, 16)) {
+    const r = R(2, 3.4);
+    s += bushMass(bx, y + .2 - r * .5, r, T, 12);
+    if (rnd() < .5) s += fern(bx + R(-4, 4), y + 1, R(3, 5), R(-40, 40), mixC(pick(tones), hazeC, .28), { cls: '', n: 10 });
+  }
+  return s;
+}
 // 森の奥：霞む梢の帯を 2 重に
 function forestFar(fw, horizon = 64) {
   let far = '';
@@ -879,6 +994,10 @@ function sceneEntrance(W) {
   mid += flowers(cx + pw * .6, mw, hz + 4, 104, 30, ['#fffaf2', '#f6d7e0', '#f2c14e', '#c7b3e6'], { scale: (y) => .35 + (y - hz) / deep * 1.6 });
   for (let x = -6; x < mw + 6; x += R(8, 13)) mid += bushMass(x, R(-7, -2), R(8, 12), [P.deep, P.dark, P.mid, P.leaf], 22);
   mid += beams(cx - 70, cx + 20, 7, '#fffbe0', { opacity: .12, slant: [16, 30] });
+  // 小道のわき：切り株ときのこ、倒木（手前ほど大きく。案内人の道の上には置かない）
+  mid += stump(cx - pw * 1.75, 93.5, 2.2, '#7a5638') + mushroom(cx - pw * 1.75 + 4, 93.8, 1, '#b8604a') + mushroom(cx - pw * 1.75 + 5.4, 94.1, .7, '#d4b884');
+  mid += fallenLog(cx + pw * 2, 91.5, 14, 1.7, '#6b4a2e', { tilt: -6 });
+  for (let k = 0; k < 4; k++) { const t = R(.45, .8), [x, y] = edge(t, k % 2 ? 1 : -1); mid += mushroom(x + (k % 2 ? 1 : -1) * R(3, 6) * t, y + R(0, 1), (.5 + t) * R(.7, 1), pick(['#b8604a', '#c98a5a', '#d4b884'])); }
   const frame = forestFrame(W, P, [[cx - 34, 5, cx + 34, 97]], { big: 1.15 });
   return {
     sky: 'radial-gradient(110% 85% at 51% 60%, #fffbe8 0%, #f4f0d3 28%, #e3e9c4 62%, #cddaa9 100%)',
@@ -893,26 +1012,48 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   const P = PAL.forest, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   let far = forestFar(fw, 64), mid = '', move = '';
   far += groundPath(-10, fw + 10, 65, 1, '#cad79d', '#b3c581');
+  // 遠くの草地に立つ鹿（霞んだ影）と、朝の霧
+  far += deer(fw * .58, 66.5, 6.5, mixC('#6b5a3e', '#e3e9c4', .45));
+  far += deer(fw * .58 + 9, 65.5, 4.2, mixC('#6b5a3e', '#e3e9c4', .55));
+  far += mist(-10, fw + 10, 66, 4, '#eef2da', .32);
   // 梢の間から差し込む朝の光の筋（遠い森の上に、斜めに）
   far += godRays(-10, fw + 10, -5, 80, Math.round(fw / 9), '#fff6d2', -.3);
   // 中景：地面、小道、木、根元の茂み、草、花
   mid += groundPath(-5, mw + 5, 76.5, 1.2, '#a3bd6b', '#6a8c42');
   mid += trail(-5, mw + 5, 86.5, 6.5);
   mid += dapple(-5, mw, 80, 100, Math.round(mw / 3), '#fff4c0', .25);
+  // 光だまり：梢のすき間から落ちる大きめの光（小道と草地に）
+  mid += dapple(-5, mw, 82, 99, Math.round(mw / 14), '#fff6c8', .2, { rx: [5, 9], ry: [1.1, 2] });
   mid += grassEdge(-5, mw + 5, 77.4, [P.leaf, P.fresh, P.olive, '#8fb24e'], 2.4);
   // 奥の並木（霞んだ細い幹）：手前の木と遠い森のあいだに奥行きの層をもう 1 枚
   for (let x = R(0, 6); x < mw; x += R(6, 11)) {
     const z = R(.45, .65), hazeC = '#e3e9c4';
     mid += tree(x, R(76.5, 78), R(70, 90), { trunkC: mixC(pick([P.trunk, '#7a5638', '#86623f']), hazeC, z), tones: null, w: R(.7, 1.3), lean: R(-.6, .6), branches: 0 });
   }
+  // 奥の下草の列と、幹のあいだにたまる朝の霧
+  mid += understory(-5, mw + 5, 78.2, [P.dark, P.mid, P.leaf, P.fresh], '#e3e9c4');
+  mid += mist(-5, mw + 5, 75, 4, '#eef2da', .2);
   const treeXs = [];
   for (let x = R(0, 8); x < mw; x += R(16, 27)) if (clearOfWorks(W, stops, x, 4)) treeXs.push(x);
   for (let s = 1; s < stops; s++) { const [a, , b] = artZone(W, at(W, FACTORS.mid)(s, W / 2), 0, 0); treeXs.push(a - 1, b + 1); }
   treeXs.sort((a, b) => a - b);
+  // ふくろうの木：2 つめの作品を過ぎたあたりで、作品から離れている幹をひとつ選ぶ
+  const owlX = treeXs.find((x) => x > W * 1.6 && clearOfWorks(W, stops, x, 9)) ?? treeXs.find((x) => x > W * 1.6 && clearOfWorks(W, stops, x, 3)) ?? treeXs.find((x) => x > W * 1.6);
   for (const x of treeXs) {
-    const base = R(79.5, 82);
-    mid += tree(x, base, R(92, 106), { trunkC: pick([P.trunk, '#7a5638', '#5c4027', '#86623f']), tones: [P.dark, P.mid, P.leaf, P.fresh], w: R(2.6, 4.4) });
+    const base = R(79.5, 82), h = R(92, 106), w = x === owlX ? R(3.9, 4.4) : R(2.6, 4.4), trunkC = pick([P.trunk, '#7a5638', '#5c4027', '#86623f']);
+    mid += tree(x, base, h, { trunkC, tones: [P.dark, P.mid, P.leaf, P.fresh], w });
+    // 太い幹のひとつに洞（うろ）とふくろう。ほかの幹には、ときどきつた
+    if (x === owlX) mid += hollow(x + w * .05, base - h * .4, w * .48);
+    else if (rnd() < .35) mid += ivy(x + R(-w * .3, w * .3), base - h * R(.35, .5), base - 1, w, [P.mid, P.leaf, P.fresh, P.lime]);
     if (rnd() < .6) mid += shrub(x + R(-4, 4), base + .6, R(7, 11), [P.dark, P.mid, P.leaf, P.fresh], { leaf: R(1.1, 1.4), n: 4 });
+  }
+  // 作品と作品のあいだ（小道の手前の縁、作品の下）：最初のすき間に倒木、あとは岩のわきに切り株とうさぎ
+  for (let s = 0; s < stops - 1; s++) {
+    const x = at(W, FACTORS.mid)(s + .5, W / 2);
+    if (s === 0) mid += fallenLog(x + R(-2, 2), 88.2, R(16, 20), R(1.9, 2.3), pick([P.trunk, '#7a5638', '#5c4027']));
+    else {
+      mid += stump(x + (s % 2 ? 1 : -1) * R(13, 16), 88.6, R(2.1, 2.6), pick([P.trunk, '#7a5638']));
+    }
   }
   // 小道ぎわのシダ：根もとに影と草を添えて、地面から生えて見えるように（葉だけが浮いて見えないように）
   for (let x = R(0, 10); x < mw; x += R(14, 24)) {
@@ -926,8 +1067,16 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   mid += litter(-5, mw, 79, 86, Math.round(mw * 1.1), ['#8a6a3a', '#a5813e', '#6f7d2e', '#b8923e', '#5c6a2a']);
   mid += litter(-5, mw, 92, 104, Math.round(mw * 1.3), ['#8a6a3a', '#a5813e', '#6f7d2e', '#b8923e', '#5c6a2a']);
   mid += pebbles(-5, mw, 87.4, 91.5, Math.round(mw * .6));
+  // 小道のわきのきのこ（木の根もとや草のかげに、ぽつぽつと）
+  for (let x = R(2, 12); x < mw; x += R(18, 34)) { const y = R(93.5, 97); mid += mushroom(x, y, R(.8, 1.3), pick(['#b8604a', '#c98a5a', '#d4b884'])); if (rnd() < .5) mid += mushroom(x + R(1.2, 2.2), y + R(-.3, .5), R(.5, .8), pick(['#b8604a', '#d4b884'])); }
   mid += flowers(-5, mw, 80, 85, Math.round(mw / 7), ['#fffaf2', '#f6d7e0', '#f2c14e', '#c7b3e6']);
   mid += flowers(-5, mw, 95, 101, Math.round(mw / 6), ['#fffaf2', '#f6d7e0', '#f2c14e', '#c7b3e6'], { scale: 1.3 });
+  // 花の上を舞う蝶（作品の下の草地に）
+  for (let s = 0; s < stops; s++) {
+    const x = at(W, FACTORS.mid)(s, W / 2);
+    mid += butterfly(x + R(-16, 16), R(84, 89), R(1.5, 1.9), pick(['#fbf7ea', '#f4ecd6', '#f6e6e8']));
+    if (rnd() < .6) mid += butterfly(x + R(-18, 18), R(94, 99), R(1.1, 1.4), pick(['#fbf7ea', '#f4ecd6']));
+  }
   for (let x = -5; x < mw; x += R(9, 14)) mid += bushMass(x, R(-5, -1), R(9, 13), [P.deep, P.dark, P.mid, P.leaf], 22);
   for (let x = R(0, 10); x < mw; x += R(22, 36)) mid += sprig(x, -3, R(12, 20), 180 + R(-20, 20), [P.leaf, P.fresh, P.lime, P.pale], { leaf: 2.8, cls: 'hang', stem: '#3d5a2a' });
   mid += beams(-10, mw, Math.round(mw / 18), '#fffbe0', { opacity: .08 });
@@ -958,6 +1107,10 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   for (let x = R(0, 10); x < fw; x += R(9, 16)) { const w = R(1.5, 3.5), l = R(-2, 2); far += `<path d="M${n1(x)} -2L${n1(x + w)} -2Q${n1(x + w + l)} 50 ${n1(x + w * .8 + l * 2)} 102L${n1(x + w * .2 + l * 2)} 102Q${n1(x + l)} 50 ${n1(x)} -2Z" fill="url(#${rg})"/>`; }
   // 水面に映る空の雲（見下ろした池に、白い雲がやわらかく映り込む）
   far += cloudReflections(-10, fw + 10, 8, 95, Math.round(fw / 14));
+  // 対岸の茂み（上のほう）と、その映り込み
+  far += farBank(-10, fw + 10, 22, ['#1f3a22', '#2b5230', '#3d6b3a', '#5a8a3c']);
+  // 水中を泳ぐ鯉（水面の下なので薄く）
+  for (let i = 0; i < fw / 16; i++) far += `<g opacity=".62">${koi(R(0, fw), R(40, 96), R(6, 9), R(0, 360), pick([['#f2eee2', '#e07a48'], ['#e07a48', '#f2eee2'], ['#f2eee2', '#3a3a3a'], ['#e8934a', '#f2eee2']]))}</g>`;
   far += caustics(-5, fw, 5, 100, Math.round(fw * 1.2), 'rgba(210,222,170,.35)');
   for (let i = 0; i < fw / 12; i++) far += `<path d="M${n1(R(0, fw))} ${n1(R(10, 90))}q${n1(R(-8, 8))} ${n1(R(4, 10))} ${n1(R(-10, 10))} ${n1(R(10, 20))}" stroke="#5f6a40" stroke-width="${n1(R(.4, 1))}" fill="none" opacity=".45" stroke-linecap="round"/>`;
   for (let i = 0; i < fw / 7; i++) { const x = R(0, fw), y = R(15, 95); far += lily(x, y, R(1.5, 3), pick(['#9fb86a', '#8aa35a', '#b3c97a'])); }
@@ -985,6 +1138,21 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     mid += reeds(cx - W * .34, 100, 7, '#6f8a3a') + reeds(cx + W * .36, 100, 6, '#7c9a40');
   }
   for (let i = 0; i < mw / 3; i++) mid += `<path d="M${n1(R(0, mw))} ${n1(R(30, 100))}h${n1(R(2, 6))}" stroke="#e8efd0" stroke-width=".25" opacity=".35" stroke-linecap="round"/>`;
+  // 生きもの：蓮の葉のカエル、水面のトンボとアメンボ、丸太のカメ、浅瀬のサギ、つるの先のカワセミ（作品の枠にはかからないところに）
+  for (let s = 0; s < stops; s++) {
+    // 立入禁止の枠：作品そのもの（上のほう）と、その下の台（細い）。台の横の水面は使える
+    const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 15, 66), [cx - 9, 60, cx + 9, 94], artZone(W, nx, 15, 66), [nx - 9, 60, nx + 9, 94]];
+    const gx = cx + W * FACTORS.mid * .5;
+    mid += guard(Z, () => { const r = R(3.5, 4.5), x = gx + R(-12, 12), y = R(66, 78); return lily(x, y, r, Q.pad) + waterLily(x + r * .2, y - .3, r * .5); }, { min: 1 });
+    mid += guard(Z, () => dragonfly(gx + R(-14, 14), R(40, 62), R(1.4, 1.9)), { min: 1 });
+    mid += guard(Z, () => striders(gx - 12, gx + 12, 66, 86, 3), { min: 1 });
+    if (s % 3 === 1) mid += guard(Z, () => turtleLog(gx + R(-6, 6), R(72, 80), R(11, 14)), { min: 1 });
+    if (s % 3 === 2) mid += guard(Z, () => heron(gx + R(-8, 8), R(84, 87), R(17, 20), rnd() < .5), { min: 1 });
+    if (s % 3 === 0 && s > 0) mid += guard(Z, () => { const x = gx + R(-8, 8), len = R(24, 34); return vine(x, 6, len, '#4c5a2a', [P.fresh, P.lime, P.leaf], { cls: '' }) + kingfisher(x + .3, 6 + len + 1.2, 1.9, rnd() < .5); }, { min: 1 });
+  }
+  // 手前の水ぎわ：苔むした石と、蓮のつぼみ
+  for (let x = R(0, 8); x < mw; x += R(12, 22)) if (clearOfWorks(W, stops, x, 6)) { const y = R(80, 86), w = R(3, 5); mid += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .45)}" fill="#6f6a58"/><ellipse cx="${n1(x - w * .2)}" cy="${n1(y - w * .18)}" rx="${n1(w * .7)}" ry="${n1(w * .25)}" fill="#8a8672"/><ellipse cx="${n1(x - w * .3)}" cy="${n1(y - w * .3)}" rx="${n1(w * .4)}" ry="${n1(w * .16)}" fill="#7a9a3c" opacity=".85"/>` + ripple(x, y + w * .3, w * .8, '#e9f0d0', .22); }
+  for (let i = 0; i < mw / 14; i++) { const x = R(0, mw), y = R(40, 96); mid += `<path d="M${n1(x)} ${n1(y)}L${n1(x + .3)} ${n1(y - 3.5)}" stroke="#4f7a38" stroke-width=".3"/><ellipse cx="${n1(x + .3)}" cy="${n1(y - 4.2)}" rx=".7" ry="1.3" fill="#f4c3d0"/><ellipse cx="${n1(x + .1)}" cy="${n1(y - 4.2)}" rx=".35" ry="1.1" fill="#fbe0e6"/>`; }
   // 水ぎわの桟橋：部屋の端から端まで続く板の道。作品はこの上の台に立つ
   mid += `<path d="M-5 87.6H${n1(mw + 5)}V91.6H-5Z" fill="#a47a4e"/><path d="M-5 87.6H${n1(mw + 5)}V88.2H-5Z" fill="#c9a276"/><path d="M-5 91.6H${n1(mw + 5)}V93H-5Z" fill="#5a3b2a"/>`;
   for (let x = -5; x < mw + 5; x += R(2.6, 3.4)) mid += `<path d="M${n1(x)} 88.2L${n1(x - .4)} 91.6" stroke="#7d5a38" stroke-width=".3" opacity=".7"/>`;
@@ -1015,6 +1183,181 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'jungle', glowDefault: [214, 232, 150],
     curtain: ['#1a3322', '#244d33', '#47733c', '#769721', '#a5c23e'],
   };
+}
+
+// ---------- 水辺の描き込み：対岸の茂み、水中の鯉、カエル、トンボ、カワセミ、サギ、カメ、アメンボ ----------
+// 対岸：暗い茂みの帯に丸い茂みとモンステラ。下に水面への映り込み（上下を反転して薄く）
+function farBank(x0, x1, y, tones) {
+  const id = `bk${gid++}`;
+  let x = x0, d = `M${n1(x0)} ${n1(y + 2)}L${n1(x0)} ${n1(y - 3)}`;
+  while (x < x1) { const w = R(4, 9), h = R(3, 7); d += `Q${n1(x + w / 2)} ${n1(y - h - w * .3)} ${n1(x + w)} ${n1(y - h * R(.2, .6))}`; x += w; }
+  let b = `<path d="${d}L${n1(x)} ${n1(y + 2)}Z" fill="${tones[0]}"/>`;
+  for (let bx = x0 + R(2, 6); bx < x1; bx += R(6, 12)) { const r = R(2.5, 4.5); b += bushMass(bx, y - r * .7, r, tones, 14); }
+  for (let bx = x0 + R(4, 10); bx < x1; bx += R(12, 22)) b += monstera(bx, y - R(1, 3), R(4, 6.5), R(-60, -20), pick([tones[1], tones[2]]), { cls: '' }) + monstera(bx + R(1, 3), y - R(.5, 2), R(3.5, 5.5), R(20, 60), pick([tones[2], tones[3]]), { cls: '' });
+  for (let bx = x0; bx < x1; bx += R(1.5, 3)) b += tuft(bx, y + .8, R(1.5, 3), [tones[1], tones[2], tones[3]], 5);
+  // 水ぎわの土と、映り込み
+  return `<g id="${id}">${b}</g><path d="M${n1(x0)} ${n1(y + .5)}H${n1(x1)}V${n1(y + 2.2)}H${n1(x0)}Z" fill="#3f4a2c" opacity=".6"/><g transform="translate(0 ${n1((y + 2.2) * 2)}) scale(1 -.75)" opacity=".28"><use href="#${id}"/></g>`;
+}
+// 水中を泳ぐ鯉（上から見た形。a = 向き（0° が上）、模様つき）
+function koi(x, y, len, a, colors) {
+  const id = `ko${gid++}`, w = len * .28, [c1, c2] = colors;
+  let s = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})"><defs><clipPath id="${id}"><path d="M0 ${n1(-len * .5)}C${n1(w)} ${n1(-len * .3)} ${n1(w)} ${n1(len * .2)} 0 ${n1(len * .45)}C${n1(-w)} ${n1(len * .2)} ${n1(-w)} ${n1(-len * .3)} 0 ${n1(-len * .5)}Z"/></clipPath></defs>`;
+  s += `<path d="M0 ${n1(len * .4)}Q${n1(-w * .9)} ${n1(len * .6)} ${n1(-w * .6)} ${n1(len * .82)}Q0 ${n1(len * .62)} ${n1(w * .6)} ${n1(len * .82)}Q${n1(w * .9)} ${n1(len * .6)} 0 ${n1(len * .4)}Z" fill="${c1}" opacity=".9"/>`;
+  for (const d of [-1, 1]) s += `<path d="M${n1(d * w * .7)} ${n1(-len * .05)}Q${n1(d * w * 1.6)} ${n1(len * .05)} ${n1(d * w * 1.3)} ${n1(len * .25)}Q${n1(d * w * .8)} ${n1(len * .15)} ${n1(d * w * .7)} ${n1(-len * .05)}Z" fill="${c1}" opacity=".85"/>`;
+  s += `<path d="M0 ${n1(-len * .5)}C${n1(w)} ${n1(-len * .3)} ${n1(w)} ${n1(len * .2)} 0 ${n1(len * .45)}C${n1(-w)} ${n1(len * .2)} ${n1(-w)} ${n1(-len * .3)} 0 ${n1(-len * .5)}Z" fill="${c1}"/>`;
+  s += `<g clip-path="url(#${id})">`;
+  for (let k = 0; k < 2; k++) s += `<ellipse cx="${n1(R(-w * .6, w * .6))}" cy="${n1(R(-len * .35, len * .3))}" rx="${n1(w * R(.4, .8))}" ry="${n1(len * R(.1, .2))}" fill="${c2}"/>`;
+  s += `</g><path d="M0 ${n1(-len * .5)}C${n1(-w)} ${n1(-len * .3)} ${n1(-w)} ${n1(len * .2)} 0 ${n1(len * .45)}Z" fill="#fff" opacity=".12"/></g>`;
+  return s;
+}
+// 蓮の葉にすわるカエル（横向き）
+function frog(x, y, s, c = '#5f9a3a', flip = false) {
+  track(x - s * 1.4, y - s * 1.3); track(x + s * 1.4, y);
+  const cd = dark(c, .18), cl = light(c, .25);
+  let f = `<g transform="translate(${n1(x)} ${n1(y)}) scale(${flip ? -1 : 1} 1)">`;
+  f += `<ellipse cx="${n1(s * .1)}" cy="${n1(-s * .45)}" rx="${n1(s * .95)}" ry="${n1(s * .5)}" fill="${c}"/>`;
+  f += `<ellipse cx="${n1(s * .75)}" cy="${n1(-s * .35)}" rx="${n1(s * .48)}" ry="${n1(s * .36)}" fill="${cd}"/>`; // 後ろ足
+  f += `<path d="M${n1(s * .9)} ${n1(-s * .1)}L${n1(s * 1.35)} 0M${n1(s * .9)} ${n1(-s * .1)}L${n1(s * 1.2)} ${n1(s * .06)}" stroke="${cd}" stroke-width="${n1(s * .1)}" stroke-linecap="round"/>`;
+  f += `<ellipse cx="${n1(-s * .55)}" cy="${n1(-s * .75)}" rx="${n1(s * .55)}" ry="${n1(s * .38)}" fill="${c}"/>`; // 頭
+  f += `<ellipse cx="${n1(-s * .1)}" cy="${n1(-s * .25)}" rx="${n1(s * .7)}" ry="${n1(s * .2)}" fill="${cl}" opacity=".7"/>`; // おなか
+  f += `<circle cx="${n1(-s * .55)}" cy="${n1(-s * 1.05)}" r="${n1(s * .2)}" fill="${c}"/><circle cx="${n1(-s * .55)}" cy="${n1(-s * 1.05)}" r="${n1(s * .13)}" fill="#f2e7a0"/><circle cx="${n1(-s * .58)}" cy="${n1(-s * 1.06)}" r="${n1(s * .07)}" fill="#1a1a14"/>`;
+  f += `<path d="M${n1(-s * .3)} ${n1(-s * .2)}L${n1(-s * .5)} 0M${n1(-s * .3)} ${n1(-s * .2)}L${n1(-s * .2)} 0" stroke="${cd}" stroke-width="${n1(s * .09)}" stroke-linecap="round"/>`; // 前足
+  return f + '</g>';
+}
+// トンボ（上から見た形。羽は薄く）
+function dragonfly(x, y, s, a = R(-40, 40)) {
+  track(x, y, s * 1.6);
+  const wing = (dx, dy, rot, l) => `<ellipse cx="${n1(dx)}" cy="${n1(dy)}" rx="${n1(l)}" ry="${n1(s * .18)}" transform="rotate(${rot} ${n1(dx)} ${n1(dy)})" fill="#eef5f6" opacity=".6"/>`;
+  let d = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})">`;
+  d += wing(-s * .7, -s * .15, -22, s * .75) + wing(s * .7, -s * .15, 22, s * .75) + wing(-s * .65, s * .2, -8, s * .65) + wing(s * .65, s * .2, 8, s * .65);
+  d += `<path d="M0 ${n1(-s * .35)}L0 ${n1(s * 1.5)}" stroke="#5a8f9a" stroke-width="${n1(s * .13)}" stroke-linecap="round"/><ellipse cx="0" cy="${n1(-s * .2)}" rx="${n1(s * .16)}" ry="${n1(s * .3)}" fill="#4a7a86"/><circle cx="0" cy="${n1(-s * .55)}" r="${n1(s * .17)}" fill="#3f6b78"/>`;
+  return d + '</g>';
+}
+// つるの先にとまるカワセミ（横向き。flip で右向き）
+function kingfisher(x, y, s, flip = false) {
+  track(x - s * 1.6, y - s * 1.3); track(x + s * 1.6, y + s * .4);
+  let k = `<g transform="translate(${n1(x)} ${n1(y)}) scale(${flip ? -1 : 1} 1)">`;
+  k += `<path d="M${n1(s * .5)} ${n1(-s * .25)}L${n1(s * 1.45)} ${n1(-s * .05)}L${n1(s * 1.4)} ${n1(s * .3)}L${n1(s * .55)} ${n1(s * .2)}Z" fill="#3f7a95"/>`; // 尾
+  k += `<ellipse cx="0" cy="0" rx="${n1(s * .8)}" ry="${n1(s * .55)}" fill="#d9944e"/>`; // 胸（橙）
+  k += `<path d="M${n1(-s * .5)} ${n1(-s * .3)}Q0 ${n1(-s * .75)} ${n1(s * .8)} ${n1(-s * .1)}Q${n1(s * .3)} ${n1(s * .1)} ${n1(-s * .3)} ${n1(-s * .05)}Z" fill="#4f97b8"/>`; // 背と羽
+  k += `<circle cx="${n1(-s * .55)}" cy="${n1(-s * .5)}" r="${n1(s * .42)}" fill="#4f97b8"/><ellipse cx="${n1(-s * .5)}" cy="${n1(-s * .32)}" rx="${n1(s * .28)}" ry="${n1(s * .16)}" fill="#f4f1e6"/>`; // 頭
+  k += `<path d="M${n1(-s * .85)} ${n1(-s * .5)}L${n1(-s * 1.7)} ${n1(-s * .35)}L${n1(-s * .85)} ${n1(-s * .32)}Z" fill="#3a3a40"/>`; // くちばし
+  k += `<circle cx="${n1(-s * .66)}" cy="${n1(-s * .58)}" r="${n1(s * .07)}" fill="#111"/>`;
+  k += `<path d="M${n1(-s * .1)} ${n1(s * .5)}L${n1(-s * .15)} ${n1(s * .85)}M${n1(s * .15)} ${n1(s * .5)}L${n1(s * .12)} ${n1(s * .85)}" stroke="#b8764a" stroke-width="${n1(s * .08)}"/>`;
+  return k + '</g>';
+}
+// 浅瀬に立つサギ（横向き、左を向く。h = 全体の高さ）
+function heron(x, y, h, flip = false) {
+  track(x - h * .5, y - h); track(x + h * .5, y);
+  const c = '#c9d0d8', cd = '#8f9aa8', cl = '#eef1f4';
+  let s = `<g transform="translate(${n1(x)} ${n1(y)}) scale(${flip ? -1 : 1} 1)">`;
+  s += `<path d="M${n1(-h * .04)} ${n1(-h * .42)}L${n1(-h * .02)} 0M${n1(h * .08)} ${n1(-h * .42)}L${n1(h * .12)} ${n1(-h * .2)}" stroke="#6b6a4a" stroke-width="${n1(h * .025)}" stroke-linecap="round"/>`; // 脚（1 本は曲げて）
+  s += `<ellipse cx="${n1(h * .05)}" cy="${n1(-h * .5)}" rx="${n1(h * .27)}" ry="${n1(h * .15)}" fill="${c}"/>`; // 胴
+  s += `<path d="M${n1(-h * .1)} ${n1(-h * .58)}Q${n1(h * .2)} ${n1(-h * .7)} ${n1(h * .34)} ${n1(-h * .45)}Q${n1(h * .15)} ${n1(-h * .42)} ${n1(-h * .1)} ${n1(-h * .58)}Z" fill="${cd}"/>`; // 翼
+  s += `<path d="M${n1(-h * .18)} ${n1(-h * .55)}C${n1(-h * .4)} ${n1(-h * .6)} ${n1(-h * .1)} ${n1(-h * .8)} ${n1(-h * .2)} ${n1(-h * .93)}L${n1(-h * .1)} ${n1(-h * .95)}C${n1(-h * .02)} ${n1(-h * .78)} ${n1(-h * .28)} ${n1(-h * .68)} ${n1(-h * .1)} ${n1(-h * .58)}Z" fill="${cl}"/>`; // S 字の首
+  s += `<ellipse cx="${n1(-h * .16)}" cy="${n1(-h * .95)}" rx="${n1(h * .09)}" ry="${n1(h * .06)}" fill="${cl}"/>`; // 頭
+  s += `<path d="M${n1(-h * .22)} ${n1(-h * .95)}L${n1(-h * .48)} ${n1(-h * .92)}L${n1(-h * .22)} ${n1(-h * .91)}Z" fill="#c9a45a"/>`; // くちばし
+  s += `<circle cx="${n1(-h * .17)}" cy="${n1(-h * .965)}" r="${n1(h * .012)}" fill="#3a3a40"/>`;
+  return s + '</g>';
+}
+// 水面から出た丸太で日なたぼっこするカメ
+function turtleLog(x, y, len, tones) {
+  track(x - len / 2, y - 4); track(x + len / 2, y + 1.5);
+  const c = '#5c4027';
+  let s = `<path d="M${n1(x - len / 2)} ${n1(y - 1.4)}Q${n1(x)} ${n1(y - 2.2)} ${n1(x + len / 2)} ${n1(y - 1.2)}L${n1(x + len / 2)} ${n1(y + .6)}Q${n1(x)} ${n1(y + 1.2)} ${n1(x - len / 2)} ${n1(y + .6)}Z" fill="${c}"/><path d="M${n1(x - len / 2)} ${n1(y + .2)}Q${n1(x)} ${n1(y + .5)} ${n1(x + len / 2)} ${n1(y)}L${n1(x + len / 2)} ${n1(y + .6)}Q${n1(x)} ${n1(y + 1.2)} ${n1(x - len / 2)} ${n1(y + .6)}Z" fill="${dark(c, .25)}"/>`;
+  s += `<ellipse cx="${n1(x + len / 2)}" cy="${n1(y - .3)}" rx=".5" ry="1.1" fill="#c9a97e"/>`;
+  s += ripple(x, y + 1.4, len * .5, '#e9f0d0', .25);
+  for (let k = 0; k < 2; k++) {
+    const tx = x - len * .25 + k * len * .35, ts = R(1.4, 1.9), sh = pick(['#4f6a2a', '#5f7d2e']);
+    s += `<path d="M${n1(tx - ts * .9)} ${n1(y - 1.5)}L${n1(tx - ts * 1.3)} ${n1(y - 1.7)}M${n1(tx + ts * .9)} ${n1(y - 1.5)}L${n1(tx + ts * 1.3)} ${n1(y - 1.7)}" stroke="#7a8a4a" stroke-width="${n1(ts * .18)}" stroke-linecap="round"/>`;
+    s += `<path d="M${n1(tx - ts)} ${n1(y - 1.5)}Q${n1(tx)} ${n1(y - 1.5 - ts * 1.1)} ${n1(tx + ts)} ${n1(y - 1.5)}Z" fill="${sh}"/><path d="M${n1(tx - ts * .55)} ${n1(y - 1.5)}Q${n1(tx)} ${n1(y - 1.5 - ts * .95)} ${n1(tx + ts * .55)} ${n1(y - 1.5)}" stroke="${light(sh, .2)}" stroke-width="${n1(ts * .12)}" fill="none"/>`;
+    s += `<ellipse cx="${n1(tx + ts * 1.2)}" cy="${n1(y - 1.7)}" rx="${n1(ts * .32)}" ry="${n1(ts * .24)}" fill="#7a8a4a"/><circle cx="${n1(tx + ts * 1.3)}" cy="${n1(y - 1.8)}" r="${n1(ts * .06)}" fill="#111"/>`;
+  }
+  return s;
+}
+// アメンボ：水面の小さな点と、足もとの丸いくぼみ
+function striders(x0, x1, y0, y1, n) {
+  let s = '';
+  for (let i = 0; i < n; i++) {
+    const x = R(x0, x1), y = R(y0, y1);
+    s += `<path d="M${n1(x)} ${n1(y)}l-1.4 -.5M${n1(x)} ${n1(y)}l1.4 -.5M${n1(x)} ${n1(y)}l-1.2 .6M${n1(x)} ${n1(y)}l1.2 .6" stroke="#4f6a3a" stroke-width=".14" opacity=".6"/><ellipse cx="${n1(x)}" cy="${n1(y)}" rx=".35" ry=".16" fill="#3a5a2a" opacity=".8"/>`;
+    for (const [dx, dy] of [[-1.4, -.5], [1.4, -.5], [-1.2, .6], [1.2, .6]]) s += `<ellipse cx="${n1(x + dx)}" cy="${n1(y + dy)}" rx=".5" ry=".2" fill="none" stroke="#e9f0d0" stroke-width=".12" opacity=".5"/>`;
+  }
+  return s;
+}
+
+// ---------- 夕暮れの浜の描き込み：砂丘の柵、小舟、焚き火、カニ、カモメ、潮だまり、遠くの桟橋と帆船 ----------
+// 砂丘の柵：細い杭に横木 2 本（ところどころ傾く）
+function duneFence(x0, x1, y, h, c = '#a8916e') {
+  track(x0, y - h); track(x1, y + .5);
+  let s = '';
+  const xs = []; for (let x = x0; x <= x1; x += R(2.2, 3.2)) xs.push([x, h * R(.8, 1.05), R(-5, 5)]);
+  for (const [x, hh, a] of xs) s += `<path d="M${n1(x - .25)} ${n1(y + .3)}L${n1(x - .2)} ${n1(y - hh)}L${n1(x + .2)} ${n1(y - hh)}L${n1(x + .25)} ${n1(y + .3)}Z" fill="${c}" transform="rotate(${a} ${n1(x)} ${n1(y)})"/><path d="M${n1(x - .2)} ${n1(y - hh)}L${n1(x + .2)} ${n1(y - hh)}" stroke="${dark(c, .2)}" stroke-width=".2" transform="rotate(${a} ${n1(x)} ${n1(y)})"/>`;
+  for (const t of [.35, .7]) s += `<path d="M${n1(x0 - .5)} ${n1(y - h * t)}L${n1(x1 + .5)} ${n1(y - h * t + R(-.3, .3))}" stroke="${dark(c, .12)}" stroke-width=".28" stroke-linecap="round"/>`;
+  s += `<path d="M${n1(x0)} ${n1(y + .5)}Q${n1((x0 + x1) / 2)} ${n1(y + 1.4)} ${n1(x1)} ${n1(y + .5)}" stroke="#8b7a5c" stroke-width=".4" fill="none" opacity=".25"/>`;
+  return s;
+}
+// 砂に引き上げた小舟（横向き）。中にオールと丸めたロープ
+function rowboat(x, y, len, c = '#d9a06a') {
+  track(x - len * .55, y - len * .3); track(x + len * .55, y + 1.5);
+  const h = len * .22, cd = dark(c, .22), cl = light(c, .15);
+  let s = `<ellipse cx="${n1(x + len * .06)}" cy="${n1(y + .5)}" rx="${n1(len * .5)}" ry="${n1(h * .2)}" fill="#8a6a4a" opacity=".35"/>`;
+  s += `<path d="M${n1(x - len * .5)} ${n1(y - h)}Q${n1(x - len * .42)} ${n1(y + .2)} ${n1(x - len * .3)} ${n1(y + .4)}L${n1(x + len * .3)} ${n1(y + .4)}Q${n1(x + len * .48)} ${n1(y + .2)} ${n1(x + len * .52)} ${n1(y - h * 1.15)}L${n1(x + len * .5)} ${n1(y - h * 1.15)}Q${n1(x)} ${n1(y - h * .55)} ${n1(x - len * .5)} ${n1(y - h)}Z" fill="${c}"/>`;
+  s += `<path d="M${n1(x - len * .5)} ${n1(y - h)}Q${n1(x)} ${n1(y - h * .55)} ${n1(x + len * .5)} ${n1(y - h * 1.15)}Q${n1(x)} ${n1(y - h * .85)} ${n1(x - len * .5)} ${n1(y - h)}Z" fill="#7a5a3a"/>`;
+  s += `<path d="M${n1(x - len * .46)} ${n1(y - h * .55)}Q${n1(x)} ${n1(y - h * .1)} ${n1(x + len * .5)} ${n1(y - h * .7)}" stroke="${cd}" stroke-width=".25" fill="none"/><path d="M${n1(x - len * .42)} ${n1(y - h * .2)}Q${n1(x)} ${n1(y + h * .15)} ${n1(x + len * .45)} ${n1(y - h * .3)}" stroke="${cd}" stroke-width=".25" fill="none"/>`;
+  s += `<path d="M${n1(x - len * .5)} ${n1(y - h)}Q${n1(x)} ${n1(y - h * .72)} ${n1(x + len * .5)} ${n1(y - h * 1.15)}" stroke="${cl}" stroke-width=".3" fill="none"/>`;
+  s += `<path d="M${n1(x - len * .1)} ${n1(y - h * .6)}L${n1(x + len * .36)} ${n1(y - h * 1.6)}" stroke="#b58a5a" stroke-width=".35" stroke-linecap="round"/><path d="M${n1(x + len * .3)} ${n1(y - h * 1.5)}l${n1(len * .1)} ${n1(-h * .25)}l${n1(len * .06)} ${n1(h * .2)}Z" fill="#c9a276"/>`;
+  s += `<circle cx="${n1(x + len * .12)}" cy="${n1(y - h * .72)}" r="${n1(h * .22)}" fill="none" stroke="#e6d3a6" stroke-width=".28"/><circle cx="${n1(x + len * .12)}" cy="${n1(y - h * .72)}" r="${n1(h * .1)}" fill="none" stroke="#e6d3a6" stroke-width=".22"/>`;
+  return s;
+}
+// 焚き火：石で囲んだ薪と火、まわりの砂に落ちる暖かい光
+function campfire(x, y, s) {
+  track(x - s * 1.6, y - s * 2.2); track(x + s * 1.6, y + s * .6);
+  let f = rglow(x, y - s * .4, s * 3.2, '#ffb060', .4);
+  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, rx = x + Math.cos(a) * s * 1.25, ry = y + Math.sin(a) * s * .45; f += `<ellipse cx="${n1(rx)}" cy="${n1(ry)}" rx="${n1(s * .32)}" ry="${n1(s * .2)}" fill="${pick(['#6f6a6a', '#7c746c', '#5f5f66'])}"/>`; }
+  f += `<path d="M${n1(x - s * .9)} ${n1(y - s * .05)}l${n1(s * 1.8)} ${n1(-s * .3)}" stroke="#5c4027" stroke-width="${n1(s * .22)}" stroke-linecap="round"/><path d="M${n1(x - s * .8)} ${n1(y - s * .35)}l${n1(s * 1.7)} ${n1(s * .25)}" stroke="#6b4a2e" stroke-width="${n1(s * .22)}" stroke-linecap="round"/>`;
+  f += `<path d="M${n1(x - s * .55)} ${n1(y - s * .2)}Q${n1(x - s * .5)} ${n1(y - s * 1.1)} ${n1(x)} ${n1(y - s * 1.9)}Q${n1(x + s * .55)} ${n1(y - s * 1)} ${n1(x + s * .55)} ${n1(y - s * .2)}Z" fill="#e8874a"/><path d="M${n1(x - s * .3)} ${n1(y - s * .2)}Q${n1(x - s * .28)} ${n1(y - s * .85)} ${n1(x + s * .05)} ${n1(y - s * 1.3)}Q${n1(x + s * .32)} ${n1(y - s * .8)} ${n1(x + s * .3)} ${n1(y - s * .2)}Z" fill="#f2c56a"/>`;
+  for (let k = 0; k < 5; k++) f += `<circle cx="${n1(x + R(-s * .5, s * .6))}" cy="${n1(y - s * R(1.8, 2.6))}" r="${n1(s * R(.05, .09))}" fill="#ffd36a" opacity=".85"/>`;
+  return f;
+}
+// カニ（上から見た形）
+function crab(x, y, s, c = '#e07a5a') {
+  track(x - s * 1.5, y - s * .9); track(x + s * 1.5, y + s * .6);
+  const cd = dark(c, .2);
+  let b = '';
+  for (const d of [-1, 1]) {
+    for (const [dx, dy] of [[1.1, -.3], [1.25, .05], [1.15, .4]]) b += `<path d="M${n1(x + d * s * .5)} ${n1(y + dy * s * .5)}Q${n1(x + d * s * dx)} ${n1(y + dy * s)} ${n1(x + d * s * (dx + .25))} ${n1(y + dy * s + s * .35)}" stroke="${cd}" stroke-width="${n1(s * .12)}" fill="none" stroke-linecap="round"/>`;
+    b += `<path d="M${n1(x + d * s * .5)} ${n1(y - s * .25)}Q${n1(x + d * s * 1.1)} ${n1(y - s * .8)} ${n1(x + d * s * 1.35)} ${n1(y - s * .55)}" stroke="${cd}" stroke-width="${n1(s * .14)}" fill="none" stroke-linecap="round"/><path d="M${n1(x + d * s * 1.35)} ${n1(y - s * .55)}l${n1(d * s * .2)} ${n1(-s * .3)}l${n1(-d * s * .35)} ${n1(s * .05)}Z" fill="${cd}"/>`;
+  }
+  b += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(s * .65)}" ry="${n1(s * .45)}" fill="${c}"/><ellipse cx="${n1(x - s * .12)}" cy="${n1(y - s * .12)}" rx="${n1(s * .35)}" ry="${n1(s * .18)}" fill="${light(c, .2)}" opacity=".7"/>`;
+  for (const d of [-1, 1]) b += `<circle cx="${n1(x + d * s * .25)}" cy="${n1(y - s * .5)}" r="${n1(s * .1)}" fill="#1a1a14"/><path d="M${n1(x + d * s * .25)} ${n1(y - s * .45)}L${n1(x + d * s * .22)} ${n1(y - s * .25)}" stroke="${cd}" stroke-width="${n1(s * .06)}"/>`;
+  return b;
+}
+// 砂に立つカモメ（横向き）
+function gull(x, y, s, flip = false) {
+  track(x - s * 1.4, y - s * 1.4); track(x + s * 1.4, y);
+  let g2 = `<g transform="translate(${n1(x)} ${n1(y)}) scale(${flip ? -1 : 1} 1)">`;
+  g2 += `<path d="M${n1(-s * .1)} ${n1(-s * .35)}L${n1(-s * .15)} 0M${n1(s * .15)} ${n1(-s * .35)}L${n1(s * .2)} 0" stroke="#c9a45a" stroke-width="${n1(s * .07)}"/>`;
+  g2 += `<ellipse cx="0" cy="${n1(-s * .55)}" rx="${n1(s * .62)}" ry="${n1(s * .32)}" fill="#f4f2ec"/>`;
+  g2 += `<path d="M${n1(-s * .3)} ${n1(-s * .75)}Q${n1(s * .3)} ${n1(-s * .95)} ${n1(s * .9)} ${n1(-s * .55)}Q${n1(s * .3)} ${n1(-s * .5)} ${n1(-s * .3)} ${n1(-s * .6)}Z" fill="#b9bcc2"/><path d="M${n1(s * .55)} ${n1(-s * .55)}L${n1(s * 1.05)} ${n1(-s * .5)}L${n1(s * .6)} ${n1(-s * .38)}Z" fill="#2a2a30"/>`;
+  g2 += `<path d="M${n1(-s * .45)} ${n1(-s * .65)}Q${n1(-s * .6)} ${n1(-s * 1.1)} ${n1(-s * .55)} ${n1(-s * 1.25)}" stroke="#f4f2ec" stroke-width="${n1(s * .3)}" fill="none" stroke-linecap="round"/><circle cx="${n1(-s * .58)}" cy="${n1(-s * 1.25)}" r="${n1(s * .22)}" fill="#f4f2ec"/>`;
+  g2 += `<path d="M${n1(-s * .78)} ${n1(-s * 1.25)}L${n1(-s * 1.25)} ${n1(-s * 1.15)}L${n1(-s * .78)} ${n1(-s * 1.12)}Z" fill="#c9a45a"/><circle cx="${n1(-s * .62)}" cy="${n1(-s * 1.3)}" r="${n1(s * .045)}" fill="#3a3a40"/>`;
+  return g2 + '</g>';
+}
+// 潮だまり：夕焼けを映す浅い水（砂の上に）
+function tidePool(x, y, w, sky = '#f3c69c') {
+  const id = `tp${gid++}`;
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky}"/><stop offset="1" stop-color="#9ac4c0"/></linearGradient></defs><ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .22)}" fill="#b8a27e" opacity=".5"/><ellipse cx="${n1(x)}" cy="${n1(y - .2)}" rx="${n1(w * .94)}" ry="${n1(w * .19)}" fill="url(#${id})" opacity=".9"/><path d="M${n1(x - w * .5)} ${n1(y - .3)}h${n1(w * .3)}M${n1(x + w * .05)} ${n1(y - .1)}h${n1(w * .35)}" stroke="#fff6e6" stroke-width=".14" opacity=".7"/>`;
+}
+// 遠くの桟橋（影絵。杭と、先に小さな灯り）と帆船
+function pierFar(x, y, len, c = '#6f6a7a') {
+  let s = `<path d="M${n1(x)} ${n1(y - 1.2)}H${n1(x + len)}V${n1(y - .7)}H${n1(x)}Z" fill="${c}"/>`;
+  for (let px = x + 1; px < x + len; px += 2.4) s += `<path d="M${n1(px)} ${n1(y - .7)}V${n1(y + .6)}" stroke="${c}" stroke-width=".3"/>`;
+  s += `<path d="M${n1(x + len - 1.5)} ${n1(y - 1.2)}V${n1(y - 3.6)}" stroke="${c}" stroke-width=".3"/><circle cx="${n1(x + len - 1.5)}" cy="${n1(y - 3.7)}" r=".35" fill="#ffd9a0"/>` + rglow(x + len - 1.5, y - 3.7, 1.6, '#ffd9a0', .5);
+  return s;
+}
+function sailboat(x, y, h, c = '#7a7488') {
+  return `<path d="M${n1(x - h * .5)} ${n1(y)}L${n1(x + h * .5)} ${n1(y)}L${n1(x + h * .4)} ${n1(y + h * .18)}L${n1(x - h * .4)} ${n1(y + h * .18)}Z" fill="${c}"/><path d="M${n1(x + h * .05)} ${n1(y - .1)}L${n1(x + h * .05)} ${n1(y - h)}L${n1(x + h * .45)} ${n1(y - .1)}Z" fill="#f3e6d6" opacity=".9"/><path d="M${n1(x - h * .05)} ${n1(y - .1)}L${n1(x - h * .05)} ${n1(y - h * .85)}L${n1(x - h * .38)} ${n1(y - .1)}Z" fill="#e6d2bd" opacity=".9"/>`;
 }
 
 // ---------- 海辺の部品（夕凪の浜・夜の海辺の街） ----------
@@ -1131,7 +1474,9 @@ export function sceneCove(W, stops) {
   const [sg, sd] = lgrad([[0, '#f4d9bd'], [.18, '#bfd9d3'], [1, '#86b3b3']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
   far += glitter(sx, hz + .5, 100, '#fff6d8', { spread: .35, n: 170, a: 1 });
-  for (let k = 0; k < 3; k++) { const x = R(fw * .1, fw * .9), hh = R(1.6, 2.6); far += `<path d="M${n1(x)} ${n1(hz - .2)}L${n1(x + hh * .15)} ${n1(hz - hh)}L${n1(x + hh * .7)} ${n1(hz - .4)}Z" fill="#8a97a8" opacity=".7"/><path d="M${n1(x - .6)} ${n1(hz)}h${n1(hh * 1.1)}" stroke="#8a97a8" stroke-width=".3" opacity=".7"/>`; }
+  // 水平線の帆船と、遠くの桟橋（先に灯りがともる）
+  for (let k = 0; k < 3; k++) far += sailboat(R(fw * .1, fw * .9), hz - .2, R(2, 3.2), pick(['#8a97a8', '#7a7488']));
+  far += pierFar(fw * .78, hz + 3.5, Math.min(26, fw * .18), '#6f6a7a');
   far += waveLines(-5, fw + 5, hz + 1, 100, '#ffffff', Math.round(fw * 1.4));
   // 中景：浅瀬の珊瑚、波打ちぎわ、濡れた砂と乾いた砂、岩と流木
   // 珊瑚は作品（Sunset Session）の色で、波打ちぎわに群れで。根もとは水に沈める
@@ -1158,8 +1503,10 @@ export function sceneCove(W, stops) {
   }
   for (let i = 0; i < mw * 1.5; i++) mid += `<circle cx="${n1(R(0, mw))}" cy="${n1(R(84, 104))}" r="${n1(R(.08, .22))}" fill="${pick(['#b9a27c', '#f6ead2', '#a8916b'])}" opacity=".7"/>`;
   for (let x = R(4, 30); x < mw; x += R(45, 90)) {
-    const y = R(85, 94), c = pick(['#6f6a6a', '#7c746c', '#5f5f66']);
-    mid += rock(x, y, R(7, 13), R(3.5, 6), c);
+    const y = R(85, 94), c = pick(['#6f6a6a', '#7c746c', '#5f5f66']), rw = R(7, 13);
+    // 夕日の長い影（太陽は左の奥なので、右手前へ長く）
+    mid += `<ellipse cx="${n1(x + rw * .9)}" cy="${n1(y + .6)}" rx="${n1(rw * 1.1)}" ry="${n1(rw * .12)}" fill="#7a5a5a" opacity=".22"/>`;
+    mid += rock(x, y, rw, R(3.5, 6), c);
     if (rnd() < .6) mid += rock(x + R(4, 8), y + R(.5, 1.5), R(3, 6), R(1.6, 3), mixC(c, '#8a8278', .3));
   }
   for (let x = R(10, 30); x < mw; x += R(40, 70)) mid += driftwood(x, R(92, 98), R(8, 14), R(-8, 8));
@@ -1168,6 +1515,17 @@ export function sceneCove(W, stops) {
   for (let x = R(0, 40); x < mw; x += R(70, 130)) mid += footprints(x, x + R(26, 44), R(82.6, 84), Math.round(R(12, 20)));
   for (let i = 0; i < mw * .8; i++) mid += `<circle cx="${n1(R(0, mw))}" cy="${n1(R(79.2, 81.2))}" r="${n1(R(.08, .24))}" fill="none" stroke="#fffaf2" stroke-width=".06" opacity=".7"/>`;
   for (let x = R(0, 10); x < mw; x += R(12, 22)) mid += tuft(x, 101 + R(-1, 2), R(3, 5), ['#a39866', '#8a8a5a', '#c2b27a', '#b7a36e'], 7);
+  // 砂浜の小物：潮だまり、カニ、立っているカモメ、砂丘の柵、引き上げた小舟、焚き火（作品の下の台のわきに）
+  for (let s = 0; s < stops; s++) {
+    // 浜の作品は幅の広い木箱の台に立つので、台の枠は広め
+    const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 2, 64), [cx - 15.5, 58, cx + 15.5, 92], artZone(W, nx, 2, 64), [nx - 15.5, 58, nx + 15.5, 92]];
+    const gx = cx + W * FACTORS.mid * .5;
+    mid += guard(Z, () => tidePool(gx + R(-10, 10), R(84, 86.5), R(5, 8)), { min: 1 });
+    mid += guard(Z, () => gull(gx + R(-12, 12), R(83.5, 86), R(1.8, 2.2), rnd() < .5), { min: 1 });
+    if (s % 3 === 0) mid += guard(Z, (k) => duneFence(gx - R(9, 12) * k, gx + R(9, 12) * k, R(98, 101), R(4, 5)), { min: .55 });
+    if (s % 3 === 1) mid += guard(Z, (k) => rowboat(gx + R(-3, 3), R(94, 97), R(16, 20) * k, pick(['#d9a06a', '#c98a7a', '#8fb0b8'])), { min: .6 });
+    if (s % 3 === 2) mid += guard(Z, () => campfire(gx + R(-4, 4), R(95, 98), R(1.8, 2.2)), { min: 1 });
+  }
   // 手前：浜辺の草と流木（作品と作品のあいだ）
   for (let s = 0; s < stops - 1; s++) {
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 2, 88);
@@ -1201,6 +1559,7 @@ export function sceneNight(W, stops) {
   far += `<path d="M-5 106L-5 ${hz - 4}${smoothD(Array.from({ length: 9 }, (_, i) => [-5 + (fw + 10) * i / 8, hz - 6 + R(-3, 2)]))}L${n1(fw + 5)} 106Z" fill="#282c55"/>`;
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
   for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); far += townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); }
+  const ferris = { x: at(W, FACTORS.far)(Math.max(1, Math.floor(stops / 2)), W * .82), y: hz - 8.5, r: 6.5 }; // 作品の右に見える位置 // 観覧車は museum.js が回るものとして置く
   { const lx = at(W, FACTORS.far)(stops - 1, W * .85); far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
   const [sg, sd] = lgrad([[0, '#2d3263'], [1, '#141733']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
@@ -1211,7 +1570,7 @@ export function sceneNight(W, stops) {
   far += haze(-10, fw + 10, hz - 14, hz + 2, '#3c3f73', 0, .35);
   // 中景：海沿いの遊歩道（手すり、街灯、ヤシ、電球の紐）と植え込み
   // 作品の後ろ（と台座のまわり）にはヤシも街灯も立てない。作品は遊歩道の上にすっきり立つ
-  const clear = (x, m = 0) => clearOfWorks(W, stops, x, m);
+  const clear = (x, m = 0) => clearOfWorks(W, stops, x, m), puddles = [];
   mid += railing(-5, mw + 5, 84, '#15141d');
   const [pg, pd] = lgrad([[0, '#2a2733'], [1, '#141219']]);
   mid += `<defs>${pd}</defs><rect x="-5" y="84" width="${n1(mw + 10)}" height="22" fill="url(#${pg})"/><rect x="-5" y="84" width="${n1(mw + 10)}" height=".5" fill="#3a3646"/>`;
@@ -1232,7 +1591,8 @@ export function sceneNight(W, stops) {
   for (let x = R(4, 12); x < mw; x += R(22, 30)) if (clear(x, 2)) {
     const h = R(10, 13);
     mid += `<ellipse cx="${n1(x)}" cy="${n1(96)}" rx="${n1(1.2)}" ry="${n1(7)}" fill="#ffc873" opacity=".12"/>` + streetLamp(x, 88, h);
-    mid += puddle(x + R(-2, 2), R(96, 100), R(6, 9), '#ffc873'); // 街灯の下の、濡れた石畳の水たまり
+    { const px = x + R(-2, 2), py = R(96, 100), pw = R(6, 9); mid += puddle(px, py, pw, '#ffc873'); puddles.push([px, py, pw]); } // 街灯の下の、濡れた石畳の水たまり
+    mid += moths(x, 88 - h, 5);
   }
   // 石畳の上：ところどころ濡れて光る石、落ちたヤシの葉、散った花びら
   for (let i = 0; i < mw * .5; i++) { const x = R(0, mw), y = R(88, 104); mid += `<rect x="${n1(x)}" y="${n1(y)}" width="${n1(R(1.5, 3.5))}" height="${n1(R(.6, 1.4))}" rx=".3" fill="${pick(['#3b3749', '#2f2c3b', '#46405a'])}" opacity=".55"/>`; }
@@ -1244,6 +1604,13 @@ export function sceneNight(W, stops) {
     const w = R(5, 7.5), y = 93 + R(-.6, .6);
     mid += `<path d="M${n1(x - w / 2)} ${n1(y - 1.8)}h${n1(w)}l.35 2.4h${n1(-w - .7)}Z" fill="#2c2937"/><path d="M${n1(x - w / 2 - .35)} ${n1(y + .6)}h${n1(w + .7)}v.5h${n1(-w - .7)}Z" fill="#1b1924"/><rect x="${n1(x - w / 2 - .3)}" y="${n1(y - 2.3)}" width="${n1(w + .6)}" height=".7" rx=".2" fill="#3b3748"/><rect x="${n1(x - w / 2 + .3)}" y="${n1(y - 1.7)}" width="${n1(w - .6)}" height=".5" fill="#17130f"/>`;
     mid += shrub(x, y - 1.6, R(4.5, 6), ['#0c1209', '#131b0e', '#1a2413', '#233019', '#2b3a1f'], { leaf: R(1.1, 1.4), n: 7, spread: 62 });
+  }
+  // 遊歩道の小物：ベンチと猫、手すりに立てかけた自転車（作品と台座のわき）
+  for (let s = 0; s < stops; s++) {
+    const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 15, 62), [cx - 13, 56, cx + 13, 94], artZone(W, nx, 15, 62), [nx - 13, 56, nx + 13, 94]];
+    const gx = cx + W * FACTORS.mid * .5;
+    if (s % 2 === 0) mid += guard(Z, (k) => { const bx = gx + R(-3, 3); return bench(bx, 97, 13 * k); }, { min: .7 });
+    else mid += guard(Z, (k) => bicycle(gx + R(-4, 4), 88.6, 2.6 * k, pick(['#b9b4c2', '#c99a78', '#8fa8b0'])), { min: .7 });
   }
   // 手前：暗いヤシの葉の影
   for (let s = 0; s < stops - 1; s++) {
@@ -1261,9 +1628,109 @@ export function sceneNight(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'radial-gradient(120% 38% at 50% 66%, rgba(150, 104, 158, .5), rgba(90, 70, 140, .18) 55%, transparent 80%), linear-gradient(#04051a 0%, #0a0d2e 28%, #151a45 50%, #252a5c 64%, #3a3a6c 74%, #2b3162 100%)', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110],
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110], puddles, ferris,
     curtain: ['#0b100a', '#141d0f', '#1f2b15', '#2f3a1a', '#3f4a22'],
   };
+}
+
+// ---------- 夜の庭の描き込み：対岸の観覧車、ベンチと猫、自転車、街灯の蛾 ----------
+function ferrisWheel(x, y, r, c = '#1d1f3c') {
+  let s = `<path d="M${n1(x - r * .55)} ${n1(y + r + 1)}L${n1(x)} ${n1(y)}L${n1(x + r * .55)} ${n1(y + r + 1)}" stroke="${c}" stroke-width=".5" fill="none"/>`;
+  s += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r)}" stroke="#3d3f6e" stroke-width=".35" fill="none"/><circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(r * .82)}" stroke="#3d3f6e" stroke-width=".2" fill="none"/>`;
+  for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, gx = x + Math.cos(a) * r, gy = y + Math.sin(a) * r; s += `<path d="M${n1(x)} ${n1(y)}L${n1(gx)} ${n1(gy)}" stroke="#3d3f6e" stroke-width=".18"/><circle cx="${n1(gx)}" cy="${n1(gy)}" r=".55" fill="${pick(['#ffb45a', '#e88ab8', '#ffe7a8', '#f0c890'])}"/>`; }
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; s += `<circle cx="${n1(x + Math.cos(a) * r * .82)}" cy="${n1(y + Math.sin(a) * r * .82)}" r=".2" fill="#ffe7a8" opacity=".8"/>`; }
+  s += `<circle cx="${n1(x)}" cy="${n1(y)}" r=".7" fill="#ffe7a8"/>` + rglow(x, y, r * 1.5, '#ff9ad0', .16);
+  return s;
+}
+// 遊歩道のベンチ（横向き）
+function bench(x, y, w, c = '#5a3b2a') {
+  track(x - w / 2 - 1, y - 6); track(x + w / 2 + 1, y + .5);
+  const cl = light(c, .18), h = 3.2;
+  let s = `<ellipse cx="${n1(x)}" cy="${n1(y + .3)}" rx="${n1(w * .55)}" ry=".6" fill="#000" opacity=".3"/>`;
+  for (const d of [-1, 1]) s += `<path d="M${n1(x + d * w * .42)} ${n1(y)}V${n1(y - h)}M${n1(x + d * w * .42)} ${n1(y - h)}Q${n1(x + d * w * .44)} ${n1(y - h - 2.4)} ${n1(x + d * w * .36)} ${n1(y - h - 2.8)}" stroke="#2a2733" stroke-width=".5" fill="none" stroke-linecap="round"/>`;
+  for (let k = 0; k < 3; k++) s += `<rect x="${n1(x - w / 2)}" y="${n1(y - h - k * .95)}" width="${n1(w)}" height=".7" rx=".2" fill="${k ? c : cl}"/>`;
+  for (let k = 0; k < 2; k++) s += `<rect x="${n1(x - w / 2 + .3)}" y="${n1(y - h - 2.9 + k * .95)}" width="${n1(w - .6)}" height=".6" rx=".2" fill="${c}"/>`;
+  return s;
+}
+// すわっている猫の影絵（左向き）。目だけ光る
+function cat(x, y, s, flip = false, c = '#0e0c12') {
+  track(x - s * 1.4, y - s * 2.6); track(x + s * 1.8, y);
+  let k = `<g transform="translate(${n1(x)} ${n1(y)}) scale(${flip ? -1 : 1} 1)">`;
+  k += `<path d="M${n1(-s * .9)} 0Q${n1(-s * 1.05)} ${n1(-s * 1.6)} ${n1(-s * .2)} ${n1(-s * 1.7)}Q${n1(s * .6)} ${n1(-s * 1.7)} ${n1(s * .75)} 0Z" fill="${c}"/>`;
+  k += `<path d="M${n1(s * .6)} ${n1(-s * .3)}Q${n1(s * 1.7)} ${n1(-s * .2)} ${n1(s * 1.6)} ${n1(-s * 1.4)}" stroke="${c}" stroke-width="${n1(s * .22)}" fill="none" stroke-linecap="round"/>`;
+  k += `<circle cx="${n1(-s * .55)}" cy="${n1(-s * 1.95)}" r="${n1(s * .5)}" fill="${c}"/><path d="M${n1(-s * .95)} ${n1(-s * 2.1)}l${n1(-s * .1)} ${n1(-s * .6)}l${n1(s * .45)} ${n1(s * .3)}ZM${n1(-s * .2)} ${n1(-s * 2.2)}l${n1(s * .18)} ${n1(-s * .55)}l${n1(-s * .5)} ${n1(s * .2)}Z" fill="${c}"/>`;
+  k += `<ellipse cx="${n1(-s * .72)}" cy="${n1(-s * 1.95)}" rx="${n1(s * .07)}" ry="${n1(s * .1)}" fill="#d9dc9a"/><ellipse cx="${n1(-s * .42)}" cy="${n1(-s * 1.95)}" rx="${n1(s * .07)}" ry="${n1(s * .1)}" fill="#d9dc9a"/>`;
+  return k + '</g>';
+}
+// 手すりに立てかけた自転車（横向き）
+function bicycle(x, y, s, c = '#c9c4d0') {
+  track(x - s * 2.2, y - s * 2.3); track(x + s * 2.2, y + .3);
+  const r = s * .9, wheel = (wx) => `<circle cx="${n1(wx)}" cy="${n1(y - r)}" r="${n1(r)}" stroke="#1b1924" stroke-width="${n1(s * .16)}" fill="none"/><circle cx="${n1(wx)}" cy="${n1(y - r)}" r="${n1(r * .8)}" stroke="${c}" stroke-width="${n1(s * .05)}" fill="none" opacity=".6"/>` + [0, 45, 90, 135].map((a) => `<path d="M${n1(wx - Math.cos(a * D) * r * .8)} ${n1(y - r - Math.sin(a * D) * r * .8)}L${n1(wx + Math.cos(a * D) * r * .8)} ${n1(y - r + Math.sin(a * D) * r * .8)}" stroke="${c}" stroke-width="${n1(s * .04)}" opacity=".6"/>`).join('');
+  let b = wheel(x - s * 1.2) + wheel(x + s * 1.2);
+  const fx = x - s * 1.2, bx = x + s * 1.2, cy = y - r;
+  b += `<path d="M${n1(bx)} ${n1(cy)}L${n1(x + s * .15)} ${n1(cy)}L${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(x + s * .6)} ${n1(cy - s * 1.35)}L${n1(bx)} ${n1(cy)}M${n1(x + s * .15)} ${n1(cy)}L${n1(x + s * .6)} ${n1(cy - s * 1.35)}M${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(fx)} ${n1(cy)}" stroke="${c}" stroke-width="${n1(s * .14)}" fill="none" stroke-linejoin="round"/>`;
+  b += `<path d="M${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(x - s * .75)} ${n1(cy - s * 1.75)}M${n1(x - s * 1.05)} ${n1(cy - s * 1.72)}h${n1(s * .6)}" stroke="${c}" stroke-width="${n1(s * .14)}" stroke-linecap="round"/>`;
+  b += `<path d="M${n1(x + s * .6)} ${n1(cy - s * 1.35)}L${n1(x + s * .7)} ${n1(cy - s * 1.75)}M${n1(x + s * .45)} ${n1(cy - s * 1.78)}h${n1(s * .5)}" stroke="${c}" stroke-width="${n1(s * .14)}" stroke-linecap="round"/>`;
+  b += `<circle cx="${n1(x + s * .15)}" cy="${n1(cy)}" r="${n1(s * .22)}" fill="#1b1924"/><path d="M${n1(x + s * .15)} ${n1(cy)}l${n1(s * .3)} ${n1(s * .35)}" stroke="${c}" stroke-width="${n1(s * .1)}"/>`;
+  b += `<rect x="${n1(x - s * 1.7)}" y="${n1(cy - s * 1.6)}" width="${n1(s * .9)}" height="${n1(s * .6)}" rx=".2" fill="#a88a6a"/>`; // 前かご
+  return b;
+}
+// 街灯のまわりを飛ぶ蛾（小さな薄い点）
+function moths(x, y, n) {
+  let s = '';
+  for (let i = 0; i < n; i++) { const mx = x + R(-3, 3), my = y + R(-2.5, 2.5); s += `<ellipse cx="${n1(mx)}" cy="${n1(my)}" rx=".45" ry=".22" fill="#fff1d0" opacity="${n1(R(.35, .7) * 100) / 100}" transform="rotate(${n1(R(-40, 40))} ${n1(mx)} ${n1(my)})"/>`; }
+  return s;
+}
+
+// ---------- スクロールに合わせて動く生きもの（museum.js が小さな SVG として置き、歩くと進む） ----------
+// 羽ばたく鳥（影絵）：胴を真ん中に、左右の翼を別々に描いて、付け根を軸に上下に振る（CSS の .wing）
+function birdSVG(c, delay) {
+  const wing = (d) => `<path class="wing" style="animation-delay:${n1(-delay)}s" d="M${n1(d * .3)} 0Q${n1(d * 2.8)} -2.6 ${n1(d * 5.6)} -.8Q${n1(d * 2.8)} -1 ${n1(d * .3)} .6Z" fill="${c}"/>`;
+  return `<svg viewBox="-6 -3.2 12 6.4" xmlns="http://www.w3.org/2000/svg">${wing(-1)}${wing(1)}<ellipse cx="0" cy=".2" rx=".9" ry=".38" fill="${c}"/><path d="M.7 .1l.9 -.1l-.7 .35Z" fill="${c}"/></svg>`;
+}
+export function swimmerSVG(kind, seed = 0) {
+  reseed(700 + seed);
+  if (kind === 'koi') return `<svg viewBox="-3 -5 6 12" xmlns="http://www.w3.org/2000/svg">${koi(0, 0, 8, 0, pick([['#f2eee2', '#e07a48'], ['#e07a48', '#f2eee2'], ['#f2eee2', '#3a3a3a'], ['#e8934a', '#f2eee2']]))}</svg>`;
+  // 飛んでいるカモメ（上から見た形ではなく、横から見た翼の形。影絵）
+  if (kind === 'gull') return birdSVG(pick(['#7a7488', '#6f5a6e']), R(0, .4));
+  // 夜の海の小舟（影絵。灯りをひとつ）
+  if (kind === 'boat') return `<svg viewBox="-3 -4.2 6 5" xmlns="http://www.w3.org/2000/svg"><path d="M-2.6 0L2.6 0L2 .8L-2 .8Z" fill="#141733"/><path d="M-.2 -.1V-3.2" stroke="#141733" stroke-width=".22"/><path d="M0 -3.1L1.9 -.2H0Z" fill="#1d1f3c"/><circle cx="-.2" cy="-3.3" r=".28" fill="#ffe7a8"/>${rglow(-.2, -3.3, 1.6, '#ffe7a8', .4)}</svg>`;
+  // トンボ（ホバリング）
+  if (kind === 'dragonfly') return `<svg viewBox="-3 -3 6 6" xmlns="http://www.w3.org/2000/svg">${dragonfly(0, 0, 1.3, 0)}</svg>`;
+  // 白い蝶（作品の蝶と同じ、白い 2 枚の羽）
+  if (kind === 'butterfly') return `<svg viewBox="-3 -3 6 6" xmlns="http://www.w3.org/2000/svg">${butterfly(0, 0.6, 1.6, pick(['#fbf7ea', '#f4ecd6']), 0)}</svg>`;
+  return '';
+}
+
+// 観覧車（回るもの）：脚は止まり、輪だけが回る。r を半径として、viewBox は -r-1.5 〜 r+1.5、下は脚のぶん
+export function ferrisSVG(r) {
+  const c = '#1d1f3c'; let s = '';
+  for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, gx = Math.cos(a) * r, gy = Math.sin(a) * r; s += `<path d="M0 0L${n1(gx)} ${n1(gy)}" stroke="#3d3f6e" stroke-width=".18"/><circle cx="${n1(gx)}" cy="${n1(gy)}" r=".55" fill="${['#ffb45a', '#e88ab8', '#ffe7a8', '#f0c890'][k % 4]}"/>`; }
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r * .82)}" cy="${n1(Math.sin(a) * r * .82)}" r=".2" fill="#ffe7a8" opacity=".8"/>`; }
+  const R2 = r + 1.5;
+  return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2 + 1.5)}" xmlns="http://www.w3.org/2000/svg">${rglow(0, 0, r * 1.5, '#ff9ad0', .16)}<path d="M${n1(-r * .55)} ${n1(r + 1)}L0 0L${n1(r * .55)} ${n1(r + 1)}" stroke="${c}" stroke-width=".5" fill="none"/><g class="wheel"><circle r="${n1(r)}" stroke="#3d3f6e" stroke-width=".35" fill="none"/><circle r="${n1(r * .82)}" stroke="#3d3f6e" stroke-width=".2" fill="none"/>${s}</g><circle r=".7" fill="#ffe7a8"/></svg>`;
+}
+// 薪ストーブの火（揺れる炎と、舞い上がる火の粉）
+export function fireSVG() {
+  let s = '<svg viewBox="-4 -12 8 13" xmlns="http://www.w3.org/2000/svg">';
+  s += `<g class="flame"><path d="M-2.4 0Q-2.4 -3 -1 -4.5Q-1.4 -2 0 -1Q.4 -3.6 1.6 -5.2Q2.4 -2.6 2.4 0Z" fill="#e8874a"/><path d="M-1.2 0Q-1.3 -2 -.4 -3Q0 -1.6 .8 -2.6Q1.2 -1.2 1.2 0Z" fill="#f2c56a"/></g>`;
+  for (let k = 0; k < 6; k++) s += `<circle class="ember" style="--d:${n1(k * .45)}s;--dx:${n1((k % 3 - 1) * .8)}px" cx="${n1(-1.5 + k * .6)}" cy="-1" r=".18" fill="#ffd36a"/>`;
+  return s + '</svg>';
+}
+// 窓の外に舞う雪（窓の枠の中だけ）
+export function windowSnowSVG(w, h) {
+  let s = `<svg viewBox="0 0 ${n1(w)} ${n1(h)}" xmlns="http://www.w3.org/2000/svg">`;
+  reseed(77);
+  for (let k = 0; k < 22; k++) s += `<circle class="wsnow" style="--d:${n1(-R(0, 9))}s;--t:${n1(R(6, 10))}s;--dx:${n1(R(-1.5, 1.5))}px" cx="${n1(R(0, w))}" cy="0" r="${n1(R(.18, .4))}" fill="#eef2fb" opacity="${n1(R(.5, .9) * 100) / 100}"/>`;
+  return s + '</svg>';
+}
+// 立ち止まったときの小さな動き：鳥（影絵）、トンボ、流れ星、火の粉のはじけ
+export function flyerSVG(kind) {
+  if (kind === 'bird') return birdSVG('#2f3a26', 0);
+  if (kind === 'dragonfly') { reseed(5); return `<svg viewBox="-3 -3 6 6" xmlns="http://www.w3.org/2000/svg">${dragonfly(0, 0, 1.4, 0)}</svg>`; }
+  if (kind === 'star') return `<svg viewBox="-12 -1 14 2" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><path d="M-12 -.3H0V.3H-12Z" fill="url(#st)"/><circle r=".6" fill="#fff"/></svg>`;
+  if (kind === 'spark') return `<svg viewBox="-3 -3 6 6" xmlns="http://www.w3.org/2000/svg"><circle r=".5" fill="#ffd36a"/><circle cx="1.2" cy="-1" r=".3" fill="#ffb45a"/><circle cx="-1" cy="-1.4" r=".25" fill="#ffd36a"/></svg>`;
+  return '';
 }
 
 // ---------- 幕：部屋の出入りで閉じる、葉のカーテン ----------
@@ -1349,6 +1816,97 @@ function pot(x, y, s, c = '#b08a64') {
   for (let i = 0; i < 5; i++) out += monstera(x, y - s * .9, s * R(1.1, 1.6), -90 + (i - 2) * 38 + R(-8, 8), pick(['#4f7a45', '#3d5c36', '#5a8a48']), { cls: '' });
   return out;
 }
+// ---------- 小屋の描き込み：ギター、スツールとマグ、レコードの山、眠る猫、スキー板、コート掛け、壁の灯り、窓辺の小物、ドライハーブ ----------
+// 壁に立てかけたアコースティックギター（少し傾けて）
+function guitar(x, y, h, c = '#c98a4a') {
+  track(x - h * .3, y - h); track(x + h * .3, y + .5);
+  const cd = dark(c, .25), bw = h * .22;
+  let g2 = `<g transform="rotate(-8 ${n1(x)} ${n1(y)})">`;
+  g2 += `<ellipse cx="${n1(x)}" cy="${n1(y + .4)}" rx="${n1(bw * 1.1)}" ry=".7" fill="#000" opacity=".3"/>`;
+  g2 += `<path d="M${n1(x - bw)} ${n1(y - bw * .9)}C${n1(x - bw * 1.1)} ${n1(y - bw * 2.1)} ${n1(x - bw * .55)} ${n1(y - bw * 2.1)} ${n1(x - bw * .6)} ${n1(y - bw * 2.5)}C${n1(x - bw * .65)} ${n1(y - bw * 3.3)} ${n1(x + bw * .65)} ${n1(y - bw * 3.3)} ${n1(x + bw * .6)} ${n1(y - bw * 2.5)}C${n1(x + bw * .55)} ${n1(y - bw * 2.1)} ${n1(x + bw * 1.1)} ${n1(y - bw * 2.1)} ${n1(x + bw)} ${n1(y - bw * .9)}C${n1(x + bw)} ${n1(y + .2)} ${n1(x - bw)} ${n1(y + .2)} ${n1(x - bw)} ${n1(y - bw * .9)}Z" fill="${c}"/>`;
+  g2 += `<circle cx="${n1(x)}" cy="${n1(y - bw * 1.6)}" r="${n1(bw * .38)}" fill="#3a2718"/><circle cx="${n1(x)}" cy="${n1(y - bw * 1.6)}" r="${n1(bw * .46)}" fill="none" stroke="${cd}" stroke-width=".18"/>`;
+  g2 += `<rect x="${n1(x - bw * .18)}" y="${n1(y - h)}" width="${n1(bw * .36)}" height="${n1(h - bw * 3)}" fill="#3a2718"/><rect x="${n1(x - bw * .22)}" y="${n1(y - h)}" width="${n1(bw * .44)}" height="${n1(bw * .7)}" fill="#1d140d"/>`;
+  g2 += `<rect x="${n1(x - bw * .5)}" y="${n1(y - bw * .8)}" width="${n1(bw)}" height="${n1(bw * .22)}" fill="#1d140d"/>`;
+  for (let k = -2; k <= 2; k++) g2 += `<path d="M${n1(x + k * bw * .06)} ${n1(y - h + bw * .3)}L${n1(x + k * bw * .08)} ${n1(y - bw * .7)}" stroke="#e8dcc0" stroke-width=".08"/>`;
+  return g2 + '</g>';
+}
+// 小さなスツールと、湯気の立つマグ
+function stoolMug(x, y, s) {
+  track(x - s * 1.2, y - s * 2.6); track(x + s * 1.2, y + .4);
+  let o = `<ellipse cx="${n1(x)}" cy="${n1(y + .3)}" rx="${n1(s * 1.1)}" ry=".5" fill="#000" opacity=".3"/>`;
+  o += `<path d="M${n1(x - s * .85)} ${n1(y)}L${n1(x - s * .6)} ${n1(y - s * 1.6)}M${n1(x + s * .85)} ${n1(y)}L${n1(x + s * .6)} ${n1(y - s * 1.6)}M${n1(x)} ${n1(y)}V${n1(y - s * 1.6)}" stroke="#4a3322" stroke-width="${n1(s * .16)}" stroke-linecap="round"/>`;
+  o += `<ellipse cx="${n1(x)}" cy="${n1(y - s * 1.6)}" rx="${n1(s)}" ry="${n1(s * .32)}" fill="#8a5f3a"/><ellipse cx="${n1(x)}" cy="${n1(y - s * 1.7)}" rx="${n1(s * .95)}" ry="${n1(s * .28)}" fill="#a8764a"/>`;
+  const mw = s * .42, my = y - s * 1.75;
+  o += `<rect x="${n1(x - mw / 2)}" y="${n1(my - mw * 1.1)}" width="${n1(mw)}" height="${n1(mw * 1.1)}" rx=".1" fill="#e8e0d0"/><path d="M${n1(x + mw / 2)} ${n1(my - mw * .85)}q${n1(mw * .5)} ${n1(-mw * .05)} 0 ${n1(mw * .5)}" stroke="#e8e0d0" stroke-width=".18" fill="none"/><rect x="${n1(x - mw / 2)}" y="${n1(my - mw * .5)}" width="${n1(mw)}" height="${n1(mw * .18)}" fill="#b8604a"/>`;
+  o += `<path d="M${n1(x - mw * .15)} ${n1(my - mw * 1.3)}q${n1(-mw * .3)} ${n1(-mw * .6)} 0 ${n1(-mw * 1.2)}M${n1(x + mw * .15)} ${n1(my - mw * 1.4)}q${n1(mw * .3)} ${n1(-mw * .6)} 0 ${n1(-mw * 1.1)}" stroke="#fff" stroke-width=".12" fill="none" opacity=".45"/>`;
+  return o;
+}
+// レコードの山（斜めに重ねたジャケット）と、立てかけた 1 枚
+function vinylStack(x, y, s) {
+  track(x - s * 1.4, y - s * 2.4); track(x + s * 1.4, y + .3);
+  let o = `<ellipse cx="${n1(x)}" cy="${n1(y + .2)}" rx="${n1(s * 1.2)}" ry=".45" fill="#000" opacity=".3"/>`;
+  const cols = ['#b8604a', '#3f5d59', '#d4b884', '#6b4a7a', '#2a2733', '#8fa8b0'];
+  for (let k = 0; k < 6; k++) o += `<rect x="${n1(x - s + R(-.15, .15))}" y="${n1(y - (k + 1) * s * .14)}" width="${n1(s * 2)}" height="${n1(s * .14)}" fill="${cols[k % cols.length]}"/>`;
+  const ry = y - s * .9, rw = s * 1.5;
+  o += `<rect x="${n1(x + s * .1)}" y="${n1(ry - rw)}" width="${n1(rw)}" height="${n1(rw)}" fill="${pick(cols)}" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/><circle cx="${n1(x + s * .1 + rw * .55)}" cy="${n1(ry - rw * .5)}" r="${n1(rw * .4)}" fill="#1a1512" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/><circle cx="${n1(x + s * .1 + rw * .55)}" cy="${n1(ry - rw * .5)}" r="${n1(rw * .13)}" fill="#e2b36f" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/>`;
+  return o;
+}
+// クッションの上で丸くなって眠る猫
+function catSleeping(x, y, s, c = '#4a3a30') {
+  track(x - s * 1.8, y - s * 1.3); track(x + s * 1.8, y + .3);
+  let o = `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(s * 1.8)}" ry="${n1(s * .6)}" fill="#7a3f33"/><ellipse cx="${n1(x)}" cy="${n1(y - s * .15)}" rx="${n1(s * 1.6)}" ry="${n1(s * .45)}" fill="#8d4a3a"/>`;
+  o += `<ellipse cx="${n1(x)}" cy="${n1(y - s * .55)}" rx="${n1(s * 1.15)}" ry="${n1(s * .6)}" fill="${c}"/>`;
+  o += `<path d="M${n1(x + s * .9)} ${n1(y - s * .35)}Q${n1(x + s * 1.5)} ${n1(y - s * .1)} ${n1(x + s * .3)} ${n1(y - s * .05)}" stroke="${c}" stroke-width="${n1(s * .22)}" fill="none" stroke-linecap="round"/>`;
+  o += `<circle cx="${n1(x - s * .75)}" cy="${n1(y - s * .7)}" r="${n1(s * .42)}" fill="${c}"/><path d="M${n1(x - s * 1.05)} ${n1(y - s * .95)}l${n1(-s * .12)} ${n1(-s * .45)}l${n1(s * .38)} ${n1(s * .22)}ZM${n1(x - s * .5)} ${n1(y - s * 1.02)}l${n1(s * .18)} ${n1(-s * .42)}l${n1(-s * .42)} ${n1(s * .15)}Z" fill="${c}"/>`;
+  o += `<path d="M${n1(x - s * .95)} ${n1(y - s * .68)}q${n1(s * .1)} ${n1(s * .08)} ${n1(s * .2)} 0M${n1(x - s * .68)} ${n1(y - s * .68)}q${n1(s * .1)} ${n1(s * .08)} ${n1(s * .2)} 0" stroke="#1a1512" stroke-width=".1" fill="none"/>`;
+  o += `<ellipse cx="${n1(x - s * .2)}" cy="${n1(y - s * .85)}" rx="${n1(s * .5)}" ry="${n1(s * .2)}" fill="${light(c, .18)}" opacity=".6"/>`;
+  return o;
+}
+// 壁に立てかけたスキー板とストック、そばのブーツ
+function skis(x, y, h) {
+  track(x - 3, y - h); track(x + 4, y + .4);
+  let o = `<ellipse cx="${n1(x + .5)}" cy="${n1(y + .2)}" rx="3" ry=".5" fill="#000" opacity=".3"/>`;
+  for (const [dx, c] of [[-.6, '#3f5d59'], [.6, '#4a6d68']]) o += `<g transform="rotate(-6 ${n1(x + dx)} ${n1(y)})"><rect x="${n1(x + dx - .55)}" y="${n1(y - h)}" width="1.1" height="${n1(h)}" rx=".5" fill="${c}"/><rect x="${n1(x + dx - .35)}" y="${n1(y - h * .55)}" width=".7" height="${n1(h * .12)}" fill="#1d1916"/><path d="M${n1(x + dx - .3)} ${n1(y - h * .92)}h.6" stroke="#e2b36f" stroke-width=".3"/></g>`;
+  for (const dx of [2.2, 2.9]) o += `<path d="M${n1(x + dx)} ${n1(y)}L${n1(x + dx - .6)} ${n1(y - h * .8)}" stroke="#8a8a8a" stroke-width=".22"/><circle cx="${n1(x + dx - .55)}" cy="${n1(y - h * .78)}" r=".35" fill="#2a2733"/><circle cx="${n1(x + dx - .05)}" cy="${n1(y - 1.2)}" r=".6" fill="none" stroke="#2a2733" stroke-width=".18"/>`;
+  o += `<path d="M${n1(x - 3.2)} ${n1(y)}v-2.6q0 -.8 .8 -.8h1.4v1.6h.8v1.8Z" fill="#6b4a2e"/><path d="M${n1(x - 3.2)} ${n1(y - 1)}h3" stroke="#3a2718" stroke-width=".25"/><path d="M${n1(x - 2.6)} ${n1(y - 3.1)}h1.2" stroke="#e8dcc0" stroke-width=".35"/>`;
+  return o;
+}
+// コート掛け：壁の板に木のフック、ニット帽とジャケットとマフラー
+function coatRack(x, y, w) {
+  track(x - w / 2, y - 2); track(x + w / 2, y + 16);
+  let o = `<rect x="${n1(x - w / 2)}" y="${n1(y)}" width="${n1(w)}" height="1.6" rx=".3" fill="#8a5f3a"/>`;
+  const hooks = [x - w * .32, x, x + w * .32];
+  for (const hx of hooks) o += `<path d="M${n1(hx)} ${n1(y + 1.6)}v1.2q0 .6 .6 .6" stroke="#3a2718" stroke-width=".35" fill="none" stroke-linecap="round"/>`;
+  // ニット帽
+  o += `<path d="M${n1(hooks[0] - 1.6)} ${n1(y + 6)}q0 -3.4 1.9 -3.6q1.9 .2 1.9 3.6Z" fill="#b8604a"/><rect x="${n1(hooks[0] - 1.7)}" y="${n1(y + 5.6)}" width="3.8" height=".9" rx=".3" fill="#d4b884"/><circle cx="${n1(hooks[0] + .3)}" cy="${n1(y + 2.3)}" r=".45" fill="#f4efe4"/>`;
+  // ジャケット（肩から垂れる）
+  o += `<path d="M${n1(hooks[1] - 2.6)} ${n1(y + 4)}q.5 -1.2 2.9 -1.4q2.4 .2 2.9 1.4l.6 9.5h-7Z" fill="#3f5d59"/><path d="M${n1(hooks[1] + .3)} ${n1(y + 3)}v10.4" stroke="#2c4340" stroke-width=".3"/><path d="M${n1(hooks[1] - 2.2)} ${n1(y + 5)}l-.7 5M${n1(hooks[1] + 2.8)} ${n1(y + 5)}l.7 5" stroke="#2c4340" stroke-width=".9" stroke-linecap="round"/>`;
+  // マフラー
+  o += `<path d="M${n1(hooks[2] - .5)} ${n1(y + 2.6)}q-.9 3 -.4 7.5h1.2q.5 -4.2 -.1 -7.5Z" fill="#d4b884"/><path d="M${n1(hooks[2] - .2)} ${n1(y + 4)}h.7M${n1(hooks[2] - .3)} ${n1(y + 6)}h.8M${n1(hooks[2] - .35)} ${n1(y + 8)}h.9" stroke="#b8604a" stroke-width=".3"/>`;
+  return o;
+}
+// 壁のランプ（受け皿の上のろうそく型の灯り）と、壁に落ちる光
+function sconce(x, y, s) {
+  return rglow(x, y - s * .6, s * 3.2, '#ffcf85', .35) + `<path d="M${n1(x - s * .5)} ${n1(y + s * .5)}h${n1(s)}l${n1(-s * .15)} ${n1(s * .35)}h${n1(-s * .7)}Z" fill="#2a1c12"/><rect x="${n1(x - s * .12)}" y="${n1(y - s * .45)}" width="${n1(s * .24)}" height="${n1(s * .95)}" fill="#f4efe4"/><ellipse cx="${n1(x)}" cy="${n1(y - s * .65)}" rx="${n1(s * .14)}" ry="${n1(s * .28)}" fill="#ffd98a"/><ellipse cx="${n1(x)}" cy="${n1(y - s * .6)}" rx="${n1(s * .06)}" ry="${n1(s * .14)}" fill="#fff6e0"/><path d="M${n1(x - s * .25)} ${n1(y + s * .5)}v${n1(s * .6)}h${n1(s * .5)}v${n1(-s * .6)}" stroke="#2a1c12" stroke-width=".25" fill="none"/>`;
+}
+// 窓辺：ろうそくと小さなサボテンの鉢
+function sillItems(wx, wy, ww, wh) {
+  const y = wy + wh + 1.2;
+  let o = `<rect x="${n1(wx - 1.5)}" y="${n1(y - .2)}" width="${n1(ww + 3)}" height="1" rx=".2" fill="#6e4a2e"/>`;
+  o += `<rect x="${n1(wx + 1.5)}" y="${n1(y - 3.4)}" width="1.2" height="3.2" fill="#f4efe4"/><ellipse cx="${n1(wx + 2.1)}" cy="${n1(y - 4)}" rx=".45" ry=".8" fill="#ffd98a"/>` + rglow(wx + 2.1, y - 4, 4, '#ffcf85', .3);
+  const px = wx + ww - 2.5;
+  o += `<path d="M${n1(px - 1.3)} ${n1(y - .2)}l.2 -2.2h2.2l.2 2.2Z" fill="#b08a64"/><rect x="${n1(px - .55)}" y="${n1(y - 5.4)}" width="1.1" height="3.2" rx=".55" fill="#5a8a48"/><rect x="${n1(px + .1)}" y="${n1(y - 4.4)}" width=".7" height="1.6" rx=".35" fill="#699053"/><circle cx="${n1(px)}" cy="${n1(y - 5.5)}" r=".35" fill="#e9a7b4"/>`;
+  return o;
+}
+// 天井から吊るしたドライハーブの束
+function herbBundle(x, y, s) {
+  track(x - s * .6, y); track(x + s * .6, y + s * 2.4);
+  let o = `<path d="M${n1(x)} ${n1(y)}v${n1(s * .6)}" stroke="#b9a27c" stroke-width=".18"/>`;
+  for (let k = -2; k <= 2; k++) o += lance(x + k * s * .12, y + s * .55, s * 1.7, s * .18, 180 + k * 9 + R(-3, 3), pick(['#6f7d2e', '#8a8a5a', '#5c6a2a', '#a39866']), { half: false });
+  o += `<path d="M${n1(x - s * .3)} ${n1(y + s * .7)}h${n1(s * .6)}" stroke="#c9543a" stroke-width=".28"/>`;
+  return o;
+}
+
 // 雪をかぶった針葉樹：段になった枝葉、右側に影、各段の上に雪
 function pine(x, base, h, c, snow = '#eef2fb') {
   track(x - h * .45, base - h); track(x + h * .45, base);
@@ -1445,6 +2003,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   mid += `<path d="M${n1(workX(1) + W * .22)} 58v-6" stroke="#1d1510" stroke-width=".3"/><path d="M${n1(workX(1) + W * .22 - 1.2)} 58h2.4l-.4 3h-1.6Z" fill="#ffd98a"/>` + rglow(workX(1) + W * .22, 59, 9, '#ffc56b', .4);
   // 中景（内）：板壁と窓（窓の外は奥の空）、床、ラグ、ストーブ、棚
   // 作品と作品のあいだの壁：1 つ目に本棚とストーブ、2 つ目以降は窓（右ほど空が明けていく）
+  let stove = null;
   const mids = []; for (let k = 2; k < stops - 1; k++) mids.push((workX(k) + workX(k + 1)) / 2);
   // 作品と作品のすき間の幅（作品の枠の外側どうし）。狭い画面では窓や棚を小さくし、入らなければ置かない（絵に重ねない）
   const zoneHalf = artZone(W, 0, 0, 0)[2], gap = W * FACTORS.mid - zoneHalf * 2;
@@ -1457,6 +2016,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   // 天井の梁に沿って、暖かい電球の飾り（ゆるく垂れる）
   { let d = `M${n1(wallX + 3)} 2`, bulbs = ''; for (let x = wallX + 3; x < mw; x += 12) { d += `Q${n1(x + 6)} 6 ${n1(x + 12)} 2`; for (const t of [.25, .5, .75]) { const bx = x + 12 * t, by = 2 + 4 * 2 * t * (1 - t) + .9; bulbs += `<circle cx="${n1(bx)}" cy="${n1(by)}" r="1.6" fill="#ffcf85" opacity=".16"/><circle cx="${n1(bx)}" cy="${n1(by)}" r=".42" fill="#ffe6b0"/>`; } } mid += `<path d="${d}" stroke="#1d140d" stroke-width=".18" fill="none"/>${bulbs}`; }
   mid += wins.map((w) => windowFrame(...w)).join('');
+  mid += wins.map((w) => sillItems(...w)).join('');
   for (const [wx, wy, ww, wh] of wins) for (const side of [-1, 1]) {
     const cx = side < 0 ? wx - 1 : wx + ww + 1;
     mid += `<path d="M${n1(cx - 2.2)} ${n1(wy - 2)}H${n1(cx + 2.2)}Q${n1(cx + 1.4 * side)} ${n1(wy + wh * .5)} ${n1(cx + 2.6)} ${n1(wy + wh + 2)}H${n1(cx - 2.6)}Q${n1(cx - 1.4 * side)} ${n1(wy + wh * .5)} ${n1(cx - 2.2)} ${n1(wy - 2)}Z" fill="#6e3a2e"/><path d="M${n1(cx - 1)} ${n1(wy - 1)}Q${n1(cx - .6)} ${n1(wy + wh * .5)} ${n1(cx - 1.2)} ${n1(wy + wh + 1.5)}M${n1(cx + .8)} ${n1(wy - 1)}Q${n1(cx + 1.2)} ${n1(wy + wh * .5)} ${n1(cx + .9)} ${n1(wy + wh + 1.5)}" stroke="#4e2820" stroke-width=".35" fill="none"/>`;
@@ -1478,10 +2038,26 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     for (let t = -3; t <= 3; t++) mid += `<path d="M${n1(x + t * rx * .13)} 93.1l${n1(rx * .045)} .9l${n1(-rx * .045)} .9l${n1(-rx * .045)} -.9Z" fill="${t % 2 ? '#e2b36f' : '#3f5d59'}" opacity=".8"/>`;
     for (const side of [-1, 1]) for (let f = -3; f <= 3; f++) mid += `<path d="M${n1(x + side * rx)} ${n1(94 + f * .45)}h${n1(side * .9)}" stroke="#e8d3ad" stroke-width=".14" opacity=".75"/>`;
   }
+  // 床と壁の小物（作品と作品のあいだ。レコードプレーヤー・ソファ・木箱のあるすき間は避ける）
+  for (let k = 1; k < stops - 1; k++) {
+    if (k === 3 || k === 4 || k === 5) continue;
+    const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
+    // 手前の鉢植えがすき間の真ん中に来るので、床の小物は左右に寄せる
+    const off = Math.max(12, W * .11);
+    if (k === 1) { mid += guitar(gx - off, 90, 24) + stoolMug(gx + off, 90.5, 2.2); }
+    else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6); }
+    else { mid += skis(gx - off, 90, 30); }
+    // 壁の小物は、作品にかからないときだけ（広い画面）
+    if (k === 1) mid += guard(Zk, () => coatRack(gx, 30, 14), { min: 1 });
+    if (k === 2) mid += guard(Zk, () => sconce(gx, 38, 2.6), { min: 1 });
+  }
+  // 天井のドライハーブ：電球のあいだに、作品にかからないところへ
+  for (let x = wallX + 9; x < mw; x += 12) if (clearOfWorks(W, stops, x, 5)) mid += herbBundle(x, 4.2, 2.6);
   if (mids.length) {
     const m = mids[0], shW = Math.min(22, gap - 2);
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
     // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
+    if (gap >= 11) stove = [m, 80];
     if (gap >= 11) mid += rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V52h1.4V71Z" fill="#1d1916"/>`;
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
@@ -1498,7 +2074,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   }
   return {
     sky: '#0d1027', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] },
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] }, stove, wins,
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
 }
