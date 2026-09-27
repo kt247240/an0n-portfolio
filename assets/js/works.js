@@ -127,7 +127,7 @@ export const WORKS = [
   {
     id: 'mountain-lights', room: 'night',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
-    title: '戸倉上山田 湯煙商会', ja: '', year: '2026', medium: 'Animation',
+    title: 'Yukemuri Shokai', ja: '', year: '2026', medium: 'Animation',
     type: 'video', src: 'assets/works/mountain-lights.mp4', poster: 'assets/works/mountain-lights.jpg', aspect: 0.8,
     note: '真っ暗な山に、社と赤い灯りがひとつずつ灯っていく。',
   },
@@ -141,7 +141,7 @@ export const WORKS = [
   {
     id: 'yukemuri', room: 'afterhours',
     nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
-    title: '戸倉上山田 湯煙商会', ja: '', year: '2026', medium: 'Poster (Motion)', credit: '戸倉上山田 湯煙商会',
+    title: 'Yukemuri Shokai', ja: '', year: '2026', medium: 'Poster (Motion)',
     type: 'video', src: 'assets/works/yukemuri.mp4', poster: 'assets/works/yukemuri.jpg', aspect: 0.8,
     note: '月夜の湯けむり。バラクラバの男も、今夜は湯船でひと休み。',
   },

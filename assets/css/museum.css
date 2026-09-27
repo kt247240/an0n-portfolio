@@ -987,3 +987,34 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .spec:nth-child(2n) .name { transform: rotate(.9deg); }
 .spec .name small { display: block; font-family: "VT323", monospace; font-weight: 400; font-size: 13px; letter-spacing: .22em; opacity: .55; margin-top: 3px; }
 .specimen .bed { row-gap: 64px; padding-bottom: 64px; }
+
+/* ビューア：作品は見出しと作品名の欄のあいだに収める（位置と高さは fitVScreen が測って決める） */
+#v-screen { top: var(--v-top, 44%); }
+#v-screen img, #v-screen video { max-height: var(--v-maxh, 72vh); }
+
+/* 夕凪の浜の砂の上のチラシ（Hidden Key. の続き）：奥へ寝かせた紙が、浜風で角からめくれ、ときどき少し滑る。動きは要素の transform だけ */
+.sand-flyer { position: absolute; top: 84.5vh; padding: 0; border: 0; background: none; cursor: pointer; perspective: 60vh; -webkit-tap-highlight-color: transparent; }
+@media (max-width: 760px) { .sand-flyer { top: 86vh; } }
+.sand-flyer::after { content: ""; position: absolute; left: 4%; right: -4%; bottom: -7%; height: 22%; background: radial-gradient(closest-side, rgba(60, 45, 30, .32), transparent); z-index: -1; }
+.sand-flyer img { display: block; width: 100%; height: auto; transform-origin: 50% 100%; transform: rotateX(58deg) rotateZ(-9deg); filter: sepia(.12) brightness(.94) saturate(.95); box-shadow: 0 1px 2px rgba(40, 30, 20, .25); }
+.room.live .sand-flyer img { animation: flyer-wind 9s ease-in-out infinite; }
+@keyframes flyer-wind {
+  0%, 18%, 100% { transform: translateX(0) rotateX(58deg) rotateZ(-9deg); }
+  24% { transform: translateX(0) rotateX(42deg) rotateY(-10deg) rotateZ(-7deg); }
+  30% { transform: translateX(0) rotateX(55deg) rotateZ(-9deg); }
+  36% { transform: translateX(0) rotateX(36deg) rotateY(-16deg) rotateZ(-5deg); }
+  44% { transform: translateX(1.4vh) translateY(-.8vh) rotateX(28deg) rotateY(-20deg) rotateZ(-2deg); }
+  52% { transform: translateX(2.2vh) rotateX(56deg) rotateZ(-6deg); }
+  60% { transform: translateX(2.2vh) rotateX(50deg) rotateZ(-6deg); }
+  72% { transform: translateX(1.2vh) rotateX(57deg) rotateZ(-8deg); }
+  86% { transform: translateX(0) rotateX(58deg) rotateZ(-9deg); }
+}
+.room.live .sand-flyer.blown img { animation: flyer-blown 2.2s cubic-bezier(.3, .6, .4, 1) both; }
+@keyframes flyer-blown {
+  0% { transform: rotateX(58deg) rotateZ(-9deg); }
+  25% { transform: translate(3vh, -9vh) rotateX(10deg) rotateY(-30deg) rotateZ(14deg); }
+  50% { transform: translate(6vh, -12vh) rotateX(-20deg) rotateY(20deg) rotateZ(-10deg); }
+  75% { transform: translate(3vh, -5vh) rotateX(30deg) rotateY(-10deg) rotateZ(-14deg); }
+  100% { transform: rotateX(58deg) rotateZ(-9deg); }
+}
+@media (prefers-reduced-motion: reduce) { .sand-flyer img { animation: none !important; } }

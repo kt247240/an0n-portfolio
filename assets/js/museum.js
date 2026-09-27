@@ -525,6 +525,15 @@ function buildRoomScene(r) {
     return el;
   });
   art.insertAdjacentHTML('beforeend', roomArtEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid));
+  // 夕凪の浜：Hidden Key. の続きの 1 枚を、作品ではなく砂の上のチラシとして置く（Hidden Key. と次の作品の台のあいだ。浜風でめくれ、ときどき少し飛ばされる。タップでも飛ぶ）
+  if (r.room.id === 'dusk') {
+    const i = r.items.findIndex((it) => it.work?.id === 'hidden-key');
+    if (i >= 0) {
+      const cw = parseFloat(r.itemEls[i].querySelector('.canvas').style.width) / U, fw = W < 70 ? 4.6 : 6.2;
+      const x = (i + 1) * W * FACTORS.mid + W / 2 + Math.min(W / 2, cw / 2 + 15);
+      art.insertAdjacentHTML('beforeend', `<button class="sand-flyer" aria-label="チラシ" style="left:${((x - fw / 2) * U).toFixed(1)}px;width:${fw}vh"><img src="assets/art/hidden-key-flyer.webp" alt="" draggable="false"></button>`);
+    }
+  }
   // 夜更けの小屋：最後の作品の左下、床の上に古い金庫（知っている人だけが開ける）
   if (r.room.scene === 'attic') {
     art.insertAdjacentHTML('beforeend', `<button class="vault-safe" aria-label="?" style="left:${(r.items.length * W * FACTORS.mid + W * .5 - Math.min(W * .36, 40) - 5.5) * U}px">${gradeColors(safeSVG(), GRADES.attic)}</button>`);
@@ -684,6 +693,12 @@ function birdHTML(r) {
   const [s, dx, bottom, flip] = b;
   return `<button class="prop bird-prop${flip ? ' flip' : ''}" aria-label="インコ" style="left:${(s * W * FACTORS.mid + W / 2 + dx) * U}px;bottom:${bottom}vh"><img src="assets/bird.webp" alt="" draggable="false"></button>`;
 }
+// 砂の上のチラシ：タップすると風にさらわれたように舞い上がって、また砂に落ちる
+document.addEventListener('click', (e) => {
+  const f = e.target.closest('.sand-flyer'); if (!f) return;
+  e.stopPropagation();
+  f.classList.remove('blown'); void f.offsetWidth; f.classList.add('blown');
+}, true);
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.bird-prop, .sign-bird'); if (!b) return;
   e.stopPropagation();
@@ -1266,9 +1281,24 @@ function setViewer(w) {
   ask.querySelector('.dm').href = ig ? ig.href : '#';
   ask.querySelector('.msg').href = mail ? `${mail.href}?subject=${encodeURIComponent(`Inquiry: ${w.title}`)}&body=${encodeURIComponent(`${w.title}${w.ja ? `（${w.ja}）` : ''}\n${location.origin}${location.pathname}#w=${w.id}\n\n`)}` : '#';
   viewer.dataset.scene = room.scene;
+  fitVScreen();
   vParts = [];
   if (glowOf.has(w.id)) vTarget = glowOf.get(w.id);
 }
+// 作品は、上の見出し（サインと閉じるボタン）と下の作品名の欄のあいだの空きに収める（作品名が作品に重ならないように）。
+// 作品名の欄は作品ごとに高さが変わる（長い題名は 2 行、クレジットの有無）ので、測ってから決める
+const vCap = $('.v-cap', viewer), vTop = $('.v-top', viewer);
+function fitVScreen() {
+  const H = viewer.clientHeight, W = viewer.clientWidth;
+  const top = vTop.getBoundingClientRect().bottom + 14, bottom = vCap.getBoundingClientRect().top - 22;
+  const avail = Math.max(120, bottom - top);
+  // 奥行き（translateZ）で少し大きく見えるぶんと、額の白い縁（6px）のぶんを引く
+  const maxH = Math.min(H * (W <= 760 ? .56 : .72), avail / 1.06 - 14);
+  viewer.style.setProperty('--v-top', `${Math.round(top + avail / 2)}px`);
+  viewer.style.setProperty('--v-maxh', `${Math.round(maxH)}px`);
+}
+if ('ResizeObserver' in window) new ResizeObserver(() => { if (vOpen || viewer.classList.contains('open')) fitVScreen(); }).observe(vCap);
+addEventListener('resize', () => { if (vOpen) fitVScreen(); });
 function openViewer(w, x, y) {
   if (vOpen) return;
   viewer.style.setProperty('--ox', `${x ?? vw / 2}px`); viewer.style.setProperty('--oy', `${y ?? vh / 2}px`);
