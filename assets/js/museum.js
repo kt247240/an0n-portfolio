@@ -1317,6 +1317,7 @@ function setViewer(w) {
   ask.querySelector('.tag').textContent = w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'Price: ASK';
   ask.querySelector('.dm').href = ig ? ig.href : '#';
   ask.querySelector('.msg').href = mail ? `${mail.href}?subject=${encodeURIComponent(`Inquiry: ${w.title}`)}&body=${encodeURIComponent(`${w.title}${w.ja ? `（${w.ja}）` : ''}\n${location.origin}${location.pathname}#w=${w.id}\n\n`)}` : '#';
+  ask.querySelector('.share').classList.remove('copied');
   viewer.dataset.scene = room.scene;
   fitVScreen();
   vParts = [];
@@ -1336,6 +1337,16 @@ function fitVScreen() {
 }
 if ('ResizeObserver' in window) new ResizeObserver(() => { if (vOpen || viewer.classList.contains('open')) fitVScreen(); }).observe(vCap);
 addEventListener('resize', () => { if (vOpen) fitVScreen(); });
+// 共有：作品ごとの共有ページ（w/<id>.html）の URL を渡す。リンクを貼ると、その作品の画像と題名が出る
+$('.v-ask .share', viewer).addEventListener('click', async (e) => {
+  const btn = e.currentTarget, w = vWork; if (!w) return;
+  const url = new URL(`w/${encodeURIComponent(w.id)}.html`, location.href).href, title = `${w.title} — ${ARTIST.name}`;
+  try {
+    if (navigator.share) { await navigator.share({ title, url }); return; }
+    await navigator.clipboard.writeText(url);
+    btn.classList.add('copied'); setTimeout(() => btn.classList.remove('copied'), 1600);
+  } catch { /* 共有をやめたときなど。何もしない */ }
+});
 function openViewer(w, x, y) {
   if (vOpen) return;
   viewer.style.setProperty('--ox', `${x ?? vw / 2}px`); viewer.style.setProperty('--oy', `${y ?? vh / 2}px`);

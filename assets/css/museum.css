@@ -1032,3 +1032,12 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 
 /* 小屋の部屋：寄りの途中で層の描き漏れがあっても、森の緑ではなく小屋の暗い木の色が見えるように */
 .scene-attic > .sticky, .scene-attic .stage { background: #22170f; }
+
+/* 作品の共有ボタン（DM・Message の並びの端に、共有のしるしだけの四角いボタン。非売品・売約済みでも出す） */
+.v-ask .share { position: relative; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--cream); border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); cursor: pointer; transition: background .3s, color .3s; }
+.v-ask .share svg { width: 17px; height: 17px; }
+.v-ask .share:hover { background: var(--cream); color: var(--ink); }
+.v-ask .share .done { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translate(-50%, 4px); font-family: "VT323", monospace; font-size: 16px; letter-spacing: .14em; color: var(--cream); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+.v-ask .share.copied .done { opacity: 1; transform: translate(-50%, 0); }
+.v-ask { flex-wrap: wrap; row-gap: 10px; }
+.v-ask .tag { white-space: nowrap; }
