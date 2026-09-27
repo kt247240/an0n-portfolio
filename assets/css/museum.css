@@ -150,7 +150,7 @@ body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 
 .work { position: absolute; top: 46%; transform: translate(-50%, -50%); transform-origin: 50% 50%; }
 /* 描画メモリを別に持たせるのは、いま画面にある部屋の作品だけ（全部に付けると、見えていない作品の分までメモリを取る） */
-.room.live .work { will-change: transform, opacity; }
+.room.live .work { will-change: transform; }
 .work .canvas { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: #111; cursor: zoom-in; transition: box-shadow .8s; box-sizing: content-box; }
 .work .canvas img, .work .canvas video { width: 100%; height: 100%; object-fit: contain; }
 .work .halo { position: absolute; left: 50%; top: 50%; width: 170%; height: 150%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(var(--glow), .5), rgba(var(--glow), 0)); opacity: .45; transition: opacity 1s; pointer-events: none; }
@@ -805,7 +805,7 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 
 /* 入口 → 最初の部屋：最初の部屋を入口の最後の 1 画面ぶん下に重ね、入口のカーテンが閉じきったら入口を隠す */
 #entrance { z-index: 3; }
-#entrance.gone .sticky { visibility: hidden; }
+#entrance.gone .sticky, #entrance.gone .curtain { visibility: hidden !important; } /* 葉のカーテンも（中身は visible にしているので、!important で確実に隠す） */
 #rooms > .room { margin-top: -100vh; }
 /* 前の部屋が上に重なるように（入口 > 1 つ目の部屋 > 2 つ目 …） */
 #entrance { z-index: 30; }

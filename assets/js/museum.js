@@ -346,7 +346,8 @@ function frameDeco(kind) {
     // 夜の海辺：遊歩道に据えた石の台座の上に立て、足もとを灯りで照らす
     case 'lightbox': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="plinth" x1="0" x2="1"><stop offset="0" stop-color="#2a2632"/><stop offset=".45" stop-color="#1d1a24"/><stop offset="1" stop-color="#121017"/></linearGradient></defs><ellipse cx="50" cy="37.5" rx="44" ry="2.6" fill="#ffc873" opacity=".16"/><path d="M26 0H74V35H26Z" fill="url(#plinth)"/><path d="M22 0H78V2.4H22Z" fill="#34303e"/><path d="M22 2.4H78V3.2H22Z" fill="#0d0b11" opacity=".6"/><path d="M23 34H77V37.5H23Z" fill="#1a1720"/><path d="M26 3.2H27.2V34H26Z" fill="#3c3848" opacity=".7"/></svg>`;
     // 夕凪の浜：流木の 2 本の柱を砂に立て、作品を縄で結ぶ。下は流木の板を渡してふさぐ（海から出て見えないように）
-    case 'post': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><ellipse cx="50" cy="37.5" rx="48" ry="2.6" fill="#6b5a44" opacity=".25"/>${[0, 1, 2, 3, 4, 5].map((k) => `<path d="M11 ${k * 6}H89V${k * 6 + 5.4}H11Z" fill="${['#b39c7c', '#a58e70', '#bba585'][k % 3]}"/><path d="M11 ${k * 6 + 5.4}H89" stroke="#7d6a52" stroke-width=".5"/>`).join('')}<path d="M8 0Q7 20 9 38H14Q13 20 13.5 0ZM86.5 0Q87 20 86 38H91Q93 20 92 0Z" fill="#9a8466"/><path d="M10 2Q9.5 20 10.5 36M88.5 2Q89 20 88 36" stroke="#c2ab8a" stroke-width=".6" fill="none"/><path d="M4 38Q11 34 18 38ZM82 38Q89 34 96 38Z" fill="#d9c49f"/></svg><svg class="deco top post" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M8 20Q7 8 9 0H14Q13 8 13.5 20ZM86.5 20Q87 8 86 0H91Q93 8 92 20Z" fill="#9a8466"/><path d="M5 3Q50 7 95 3" stroke="#8a7458" stroke-width="2.2" fill="none"/><path d="M30 5L33 20M70 5L67 20" stroke="#efe6d2" stroke-width=".6"/></svg>`;
+    // 板は隙間のない 1 枚（溝だけ）にして、後ろの海や砂が透けないように。柱の足もとは砂に埋まる（砂の山）
+    case 'post': return `<svg class="deco under" viewBox="0 0 100 40" preserveAspectRatio="none"><ellipse cx="50" cy="38" rx="50" ry="2.4" fill="#6b5a44" opacity=".22"/><path d="M11 0H89V36H11Z" fill="#7d6a52"/>${[0, 1, 2, 3, 4, 5].map((k) => `<path d="M11 ${k * 6}H89V${k * 6 + 5.4}H11Z" fill="${['#b39c7c', '#a58e70', '#bba585'][k % 3]}"/>`).join('')}<path d="M8 0Q7 20 9 38H14Q13 20 13.5 0ZM86.5 0Q87 20 86 38H91Q93 20 92 0Z" fill="#9a8466"/><path d="M10 2Q9.5 20 10.5 36M88.5 2Q89 20 88 36" stroke="#c2ab8a" stroke-width=".6" fill="none"/><path d="M2 39.5Q11 34.5 20 39.5ZM80 39.5Q89 34.5 98 39.5Z" fill="#d6c3a0"/><path d="M2 39.5Q11 36.2 20 39.5ZM80 39.5Q89 36.2 98 39.5Z" fill="#c7b28d" opacity=".6"/></svg><svg class="deco top post" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M8 20Q7 8 9 0H14Q13 8 13.5 20ZM86.5 20Q87 8 86 0H91Q93 8 92 20Z" fill="#9a8466"/><path d="M5 3Q50 7 95 3" stroke="#8a7458" stroke-width="2.2" fill="none"/><path d="M30 5L33 20M70 5L67 20" stroke="#efe6d2" stroke-width=".6"/></svg>`;
     default: return '';
   }
 }
@@ -764,8 +765,8 @@ function updateRoom(r, now) {
     r.leaveC = r.leaveC || { el: r.el, box: $('.curtain-leave', r.el), leafEls: null, curShown: -1 };
     r.leaveC.leaves = next.leaves; r.leaveC.curtainHTML = next.curtainHTML;
     // 隠した部屋（次の部屋に入れ替わった後）では作らない。作ると、閉じた葉だけが上へ流れていき、下の端がまっすぐ見える
-    // 隠した部屋（次の部屋に入れ替わった後）では、閉じきった形のまま置いておく（次の部屋がその葉を引き継ぐ。部屋ごと隠れているので見えない）
-    updateCurtain(r.leaveC, r.el.classList.contains('gone') ? 1 : leave);
+    // 隠した部屋（次の部屋に入れ替わった後）では、閉じきった形のまま置いておき、次の部屋に葉を渡す（渡したあとは作り直さない）
+    if (r.el.classList.contains('gone')) { if (r.leaveC.leafEls) updateCurtain(r.leaveC, 1); } else updateCurtain(r.leaveC, leave);
   }
   put(q(r, '.veil'), 'opacity', (Math.max(r.curS, next ? 0 : leave) * .35).toFixed(3));
   // 部屋の入口のアニメーション（部屋の名前の代わり）
@@ -777,7 +778,7 @@ function updateRoom(r, now) {
   let near = -1, best = 9, glow = r.sceneData.glowDefault;
   r.itemEls.forEach((el, i) => {
     const d = Math.abs(r.c - (i + 1));
-    put(el, 'opacity', (1 - Math.min(d, 1) * .35).toFixed(3));
+    // （離れた作品を薄くはしない：板や額が半透明になって、後ろの砂や海が透けて見えるので）
     el.classList.toggle('near', d < .25);
     if (d < best) { best = d; near = i; }
     const v = el.querySelector('video');
@@ -855,8 +856,9 @@ function updateEntrance() {
   }
   // 案内人が奥へ消えたら、最初の部屋と同じ葉のカーテンが左右から閉じる。
   // 閉じきったところで最初の部屋（入口の真下に重ねてある）へ入れ替わるので、つなぎ目は見えない
+  // （入口を過ぎて隠したあとは、葉は最初の部屋に渡してあるので、ここでは作り直さない）
   const r0 = rooms[0];
-  if (r0?.leaves) {
+  if (r0?.leaves && !entrance.classList.contains('gone')) {
     entranceCurtain.leaves = r0.leaves; entranceCurtain.curtainHTML = r0.curtainHTML;
     updateCurtain(entranceCurtain, smooth(.68, .96, p));
   }
@@ -1296,6 +1298,8 @@ function frame(now) {
     // （入口の葉のカーテンは、ここでは外さない。最初の部屋がそのまま引き継いで開く。入口の絵を手放すときに一緒に外す）
     currentRoom = null;
     rooms.forEach((r) => updateRoom(r, now));
+    // 入口の葉が最初の部屋に渡されずに残っていたら外す（部屋の更新のあとで。先に外すと渡せない）
+    if (gone && entranceCurtain.leafEls) updateCurtain(entranceCurtain, 0);
     // 0.4 秒ほど立ち止まっていたら、次の部屋の絵を先に読み込む（入口にいるときは最初の部屋）
     // （スマホではしない：次の部屋の元画像を持ったまま歩くと、今の部屋のぶんと重なってメモリが足りなくなる）
     if (!COARSE && now - movedAt > 400 && Math.abs(sy - SY) < .5 && (currentRoom || sy < GEO.entH)) prefetchNext(currentRoom);

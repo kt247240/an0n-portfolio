@@ -1209,17 +1209,20 @@ export function sceneNight(W, stops) {
   // 中景：海沿いの遊歩道（手すり、街灯、ヤシ、電球の紐）と植え込み
   // 作品の後ろ（と台座のまわり）にはヤシも街灯も立てない。作品は遊歩道の上にすっきり立つ
   const clear = (x, m = 0) => clearOfWorks(W, stops, x, m);
-  const palmXs = [];
-  for (let x = R(0, 10); x < mw; x += R(18, 30)) {
-    const h = R(42, 60), lean = R(-7, 7);
-    if (!clear(x, 6) || !clear(x + lean * 1.6, 10)) { palmXs.push(null); continue; }
-    mid += palm(x, 86, h, lean, '#2a2119', '#1c2614', '#2d3a1f');
-    palmXs.push([x + lean, 86 - h]);
-  }
-  for (let i = 1; i < palmXs.length; i++) if (palmXs[i - 1] && palmXs[i]) mid += strands(palmXs[i - 1][0], palmXs[i][0], Math.max(palmXs[i - 1][1], palmXs[i][1]) + 5, R(2, 5), 9);
   mid += railing(-5, mw + 5, 84, '#15141d');
   const [pg, pd] = lgrad([[0, '#2a2733'], [1, '#141219']]);
   mid += `<defs>${pd}</defs><rect x="-5" y="84" width="${n1(mw + 10)}" height="22" fill="url(#${pg})"/><rect x="-5" y="84" width="${n1(mw + 10)}" height=".5" fill="#3a3646"/>`;
+  // ヤシは遊歩道の上（手すりの手前）に、石の植木枡に植えて立てる。根もとが石畳に見えるので、海から生えて見えない
+  const palmXs = [], palmY = 93.5;
+  for (let x = R(0, 10); x < mw; x += R(18, 30)) {
+    const h = R(44, 60), lean = R(-7, 7);
+    if (!clear(x, 6) || !clear(x + lean * 1.6, 10)) { palmXs.push(null); continue; }
+    const w = 7.5;
+    mid += `<path d="M${n1(x - w / 2)} ${n1(palmY - 2.2)}h${n1(w)}l.4 2.8h${n1(-w - .8)}Z" fill="#2c2937"/><path d="M${n1(x - w / 2 - .4)} ${n1(palmY + .6)}h${n1(w + .8)}v.5h${n1(-w - .8)}Z" fill="#1b1924"/><rect x="${n1(x - w / 2 - .35)}" y="${n1(palmY - 2.7)}" width="${n1(w + .7)}" height=".7" rx=".2" fill="#3b3748"/><rect x="${n1(x - w / 2 + .3)}" y="${n1(palmY - 2.1)}" width="${n1(w - .6)}" height=".5" fill="#17130f"/>`;
+    mid += palm(x, palmY - 1.9, h, lean, '#2a2119', '#1c2614', '#2d3a1f');
+    palmXs.push([x + lean, palmY - 1.9 - h]);
+  }
+  for (let i = 1; i < palmXs.length; i++) if (palmXs[i - 1] && palmXs[i]) mid += strands(palmXs[i - 1][0], palmXs[i][0], Math.max(palmXs[i - 1][1], palmXs[i][1]) + 5, R(2, 5), 9);
   // 遊歩道の石畳（目地）と、街灯の光が濡れた石に映る筋
   for (let y = 88.5; y < 106; y += 2.6) mid += `<path d="M-5 ${n1(y)}H${n1(mw + 5)}" stroke="#35313f" stroke-width=".18" opacity=".7"/>`;
   for (let y = 86, r = 0; y < 106; y += 2.6, r++) for (let x = -5 + (r % 2) * 2.5; x < mw + 5; x += 5) mid += `<path d="M${n1(x)} ${n1(y)}v2.6" stroke="#35313f" stroke-width=".15" opacity=".55"/>`;
