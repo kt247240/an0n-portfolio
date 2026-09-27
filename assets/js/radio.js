@@ -9,6 +9,8 @@
 import { createAmbience } from './ambience.js';
 
 const API = 'https://w.soundcloud.com/player/api.js';
+// 切り分け用：?noradio を付けて開くと、SoundCloud を読み込まずに環境音だけを鳴らす
+const NO_SC = location.search.includes('noradio');
 const loadAPI = () => window.SC ? Promise.resolve() : new Promise((ok, ng) => {
   const s = document.createElement('script'); s.src = API; s.async = true; s.onload = ok; s.onerror = ng; document.head.append(s);
 });
@@ -82,6 +84,7 @@ export function createRadio({ playlist, secret, volume = 70 }) {
       want = !want;
       ensureAmbience();
       if (actx) (want ? actx.resume() : Promise.resolve()).catch(() => {});
+      if (NO_SC) { playing = want; sync(); return want; }
       setup().then(() => {
         if (want) {
           widget.play();
