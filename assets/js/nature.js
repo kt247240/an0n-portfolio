@@ -2057,7 +2057,8 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
     // 手前の鉢植えがすき間の真ん中に来るので、床の小物は左右に寄せる
     const off = Math.max(12, W * .11);
-    if (k === 1) { mid += guitar(gx - off, 90, 24) + stoolMug(gx + off, 90.5, 2.2); mug = [gx + off, 90.5 - 2.2 * 1.75 - 2.2 * .42 * 1.1]; }
+    // 1 つ目のすき間は左半分が小屋の外（雪の中）なので、ギターは置かない。スツールとマグは小屋の中にあるときだけ
+    if (k === 1) { if (gx + off > wallX + 3) { mid += stoolMug(gx + off, 90.5, 2.2); mug = [gx + off, 90.5 - 2.2 * 1.75 - 2.2 * .42 * 1.1]; } }
     else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6); }
     else { mid += skis(gx - off, 90, 30); }
     // 壁の小物は、作品にかからないときだけ（広い画面）

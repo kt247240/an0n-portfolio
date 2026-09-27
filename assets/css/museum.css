@@ -748,7 +748,7 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .snowcut { position: absolute; overflow: hidden; }
 .snowcut img { display: block; max-width: none; user-select: none; }
 .snowcut.flip img { transform: scaleX(-1); }
-.snowcut.board { overflow: visible; transform-origin: 50% 100%; transform: rotate(4deg); }
+.snowcut.board { overflow: hidden; transform-origin: 50% 100%; transform: rotate(-4deg); } /* 下の 2 割は雪の中（切り取って、根もとを雪の盛り上がりで隠す） */
 .cabin-door { position: absolute; top: 44vh; width: 12vh; height: 38vh; perspective: 60vh; pointer-events: none; --open: 0; }
 .cabin-door .leaf { position: absolute; inset: 0; transform-origin: 0 50%; transform: rotateY(calc(var(--open) * -104deg)); filter: brightness(calc(1 - var(--open) * .35)); }
 .cabin-door .leaf svg, .cabin-door .spill { display: block; width: 100%; height: 100%; }
