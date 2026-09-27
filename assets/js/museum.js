@@ -480,7 +480,7 @@ function buildRoomScene(r) {
     const sides = (ks, name, y, h, clipR) => ks.map((k) => part(`snow-${name}-ext.webp`, P.x + k * P.pw, y, h, clipR, k % 2 === 0)).join('');
     r.layerHTML['.far'] += part('snow-mount.webp', P.x, P.y(240), 480 * P.s) + sides(P.farTiles, 'mount', P.y(240), 480 * P.s);
     // スノーボードは、小屋の手前の雪に縦に刺す（下の 2 割ほどが雪に埋まり、根もとに雪が盛り上がる）
-    const bh = W < 80 ? 22 : 28, bw = bh * 136 / 640, bx = P.facade0 - (W < 80 ? 7 : 10), by = 97, sunk = bh * .2;
+    const bh = W < 80 ? 32 : 38, bw = bh * 136 / 640, bx = P.facade0 - (W < 80 ? 8 : 12), by = 97, sunk = bh * .18; // 扉（高さ 38）と比べて、人の背丈より少し低いくらいに見える大きさ
     const mound = `<svg class="snowcut" viewBox="-10 -3 20 6" preserveAspectRatio="none" style="${box(bx - bw * 1.6, by - 1.6, bw * 3.2, 3.2)};overflow:visible" aria-hidden="true"><ellipse cx=".6" cy="1.4" rx="9.5" ry="1.4" fill="#7f8fcf" opacity=".45"/><path d="M-9.6 2.4Q-6 -.6 -2.2 -1.4Q0 -2.2 2.4 -1.2Q6 -.4 9.6 2.4Z" fill="#b4c4f6"/><path d="M-6.5 .6Q-2.5 -1.6 0 -1.8Q2.6 -1.5 5.5 .2" stroke="#d6e0fc" stroke-width=".5" fill="none" stroke-linecap="round"/></svg>`;
     r.layerHTML['.mid'] += part('snow-ground.webp', P.x, P.y(600), 722 * P.s, P.facade0) + sides(P.midTiles, 'ground', P.y(600), 722 * P.s, P.facade0)
       + `<svg class="snowcut" viewBox="${P.corner[0]} 0 ${P.corner[1]} 100" preserveAspectRatio="none" style="${box(P.corner[0], 0, P.corner[1], 100)};overflow:visible" aria-hidden="true">${gradeColors(P.corner[2], GRADES.attic)}</svg>`

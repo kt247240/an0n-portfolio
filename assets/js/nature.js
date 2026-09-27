@@ -487,9 +487,9 @@ function beachShell(x, y, s, kind) {
   return `<path d="M${n1(x)} ${n1(y)}l${n1(s * .5)} ${n1(-s * .35)}l${n1(s * .45)} ${n1(s * .15)}l${n1(-s * .2)} ${n1(s * .3)}Z" fill="${pick(['#9fd8c8', '#b9e0f0', '#e8d6a8'])}" opacity=".75"/><path d="M${n1(x + s * .2)} ${n1(y - s * .1)}l${n1(s * .3)} ${n1(-s * .15)}" stroke="#fff" stroke-width=".1" opacity=".8"/>`;
 }
 // 砂に残る足あと（波打ちぎわに沿って）
-function footprints(x0, x1, y, n) {
+function footprints(x0, x1, y, n, keep = () => true) {
   let s = '';
-  for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * i / n, yy = y + (i % 2 ? .7 : -.7) + Math.sin(i * .4) * 1.2; s += `<ellipse cx="${n1(x)}" cy="${n1(yy)}" rx=".75" ry=".32" fill="#b99f7c" opacity=".45"/><ellipse cx="${n1(x + .5)}" cy="${n1(yy - .05)}" rx=".22" ry=".18" fill="#b99f7c" opacity=".45"/>`; }
+  for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * i / n, yy = y + (i % 2 ? .7 : -.7) + Math.sin(i * .4) * 1.2; if (!keep(x, yy)) continue; s += `<ellipse cx="${n1(x)}" cy="${n1(yy)}" rx=".75" ry=".32" fill="#b99f7c" opacity=".45"/><ellipse cx="${n1(x + .5)}" cy="${n1(yy - .05)}" rx=".22" ry=".18" fill="#b99f7c" opacity=".45"/>`; }
   return s;
 }
 // 濡れた石畳に落ちる街灯の光と、水たまりの映り込み
@@ -681,10 +681,11 @@ function litter(x0, x1, y0, y1, n, colors) {
   return s;
 }
 // 小道の小石
-function pebbles(x0, x1, y0, y1, n) {
+function pebbles(x0, x1, y0, y1, n, keep = () => true) {
   let s = '';
   for (let i = 0; i < n; i++) {
     const x = R(x0, x1), y = R(y0, y1), rx = R(.3, .9), c = pick(['#a39478', '#8f836b', '#b8ab8e']);
+    if (!keep(x, y)) continue;
     s += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(rx)}" ry="${n1(rx * .55)}" fill="${c}"/><ellipse cx="${n1(x - rx * .25)}" cy="${n1(y - rx * .2)}" rx="${n1(rx * .45)}" ry="${n1(rx * .2)}" fill="#e6dcc2" opacity=".6"/>`;
   }
   return s;
@@ -1132,7 +1133,8 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   for (let i = 0; i < mw / 10; i++) { const x = R(0, mw), y = R(30, 98); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(3, 7))} ${n1(R(-.6, .6))} ${n1(R(7, 14))} 0" stroke="#4f5a35" stroke-width=".25" fill="none" opacity=".35"/>`; }
   for (let s = 0; s < stops; s++) {
     const cx = at(W, FACTORS.mid)(s, W / 2);
-    mid += reeds(cx - W * .34, 100, 7, '#6f8a3a') + reeds(cx + W * .36, 100, 6, '#7c9a40');
+    // 葦は台（桟橋の上の木の台）の横に重ならないところだけ（狭い画面では台の縁にかかるので置かない）
+    for (const [dx, n, c] of [[-.34, 7, '#6f8a3a'], [.36, 6, '#7c9a40']]) { const x = cx + W * dx; if (clearOfWorks(W, stops, x - 3, 2) && clearOfWorks(W, stops, x + 3, 2)) mid += reeds(x, 100, n, c); }
   }
   for (let i = 0; i < mw / 3; i++) mid += `<path d="M${n1(R(0, mw))} ${n1(R(30, 100))}h${n1(R(2, 6))}" stroke="#e8efd0" stroke-width=".25" opacity=".35" stroke-linecap="round"/>`;
   // 生きもの：蓮の葉のカエル、水面のトンボとアメンボ、丸太のカメ、浅瀬のサギ、つるの先のカワセミ（作品の枠にはかからないところに）
@@ -1513,26 +1515,32 @@ export function sceneCove(W, stops) {
   for (let x = R(-5, 5); x < mw; x += R(6, 14)) mid += `<path d="M${n1(x)} ${n1(R(81, 83))}h${n1(R(3, 9))}" stroke="#fff6ea" stroke-width=".22" opacity=".55" stroke-linecap="round"/>`;
   for (let k = 0; k < 2; k++) { let d = `M-5 ${n1(79.6 + k * 1.2)}`; for (let x = -5; x < mw + 5; x += 3) d += `Q${n1(x + 1.5)} ${n1(79.6 + k * 1.2 + R(-.5, .5))} ${n1(x + 3)} ${n1(79.6 + k * 1.2 + R(-.3, .3))}`; mid += `<path d="${d}" stroke="#fffaf2" stroke-width=".3" fill="none" opacity="${k ? .35 : .6}"/>`; }
   // 乾いた砂の上：小石、貝のかけら、打ち上げられた海藻
-  mid += pebbles(-5, mw, 85, 103, Math.round(mw * .5));
-  for (let i = 0; i < mw * .35; i++) { const x = R(0, mw), y = R(84, 102); mid += `<path d="M${n1(x)} ${n1(y)}a.6 .45 0 0 1 1.2 0Z" fill="#f4e9da" opacity=".85"/>`; }
+  // 看板（流木の台）の下の縁に切られる帯（台の真下で、地面の y が 92 より上）には、砂の上の小物を置かない：
+  // 板の下から半分だけのぞいて、台の下にもぐり込んでいるように見えるので
+  const open = (x, y) => y >= 92 || clearOfWorks(W, stops, x, 3);
+  mid += pebbles(-5, mw, 85, 103, Math.round(mw * .5), open);
+  for (let i = 0; i < mw * .35; i++) { const x = R(0, mw), y = R(84, 102); if (!open(x, y)) continue; mid += `<path d="M${n1(x)} ${n1(y)}a.6 .45 0 0 1 1.2 0Z" fill="#f4e9da" opacity=".85"/>`; }
   for (let i = 0; i < mw / 16; i++) {
     const x = R(0, mw), y = R(83.8, 87.5);
+    if (!open(x - 2, y) || !open(x + 3, y)) continue;
     let d = '';
     for (let k = 0; k < 6; k++) { const a = R(-.5, .5), l = R(1.2, 2.6), ox = R(-1.2, 1.2), oy = R(-.3, .3); d += `M${n1(x + ox)} ${n1(y + oy)}q${n1(l * .5)} ${n1(a - .5)} ${n1(l)} ${n1(a)}`; }
     mid += `<path d="${d}" stroke="${pick(['#4f5a2e', '#5c5a34', '#6b6a3a'])}" stroke-width=".3" fill="none" opacity=".75" stroke-linecap="round"/>`;
   }
-  for (let i = 0; i < mw * 1.5; i++) mid += `<circle cx="${n1(R(0, mw))}" cy="${n1(R(84, 104))}" r="${n1(R(.08, .22))}" fill="${pick(['#b9a27c', '#f6ead2', '#a8916b'])}" opacity=".7"/>`;
+  for (let i = 0; i < mw * 1.5; i++) { const x = R(0, mw), y = R(84, 104); if (open(x, y)) mid += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(R(.08, .22))}" fill="${pick(['#b9a27c', '#f6ead2', '#a8916b'])}" opacity=".7"/>`; }
   for (let x = R(4, 30); x < mw; x += R(45, 90)) {
+    // 看板（流木の台）の足もとには置かない：板の下から岩がのぞいて、台が岩に乗っているように見えるので
+    if (!clearOfWorks(W, stops, x - 7, 10) || !clearOfWorks(W, stops, x + 16, 10)) continue;
     const y = R(85, 94), c = pick(['#6f6a6a', '#7c746c', '#5f5f66']), rw = R(7, 13);
     // 夕日の長い影（太陽は左の奥なので、右手前へ長く）
     mid += `<ellipse cx="${n1(x + rw * .9)}" cy="${n1(y + .6)}" rx="${n1(rw * 1.1)}" ry="${n1(rw * .12)}" fill="#7a5a5a" opacity=".22"/>`;
     mid += rock(x, y, rw, R(3.5, 6), c);
     if (rnd() < .6) mid += rock(x + R(4, 8), y + R(.5, 1.5), R(3, 6), R(1.6, 3), mixC(c, '#8a8278', .3));
   }
-  for (let x = R(10, 30); x < mw; x += R(40, 70)) mid += driftwood(x, R(92, 98), R(8, 14), R(-8, 8));
+  for (let x = R(10, 30); x < mw; x += R(40, 70)) if (clearOfWorks(W, stops, x - 7, 10) && clearOfWorks(W, stops, x + 7, 10)) mid += driftwood(x, R(92, 98), R(8, 14), R(-8, 8));
   // 貝殻・ヒトデ・シーグラス、波打ちぎわの足あとと泡
-  for (let i = 0; i < mw / 7; i++) { const x = R(0, mw), y = R(84.5, 103), k = rnd(); mid += beachShell(x, y, R(1.4, 2.4) * (1 + (y - 84) / 22), k < .45 ? 0 : k < .75 ? 1 : k < .85 ? 2 : 3); }
-  for (let x = R(0, 40); x < mw; x += R(70, 130)) mid += footprints(x, x + R(26, 44), R(82.6, 84), Math.round(R(12, 20)));
+  for (let i = 0; i < mw / 7; i++) { const x = R(0, mw), y = R(84.5, 103), k = rnd(); if (!open(x - 1, y) || !open(x + 2, y)) continue; mid += beachShell(x, y, R(1.4, 2.4) * (1 + (y - 84) / 22), k < .45 ? 0 : k < .75 ? 1 : k < .85 ? 2 : 3); }
+  for (let x = R(0, 40); x < mw; x += R(70, 130)) mid += footprints(x, x + R(26, 44), R(82.6, 84), Math.round(R(12, 20)), open);
   for (let i = 0; i < mw * .8; i++) mid += `<circle cx="${n1(R(0, mw))}" cy="${n1(R(79.2, 81.2))}" r="${n1(R(.08, .24))}" fill="none" stroke="#fffaf2" stroke-width=".06" opacity=".7"/>`;
   for (let x = R(0, 10); x < mw; x += R(12, 22)) mid += tuft(x, 101 + R(-1, 2), R(3, 5), ['#a39866', '#8a8a5a', '#c2b27a', '#b7a36e'], 7);
   // 砂浜の小物：潮だまり、カニ、立っているカモメ、砂丘の柵、引き上げた小舟、焚き火（作品の下の台のわきに）
@@ -1620,6 +1628,7 @@ export function sceneNight(W, stops) {
   for (let i = 0; i < mw * .8; i++) mid += `<rect x="${n1(R(0, mw))}" y="${n1(R(89, 104))}" width="${n1(R(1, 3))}" height=".2" fill="#3a3646" opacity=".6"/>`;
   // 遊歩道の植え込み：石の植木枡（土が見える）に、こんもりした低い茂み。枝葉だけが石畳の上に浮いて見えないように、根もとを枡に入れる
   for (let x = R(-5, 5); x < mw; x += R(10, 16)) {
+    if (!clearOfWorks(W, stops, x, 5)) continue; // 台座の真下には植え込みを置かない（茂みの上が台座の足もとに切られるので）
     const w = R(5, 7.5), y = 93 + R(-.6, .6);
     mid += `<path d="M${n1(x - w / 2)} ${n1(y - 1.8)}h${n1(w)}l.35 2.4h${n1(-w - .7)}Z" fill="#2c2937"/><path d="M${n1(x - w / 2 - .35)} ${n1(y + .6)}h${n1(w + .7)}v.5h${n1(-w - .7)}Z" fill="#1b1924"/><rect x="${n1(x - w / 2 - .3)}" y="${n1(y - 2.3)}" width="${n1(w + .6)}" height=".7" rx=".2" fill="#3b3748"/><rect x="${n1(x - w / 2 + .3)}" y="${n1(y - 1.7)}" width="${n1(w - .6)}" height=".5" fill="#17130f"/>`;
     mid += shrub(x, y - 1.6, R(4.5, 6), ['#0c1209', '#131b0e', '#1a2413', '#233019', '#2b3a1f'], { leaf: R(1.1, 1.4), n: 7, spread: 62 });
