@@ -1912,8 +1912,7 @@ function vinylStack(x, y, s) {
   let o = `<ellipse cx="${n1(x)}" cy="${n1(y + .2)}" rx="${n1(s * 1.2)}" ry=".45" fill="#000" opacity=".3"/>`;
   const cols = ['#b8604a', '#3f5d59', '#d4b884', '#6b4a7a', '#2a2733', '#8fa8b0'];
   for (let k = 0; k < 6; k++) o += `<rect x="${n1(x - s + R(-.15, .15))}" y="${n1(y - (k + 1) * s * .14)}" width="${n1(s * 2)}" height="${n1(s * .14)}" fill="${cols[k % cols.length]}"/>`;
-  const ry = y - s * .9, rw = s * 1.5;
-  o += `<rect x="${n1(x + s * .1)}" y="${n1(ry - rw)}" width="${n1(rw)}" height="${n1(rw)}" fill="${pick(cols)}" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/><circle cx="${n1(x + s * .1 + rw * .55)}" cy="${n1(ry - rw * .5)}" r="${n1(rw * .4)}" fill="#1a1512" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/><circle cx="${n1(x + s * .1 + rw * .55)}" cy="${n1(ry - rw * .5)}" r="${n1(rw * .13)}" fill="#e2b36f" transform="rotate(-6 ${n1(x + s * .1)} ${n1(ry)})"/>`;
+  pick(cols); // 立てかけたジャケットはやめた（本人の希望）。乱数の順番を変えないように、選ぶ処理だけ残す
   return o;
 }
 // クッションの上で丸くなって眠る猫
