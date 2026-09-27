@@ -355,7 +355,7 @@ const rooms = ROOMS.map((room, ri) => {
   const el = document.createElement('section');
   el.className = `room scene-${room.scene} frame-${room.frame}`;
   el.id = `room-${room.id}`;
-  el.innerHTML = `<div class="sticky">
+  el.innerHTML = `<div class="sticky"><div class="stage">
       <div class="sky"></div>
       <div class="plane far"></div><div class="plane drift" aria-hidden="true"></div>${room.scene === 'jungle' ? '<div class="water-glow" aria-hidden="true"><i class="tint"></i><canvas class="caust"></canvas><i class="haze"></i></div>' : ''}<div class="plane mid"></div>
       <div class="plane props" aria-hidden="true"></div>
@@ -370,7 +370,7 @@ const rooms = ROOMS.map((room, ri) => {
       <div class="curtain curtain-leave" aria-hidden="true"></div>
       <div class="veil"></div>
       <div class="vig" aria-hidden="true"></div>
-    </div>`;
+    </div></div>`;
   roomsEl.append(el);
   return { room, ri, el, items, stops: items.length + 1, c: 0, glow: [255, 230, 200], sceneData: null, live: false, capIdx: -2 };
 });
@@ -516,7 +516,7 @@ function buildRoomScene(r) {
       // 小屋の扉：蝶番を左に、近づくとゆっくり内側へひらく。ひらくほど中の灯りが雪に漏れる
       el.className = 'cabin-door';
       el.style.left = `${(x - 6) * U}px`;
-      el.innerHTML = gradeColors(`<svg class="spill" viewBox="0 0 40 18" preserveAspectRatio="none" aria-hidden="true"><path d="M14 0H26L40 18H0Z" fill="#ffd9a0"/></svg><div class="leaf"><svg viewBox="0 0 12 38" preserveAspectRatio="none" aria-hidden="true"><rect width="12" height="38" fill="#4a3322"/>${[3, 6, 9].map((v) => `<path d="M${v} 0V38" stroke="#3a2718" stroke-width=".35"/>`).join('')}<path d="M1.4 7H10.6M1.4 30H10.6M1.4 30L10.6 7" stroke="#5e4029" stroke-width="1.1"/><circle cx="10" cy="20" r=".6" fill="#c9a36a"/></svg></div>`, GRADES.attic);
+      el.innerHTML = gradeColors(`<i class="spill" aria-hidden="true"></i><svg class="step" viewBox="0 0 16 4" preserveAspectRatio="none" aria-hidden="true"><path d="M.6 1.1H15.4V4H.6Z" fill="#3e2a1b"/><path d="M.6 1.1H15.4V1.7H.6Z" fill="#6a4a31"/><path d="M1.5 2.5H14.5M1.5 3.3H14.5" stroke="#2e1f14" stroke-width=".18"/><path d="M0 1.3Q1 .2 4 .5T9 .4T14 .5Q15.6 .4 16 1.3Q12 1 8 1.2T0 1.3Z" fill="#dfe6f2"/><path d="M4.5 .9Q8 .5 11.5 .9" stroke="#ffd9a0" stroke-width=".35" stroke-linecap="round" opacity=".55" class="step-lit"/></svg><div class="leaf"><svg viewBox="0 0 12 38" preserveAspectRatio="none" aria-hidden="true"><rect width="12" height="38" fill="#4a3322"/>${[3, 6, 9].map((v) => `<path d="M${v} 0V38" stroke="#3a2718" stroke-width=".35"/>`).join('')}<path d="M1.4 7H10.6M1.4 30H10.6M1.4 30L10.6 7" stroke="#5e4029" stroke-width="1.1"/><circle cx="10" cy="20" r=".6" fill="#c9a36a"/></svg></div>`, GRADES.attic);
     } else {
       el.className = 'work pending';
       el.innerHTML = `<svg class="covered" viewBox="0 0 60 72" aria-label="搬入中"><path d="M8 70L14 30M52 70L46 30M30 70V40" stroke="#8a5a3b" stroke-width="2.4" stroke-linecap="round"/><path d="M10 8Q30 2 50 8L54 56Q46 60 40 55Q34 61 28 55Q21 61 15 55Q10 59 6 56Z" fill="#efe6d2"/><path d="M10 8Q30 2 50 8L52 30Q30 20 10 30Z" fill="#faf3e4"/><path d="M20 10Q22 30 18 55M34 8Q36 30 34 56M44 9Q42 32 44 55" stroke="#d8ccb2" stroke-width="1" fill="none"/><path d="M28 2Q30 -1 32 2L31 6H29Z" fill="#6b4630"/></svg>`;
@@ -693,12 +693,48 @@ function birdHTML(r) {
   const [s, dx, bottom, flip] = b;
   return `<button class="prop bird-prop${flip ? ' flip' : ''}" aria-label="インコ" style="left:${(s * W * FACTORS.mid + W / 2 + dx) * U}px;bottom:${bottom}vh"><img src="assets/bird.webp" alt="" draggable="false"></button>`;
 }
-// 砂の上のチラシ：タップすると風にさらわれたように舞い上がって、また砂に落ちる
+// 砂の上のチラシ：タップすると、砂から拾い上げるように起き上がって画面の真ん中で大きく見られる（もう一度タップか × で砂に戻る）
+let flyerView = null, flyerFrom = null;
+function flyerRectVars(el, from) {
+  // 拾い上げる前のチラシの位置と大きさ（砂の上）から、大きく見る位置まで動かすための差
+  el.style.transition = 'none'; el.style.transform = 'none'; // 変形をはずした、大きく見るときの位置を測る
+  const to = el.getBoundingClientRect(), sx = from.width / to.width;
+  el.style.transform = ''; void el.offsetWidth; el.style.transition = '';
+  el.style.setProperty('--fx', `${(from.left + from.width / 2 - (to.left + to.width / 2)).toFixed(1)}px`);
+  el.style.setProperty('--fy', `${(from.top + from.height / 2 - (to.top + to.height / 2)).toFixed(1)}px`);
+  el.style.setProperty('--fs', sx.toFixed(4));
+}
+function openFlyer(f) {
+  if (!flyerView) {
+    flyerView = document.createElement('div');
+    flyerView.id = 'flyer-view';
+    flyerView.innerHTML = `<button class="fv-close" aria-label="閉じる">×</button><img alt="Hidden Key. のチラシ" src="assets/art/hidden-key-flyer-lg.webp" draggable="false">`;
+    document.body.append(flyerView);
+    flyerView.addEventListener('click', closeFlyer);
+    for (const ev of ['touchmove', 'wheel']) flyerView.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
+  }
+  flyerFrom = f; f.classList.add('picked');
+  const img = flyerView.querySelector('img');
+  const go = () => {
+    flyerView.classList.remove('open', 'closing'); flyerView.classList.add('show');
+    flyerRectVars(img, f.getBoundingClientRect());
+    void img.offsetWidth; flyerView.classList.add('open');
+  };
+  if (img.complete && img.naturalWidth) go(); else img.addEventListener('load', go, { once: true });
+}
+function closeFlyer() {
+  if (!flyerView?.classList.contains('open')) return;
+  const img = flyerView.querySelector('img');
+  if (flyerFrom) flyerRectVars(img, flyerFrom.getBoundingClientRect());
+  flyerView.classList.add('closing'); flyerView.classList.remove('open');
+  setTimeout(() => { flyerView.classList.remove('show', 'closing'); flyerFrom?.classList.remove('picked'); flyerFrom = null; }, 560);
+}
 document.addEventListener('click', (e) => {
   const f = e.target.closest('.sand-flyer'); if (!f) return;
   e.stopPropagation();
-  f.classList.remove('blown'); void f.offsetWidth; f.classList.add('blown');
+  openFlyer(f);
 }, true);
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFlyer(); });
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.bird-prop, .sign-bird'); if (!b) return;
   e.stopPropagation();
@@ -945,15 +981,16 @@ function updateRoom(r, now) {
   // 夜更けの小屋：扉の前で立ち止まったまま扉の中へ吸い込まれ（ズームと灯り）、灯りが引くと室内にいる
   let cam = r.c;
   if (r.room.scene === 'attic') {
-    const c = r.c, sticky = q(r, '.sticky'), flash = q(r, '.flash');
+    const c = r.c, sticky = q(r, '.stage'), flash = q(r, '.flash'); // 拡大は .sticky ではなく中の .stage に（iPhone の Safari は、貼りつく要素そのものを拡大すると位置と大きさがずれて、画面の端が抜ける）
     if (c > 1 && c < 2) cam = c < 1.5 ? 1 : 2;
     const zin = c > 1 && c < 1.5 ? smooth(1.02, 1.47, c) : 0;
     const settle = c >= 1.5 && c < 2 ? 1 - smooth(1.5, 1.95, c) : 0;
-    // スマホは寄りを控えめに（大きく拡大した層はメモリを食うので。灯りが先に画面を満たす）
-    const scale = zin > 0 ? Math.pow(COARSE ? 3.2 : 5.5, zin) : 1 + settle * .18;
+    // スマホは寄りを控えめに：何画面ぶんもある横長の層をまとめて大きく拡大すると、iPhone が描き切れずに画面の端が抜ける。
+    // 寄りは 1.9 倍までにして、そのぶん灯りを早めに満たす（寄り切る前に暖かい光が画面を包む）
+    const scale = zin > 0 ? Math.pow(COARSE ? 1.9 : 5.5, zin) : 1 + settle * .18;
     put(sticky, 'transformOrigin', zin > 0 ? '50% 63%' : '50% 55%');
     put(sticky, 'transform', scale > 1.0005 ? `scale(${scale.toFixed(4)})` : '');
-    put(flash, 'opacity', (c < 1.5 ? smooth(1.26, 1.48, c) : 1 - smooth(1.5, 1.72, c)).toFixed(3));
+    put(flash, 'opacity', (c < 1.5 ? (COARSE ? smooth(1.12, 1.38, c) : smooth(1.26, 1.48, c)) : 1 - smooth(1.5, 1.72, c)).toFixed(3));
   }
   r.cam = cam;
   // 小屋の中の最初の作品の前では、画面の左端がちょうど外壁との境目。
@@ -1701,7 +1738,7 @@ function enterForest(withSound) {
 paceScroll({
   maxSpeed: () => vh * 1.9,
   // 目録と作家の欄（いちばん下）は、ふつうのスクロール。作品を飾っている部屋までは今のまま
-  active: (e) => !vOpen && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault') && scrollY < $('#catalog').offsetTop - 2,
+  active: (e) => !vOpen && !flyerView?.classList.contains('show') && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault') && scrollY < $('#catalog').offsetTop - 2,
 });
 $('#enter-sound').addEventListener('click', () => enterForest(true));
 $('#enter-silent').addEventListener('click', () => enterForest(false));

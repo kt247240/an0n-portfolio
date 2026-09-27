@@ -89,6 +89,7 @@ body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; 
 
 /* ---------- シーン共通 ---------- */
 .sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+.stage { position: absolute; inset: 0; }
 .sky { position: absolute; inset: 0; }
 .plane { position: absolute; left: 0; top: 0; height: 100%; will-change: transform; pointer-events: none; }
 .work .canvas, .work.pending { pointer-events: auto; }
@@ -751,9 +752,14 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .snowcut.flip img { transform: scaleX(-1); }
 .snowcut.board { overflow: hidden; transform-origin: 50% 100%; transform: rotate(-4deg); } /* 下の 2 割は雪の中（切り取って、根もとを雪の盛り上がりで隠す） */
 .cabin-door { position: absolute; top: 44vh; width: 12vh; height: 38vh; perspective: 60vh; pointer-events: none; --open: 0; }
+.cabin-door { perspective: 120vh; perspective-origin: 50% 100%; } /* 遠近の中心を敷居の高さに：開いても扉の下の辺は敷居の線のまま（土台にはみ出さない） */
 .cabin-door .leaf { position: absolute; inset: 0; transform-origin: 0 50%; transform: rotateY(calc(var(--open) * -104deg)); filter: brightness(calc(1 - var(--open) * .35)); }
-.cabin-door .leaf svg, .cabin-door .spill { display: block; width: 100%; height: 100%; }
-.cabin-door .spill { position: absolute; left: -14vh; top: 100%; width: 40vh; height: 18vh; opacity: calc(var(--open) * .3); }
+.cabin-door .leaf svg { display: block; width: 100%; height: 100%; }
+/* 扉の前の踏み段（雪をかぶった木の段）。土台の帯を隠し、扉が開くと段の雪に中の灯りが差す */
+.cabin-door .step { position: absolute; left: -2.2vh; top: calc(100% - .5vh); width: 16.4vh; height: 3.6vh; }
+.cabin-door .step-lit { opacity: calc(var(--open) * .8); }
+/* 雪に落ちる灯り：角のない、奥ほど明るいにじみ（扉の幅から広がって、手前へ薄れていく） */
+.cabin-door .spill { position: absolute; left: -12vh; top: calc(100% + 2.6vh); width: 36vh; height: 16vh; opacity: var(--open); background: radial-gradient(34% 100% at 50% 0%, rgba(255, 214, 150, .42), rgba(255, 205, 140, .16) 45%, transparent 78%); }
 
 /* 小屋の扉へ吸い込まれるときの、中の灯り（画面いっぱいの暖かい光。作品が見える前に引いていく） */
 .scene-attic .flash { display: block; z-index: 7; opacity: 0; background: radial-gradient(circle at 50% 63%, #fff1d2 0%, #ffd9a0 35%, #f2b566 70%, #c9874a 100%); }
@@ -993,8 +999,9 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 #v-screen img, #v-screen video { max-height: var(--v-maxh, 72vh); }
 
 /* 夕凪の浜の砂の上のチラシ（Hidden Key. の続き）：奥へ寝かせた紙が、浜風で角からめくれ、ときどき少し滑る。動きは要素の transform だけ */
-.sand-flyer { position: absolute; top: 84.5vh; padding: 0; border: 0; background: none; cursor: pointer; perspective: 60vh; -webkit-tap-highlight-color: transparent; }
+.sand-flyer { position: absolute; top: 84.5vh; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; perspective: 60vh; -webkit-tap-highlight-color: transparent; }
 @media (max-width: 760px) { .sand-flyer { top: 86vh; } }
+.sand-flyer::before { content: ""; position: absolute; inset: -2vh -1.5vh; } /* 指で押しやすいように、見た目より少し広く */
 .sand-flyer::after { content: ""; position: absolute; left: 4%; right: -4%; bottom: -7%; height: 22%; background: radial-gradient(closest-side, rgba(60, 45, 30, .32), transparent); z-index: -1; }
 .sand-flyer img { display: block; width: 100%; height: auto; transform-origin: 50% 100%; transform: rotateX(58deg) rotateZ(-9deg); filter: sepia(.12) brightness(.94) saturate(.95); box-shadow: 0 1px 2px rgba(40, 30, 20, .25); }
 .room.live .sand-flyer img { animation: flyer-wind 9s ease-in-out infinite; }
@@ -1009,12 +1016,19 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
   72% { transform: translateX(1.2vh) rotateX(57deg) rotateZ(-8deg); }
   86% { transform: translateX(0) rotateX(58deg) rotateZ(-9deg); }
 }
-.room.live .sand-flyer.blown img { animation: flyer-blown 2.2s cubic-bezier(.3, .6, .4, 1) both; }
-@keyframes flyer-blown {
-  0% { transform: rotateX(58deg) rotateZ(-9deg); }
-  25% { transform: translate(3vh, -9vh) rotateX(10deg) rotateY(-30deg) rotateZ(14deg); }
-  50% { transform: translate(6vh, -12vh) rotateX(-20deg) rotateY(20deg) rotateZ(-10deg); }
-  75% { transform: translate(3vh, -5vh) rotateX(30deg) rotateY(-10deg) rotateZ(-14deg); }
-  100% { transform: rotateX(58deg) rotateZ(-9deg); }
-}
 @media (prefers-reduced-motion: reduce) { .sand-flyer img { animation: none !important; } }
+
+/* チラシを大きく見る：暗い幕の上で、砂の上の位置から起き上がって真ん中へ（閉じると砂の上へ戻る） */
+.sand-flyer.picked { visibility: hidden; }
+#flyer-view { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; background: rgba(8, 7, 10, 0); transition: background .5s; cursor: zoom-out; touch-action: none; }
+#flyer-view.show { display: flex; }
+#flyer-view.open { background: rgba(8, 7, 10, .82); }
+#flyer-view img { max-width: min(86vw, 520px); max-height: 80vh; max-height: 80svh; width: auto; height: auto; box-shadow: 0 30px 70px rgba(0, 0, 0, .55); transform-origin: 50% 50%;
+  transform: translate(var(--fx, 0), var(--fy, 0)) scale(var(--fs, .1)) perspective(60vh) rotateX(58deg) rotateZ(-9deg); transition: transform .55s cubic-bezier(.2, .8, .25, 1); }
+#flyer-view.open img { transform: none; }
+#flyer-view.closing img { transition-timing-function: cubic-bezier(.5, 0, .7, .4); }
+.fv-close { position: absolute; top: 18px; right: 20px; width: 46px; height: 46px; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); color: var(--cream); font-size: 20px; cursor: pointer; opacity: 0; transition: opacity .4s .2s; }
+#flyer-view.open .fv-close { opacity: 1; }
+
+/* 小屋の部屋：寄りの途中で層の描き漏れがあっても、森の緑ではなく小屋の暗い木の色が見えるように */
+.scene-attic > .sticky, .scene-attic .stage { background: #22170f; }

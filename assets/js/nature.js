@@ -2046,9 +2046,9 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   {
     const [dG, dD] = lgrad([[0, '#b4c4f6'], [.4, '#a3b5f1'], [1, '#97a9e5']]);
     const a = facade0 - 16, b = facade0 + 16;
-    corner += `<defs>${dD}</defs><path d="M${n1(a - 6)} 106Q${n1(a + 1)} 104.5 ${n1(a + 4)} 99.6Q${n1(a + 8)} 94.4 ${n1(facade0 - 5)} 90Q${n1(facade0 - 1.5)} 86.4 ${n1(facade0 + .5)} 84.6L${n1(facade0 + 8)} 85Q${n1(b - 3)} 87 ${n1(b)} 92L${n1(b)} 106Z" fill="url(#${dG})"/>`;
+    corner += `<defs>${dD}</defs><path d="M${n1(a - 6)} 106Q${n1(a + 1)} 104.5 ${n1(a + 4)} 99.6Q${n1(a + 8)} 94.4 ${n1(facade0 - 5)} 90Q${n1(facade0 - 1.5)} 86.4 ${n1(facade0 + .5)} 84.6L${n1(facade0 + 4)} 85Q${n1(facade0 + 9.5)} 86.8 ${n1(facade0 + 12)} 92.5Q${n1(b - 1.8)} 100.5 ${n1(b - .6)} 106Z" fill="url(#${dG})"/>`;
     corner += `<path d="M${n1(a + 3)} 99.2Q${n1(a + 8)} 94.6 ${n1(facade0 - 5)} 90.4Q${n1(facade0 - 1.5)} 87 ${n1(facade0 + .5)} 85.3" stroke="#c6d3fa" stroke-width=".7" fill="none" stroke-linecap="round" opacity=".8"/>`;
-    for (let k = 0; k < 7; k++) corner += `<ellipse cx="${n1(R(a + 4, b - 3))}" cy="${n1(R(95, 104))}" rx="${n1(R(1.5, 3.5))}" ry="${n1(R(.3, .6))}" fill="#8b9ddb" opacity=".55"/>`;
+    for (let k = 0; k < 7; k++) corner += `<ellipse cx="${n1(R(a + 5, facade0 + 7))}" cy="${n1(R(96, 104))}" rx="${n1(R(1.5, 3.5))}" ry="${n1(R(.3, .6))}" fill="#8b9ddb" opacity=".55"/>`;
   }
   // 小屋の外壁（丸太）と軒、窓の灯り、少し開いた扉
   const logs = [];
