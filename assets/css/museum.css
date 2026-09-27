@@ -153,6 +153,10 @@ body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 .room.live .work { will-change: transform; }
 .work .canvas { position: relative; display: block; padding: 0; border: 0; overflow: hidden; background: #111; cursor: zoom-in; transition: box-shadow .8s; box-sizing: content-box; }
 .work .canvas img, .work .canvas video { width: 100%; height: 100%; object-fit: contain; }
+/* 動画の作品：表紙の絵を前に重ねておき、動画が動き出してから（.ready）動画を見せる。読み込み中の黒い箱を見せない */
+.work .canvas .poster { position: absolute; inset: 0; z-index: 1; }
+.work .canvas video { opacity: 0; transition: opacity .4s; }
+.work .canvas video.ready { position: relative; z-index: 2; opacity: 1; }
 .work .halo { position: absolute; left: 50%; top: 50%; width: 170%; height: 150%; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(var(--glow), .5), rgba(var(--glow), 0)); opacity: .45; transition: opacity 1s; pointer-events: none; }
 .work.near .halo { opacity: 1; }
 .room.moonlit .work .halo { opacity: .75; }

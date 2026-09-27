@@ -15,13 +15,21 @@ export function paceScroll({ maxSpeed, active }) {
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     // ナビのリンクなど、ほかの方法でスクロール位置が変わっていたら、そちらを優先して止まる
     if (setY >= 0 && Math.abs(scrollY - setY) > 2 && touchY == null) { cur = target = scrollY; vel = 0; running = false; setY = -1; return; }
-    const d = target - cur, lim = maxSpeed() * dt;
-    // 行き先までを、上限の速さを超えないように。行き先が近づいたら、なめらかに減速して止まる（減速の区間は画面の 4 割ほど）
-    const ease = Math.min(1, Math.abs(d) / (innerHeight * .4));
-    const speed = lim * (.15 + .85 * ease);
-    const move = Math.sign(d) * Math.min(Math.abs(d), Math.max(speed, Math.min(Math.abs(d), .6)));
-    cur += move;
-    if (Math.abs(target - cur) < .5 && touchY == null) { cur = target; running = false; }
+    const max = maxSpeed();
+    if (touchY == null && vel !== 0) {
+      // 指を離したあとの惰性：iPhone のふつうのスクロールと同じく、速さが少しずつ弱まっていく（強くはじくほど遠くまで）。
+      // ただし進む速さは上限まで。上限を超える勢いのあいだは上限の速さで進み、弱まってきたらなめらかに止まる
+      const v = Math.sign(vel) * Math.min(Math.abs(vel), max);
+      cur = clampY(cur + v * dt); target = cur;
+      vel *= Math.exp(-dt * 2.1);
+      if (Math.abs(vel) < 6 || cur <= 0 || cur >= maxY()) { vel = 0; running = false; }
+    } else {
+      // 指でなぞっているあいだ・ホイール：行き先へ、上限の速さを超えないように追いかける（近づいたらなめらかに）
+      const d = target - cur, lim = max * dt;
+      const move = Math.sign(d) * Math.min(Math.abs(d), Math.max(lim * Math.min(1, Math.abs(d) / (innerHeight * .25)), Math.min(Math.abs(d), touchY == null ? .6 : 2)));
+      cur += move;
+      if (Math.abs(target - cur) < .5 && touchY == null) { cur = target; running = false; }
+    }
     scrollTo(0, Math.round(cur)); setY = scrollY;
     if (running) requestAnimationFrame(step); else setY = -1;
   }
@@ -30,23 +38,22 @@ export function paceScroll({ maxSpeed, active }) {
   addEventListener('touchstart', (e) => {
     if (!active(e) || e.touches.length > 1) { touchY = null; return; }
     touchY = lastMoveY = e.touches[0].clientY; touchT = performance.now(); vel = 0;
-    if (!running) cur = target = scrollY;
+    if (!running) cur = target = scrollY; else target = cur; // 惰性で動いている途中にさわったら、そこで止めて指に合わせる
   }, { passive: true });
   addEventListener('touchmove', (e) => {
     if (touchY == null || e.touches.length > 1) return;
     e.preventDefault();
     const y = e.touches[0].clientY, now = performance.now(), dy = lastMoveY - y, dt = Math.max(1, now - touchT);
     target = clampY(target + dy * 1.15); // 指の動きより少しだけ多めに進む（画面いっぱいなぞらなくても次へ行けるように）
-    vel = vel * .5 + (dy / dt * 1000) * .5; // 指の速さ（なめらかにならす）
+    vel = vel * .4 + (dy / dt * 1000) * .6; // 指の速さ（なめらかにならす）
     lastMoveY = y; touchT = now; kick();
   }, { passive: false });
-  // 指を離したとき：はじいた強さに応じて、その先まで進む（ふつうの慣性スクロールと同じ距離感。ただし進む速さは上限まで）
+  // 指を離したとき：指の速さをそのまま惰性の速さにする（止まってから離したときは惰性なし）
   const end = () => {
     if (touchY == null) return; touchY = null;
-    if (performance.now() - touchT > 120) vel = 0;
-    const fling = Math.sign(vel) * Math.min(innerHeight * 2.2, Math.abs(vel) * .32); // 距離：指の速さ × 0.32 秒ぶん（最大で画面 2.2 枚）
-    if (Math.abs(fling) > 8) target = clampY(target + fling);
-    vel = 0; kick();
+    if (performance.now() - touchT > 120 || Math.abs(vel) < 40) vel = 0;
+    vel *= 1.15; // なぞる量と同じだけ、少し多めに
+    kick();
   };
   addEventListener('touchend', end, { passive: true });
   addEventListener('touchcancel', end, { passive: true });
@@ -55,6 +62,7 @@ export function paceScroll({ maxSpeed, active }) {
     e.preventDefault();
     const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
     if (!running) cur = target = scrollY;
+    vel = 0;
     target = clampY(target + e.deltaY * k * 1.15);
     kick();
   }, { passive: false });

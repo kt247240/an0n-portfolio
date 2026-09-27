@@ -314,16 +314,11 @@ const icon = (scene) => `<svg viewBox="0 0 20 20" aria-hidden="true">${ICON[scen
 const worksIn = (roomId) => WORKS.filter((w) => w.room === roomId);
 const workNo = (w) => String(WORKS.indexOf(w) + 1).padStart(2, '0');
 // （表紙の絵を部屋に入ってから付ける lazy は使わない：付くまで作品が黒く見える）
-const mediaHTML = (w, { autoplay = false, lazy = false } = {}) => (w.type === 'video'
-  ? `<video muted loop playsinline preload="${autoplay ? 'auto' : 'none'}" ${autoplay ? 'autoplay' : ''} ${lazy ? 'data-poster' : 'poster'}="${esc(w.poster)}" src="${esc(w.src)}"></video>`
-  : `<img ${lazy ? 'data-src' : 'src'}="${esc(w.src)}" alt="${esc(w.title)}" decoding="async">`);
-// 部屋が画面に入ったら表紙を付け、離れたら外す
-function roomMedia(r, on) {
-  r.el.querySelectorAll('.work video, .work img').forEach((m) => {
-    if (m.tagName === 'VIDEO') { if (on && m.dataset.poster) { m.poster = m.dataset.poster; delete m.dataset.poster; } else if (!on && m.poster) { m.dataset.poster = m.poster; m.removeAttribute('poster'); } }
-    else if (on && m.dataset.src) { m.src = m.dataset.src; delete m.dataset.src; } else if (!on && m.getAttribute('src')) { m.dataset.src = m.getAttribute('src'); m.removeAttribute('src'); }
-  });
-}
+// 部屋の作品の動画は、表紙の絵（img）を前に重ねておき、動画が実際に動き出してから動画を見せる
+// （iPhone は動画を読み込みはじめると表紙を外して黒くなるので、その黒を見せない）
+const mediaHTML = (w, { autoplay = false } = {}) => (w.type === 'video'
+  ? `${autoplay ? '' : `<img class="poster" src="${esc(w.poster)}" alt="" decoding="async">`}<video muted loop playsinline preload="${autoplay ? 'auto' : 'none'}" ${autoplay ? 'autoplay' : ''} poster="${esc(w.poster)}" src="${esc(w.src)}"></video>`
+  : `<img src="${esc(w.src)}" alt="${esc(w.title)}" decoding="async">`);
 
 /* ---------- 作品の色を読む（空間の光の色にする） ---------- */
 const glowOf = new Map();
@@ -475,7 +470,7 @@ function buildRoomScene(r) {
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
       if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
       const wv = el.querySelector('video');
-      if (wv) { wv.dataset.vsrc = wv.getAttribute('src'); wv.removeAttribute('src'); }
+      if (wv) { wv.dataset.vsrc = wv.getAttribute('src'); wv.removeAttribute('src'); wv.addEventListener('playing', () => wv.classList.add('ready')); wv.addEventListener('emptied', () => wv.classList.remove('ready')); }
       el.querySelector('.canvas').addEventListener('click', (e) => openViewer(w, e.clientX, e.clientY));
     } else if (it.door) {
       // 小屋の扉：蝶番を左に、近づくとゆっくり内側へひらく。ひらくほど中の灯りが雪に漏れる
@@ -836,14 +831,15 @@ function updateRoom(r, now) {
     if (d < best) { best = d; near = i; }
     const v = el.querySelector('video');
     if (v) {
-      // 作品の前で立ち止まっているときは、その作品の動画だけ（隣の作品は画面の外）。作品と作品のあいだでは両方が動く
+      // 動画は、作品に近づく少し前から読み込みはじめ（着いたときに待たせない）、作品の前で立ち止まっているときは
+      // その作品の動画だけを動かす（隣の作品は画面の外）。作品と作品のあいだでは両方が動く
+      if (d < 1.6 && !v.getAttribute('src') && v.dataset.vsrc) { v.src = v.dataset.vsrc; delete v.dataset.vsrc; v.preload = 'auto'; v.load(); }
       if (d < (COARSE ? .8 : 1.1)) {
-        if (!v.getAttribute('src') && v.dataset.vsrc) { v.src = v.dataset.vsrc; delete v.dataset.vsrc; }
-        if (v.paused) v.play().catch(() => {});
+        if (v.paused && v.getAttribute('src')) v.play().catch(() => {});
       } else {
         if (!v.paused) v.pause();
         // 離れた動画は読み込んだ中身ごと手放す（止めるだけだとメモリに残る）。表紙の絵はそのまま見える
-        if (d > (COARSE ? .95 : 1.6) && v.getAttribute('src')) { v.dataset.vsrc = v.getAttribute('src'); v.removeAttribute('src'); v.load(); }
+        if (d > 1.9 && v.getAttribute('src')) { v.dataset.vsrc = v.getAttribute('src'); v.removeAttribute('src'); v.load(); }
       }
     }
   });
