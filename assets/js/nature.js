@@ -2119,8 +2119,8 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     // 手前の鉢植えがすき間の真ん中に来るので、床の小物は左右に寄せる
     const off = Math.max(12, W * .11), FK = W < 80 ? 1.25 : 2.1; // 家具の大きさ（絵と比べて部屋が大きすぎて見えないように）
     // 1 つ目のすき間は左半分が小屋の外（雪の中）なので、ギターは置かない。スツールとマグは小屋の中にあるときだけ
-    if (k === 1) { if (gx + off > wallX + 3) { mid += stoolMug(gx + off, 90.5, 2.2 * FK); mug = [gx + off, 90.5 - 2.2 * FK * 1.75 - 2.2 * FK * .42 * 1.1]; } }
-    else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6 * FK); }
+    if (k === 1) { const sz = 3.4 * FK; if (gx + off > wallX + 3) { mid += stoolMug(gx + off, 90.5, sz); mug = [gx + off, 90.5 - sz * 1.75 - sz * .42 * 1.1]; } } // スツールとマグは、薪ストーブやソファと比べて小さすぎないように（スツールは膝くらいの高さ）
+    else if (k === 2) { mid += vinylStack(gx - off - (W < 80 ? 0 : 9), 90, 4.6 * FK); } // 広い画面では薪ストーブから離す // 床のレコードの山：ジャケットがストーブの半分くらいの高さ
     else { mid += skis(gx - off, 90, 30 * Math.min(FK, 1.6)); }
     // 壁の小物は、作品にかからないときだけ（広い画面）
     if (k === 1) mid += guard(Zk, () => coatRack(gx, 30, 14 * Math.min(FK, 1.4)), { min: 1 });
