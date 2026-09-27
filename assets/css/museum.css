@@ -753,7 +753,8 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 
 /* スマホ・タブレットで焼いた絵（canvas のタイル）を入れる箱。img と同じ並べ方 */
 .plane > .raster { position: relative; display: block; height: 100%; }
-.raster.pre img { position: absolute; top: 0; height: 100%; display: block; max-width: none; user-select: none; pointer-events: none; }
+/* 書き出し済みの背景のタイル：1 枚ずつ別の描画レイヤーにして、読み込んだ画像をそのまま合成に使う（層の中に描くと、層の幅ぶんの描画メモリが要る） */
+.raster.pre img { position: absolute; top: 0; height: 100%; display: block; max-width: none; user-select: none; pointer-events: none; will-change: transform; }
 .frame > .raster { position: relative; width: 100%; height: 100%; }
 .curtain .raster { position: absolute; will-change: transform; transform-origin: 50% 50%; }
 .curtain .raster canvas { height: 100% !important; }
@@ -838,9 +839,8 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 
 /* スマホ：画面いっぱいの薄い重ね板（暗がり・光・ネオン・粒など）は 1/3 の大きさに描いて 3 倍に拡大する。
    iPhone は拡大する前の大きさで描画メモリを取るので、1 枚あたり 12MB → 1.3MB（なめらかなグラデーションなので見た目は変わらない）。
-   作品の額に別の描画メモリを持たせるのもやめる（動かすのは層ごとなので） */
+   （作品の額は別の描画メモリのまま。額を層の中に描くと、層の幅ぶんの描画メモリが要る） */
 @media (pointer: coarse) {
   .room .vig, .veil, .hush, .nextglow, .room .neon, .flash, .lightplay, .water-glow .tint, .water-glow .haze { inset: auto; left: 0; top: 0; width: 33.4%; height: 33.4%; transform: scale(3); transform-origin: 0 0; }
   .room .grain-under { inset: auto; left: -10%; top: -10%; width: 40%; height: 40%; transform: scale(3); transform-origin: 0 0; background-size: 80px 80px; }
-  .room.live .work { will-change: auto; }
 }
