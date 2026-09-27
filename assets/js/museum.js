@@ -733,7 +733,7 @@ function buildCatalog() {
   const grid = $('#catalog-grid');
   grid.innerHTML = ROOMS.map((room) => {
     const specs = WORKS.map((w, i) => [w, i]).filter(([w]) => w.room === room.id).map(([w, i]) => `<button class="spec" data-i="${i}" data-id="${w.id}" aria-label="${esc(w.title)} を見る" style="--ar:${w.aspect}">
-        <span class="mount">${w.type === 'video' ? `<img src="${esc(w.poster)}" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="${esc(w.src)}"></video>` : `<img src="${esc(w.src)}" alt="" loading="lazy">`}</span><i class="pin" aria-hidden="true"></i><i class="ask${w.sold ? ' sold' : w.nfs ? ' nfs' : ''}" aria-hidden="true">${w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'ASK'}</i></button>`).join('');
+        <span class="mount">${w.type === 'video' ? `<img src="${esc(w.poster)}" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="${esc(w.src)}"></video>` : `<img src="${esc(w.src)}" alt="" loading="lazy">`}</span><i class="pin" aria-hidden="true"></i><span class="name" aria-hidden="true">${esc(w.title)}${w.year ? `<small>${esc(w.year)}</small>` : ''}</span><i class="ask${w.sold ? ' sold' : w.nfs ? ' nfs' : ''}" aria-hidden="true">${w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'ASK'}</i></button>`).join('');
     return `<section class="specimen" data-room="${room.id}" aria-label="${esc(room.ja)}"><div class="box"><div class="bed">${specs}<span class="pressed">${pressedSpecimen(room.scene)}</span></div></div></section>`;
   }).join('');
   grid.addEventListener('click', (e) => {
@@ -1256,7 +1256,8 @@ function setViewer(w) {
     const img = new Image(); img.src = w.poster; vPoster = img;
   }
   const room = ROOMS.find((r) => r.id === w.room);
-  $('#v-meta').textContent = w.credit || '';
+  // 作品名（と制作年）、その下に依頼作品のクレジット
+  { const m = $('#v-meta'); m.textContent = ''; const t = document.createElement('span'); t.className = 'v-title'; t.textContent = w.title; m.append(t); if (w.year) { const y = document.createElement('span'); y.className = 'v-year'; y.textContent = w.year; m.append(y); } if (w.credit) { const c = document.createElement('span'); c.className = 'v-credit'; c.textContent = w.credit; m.append(c); } }
   // 価格はすべて ASK：Instagram の DM か、作品名入りのメッセージ（メール）で問い合わせ
   const ig = ARTIST.links.find((l) => l.label === 'Instagram'), mail = ARTIST.links.find((l) => l.label === 'Mail');
   const ask = $('.v-ask', viewer);

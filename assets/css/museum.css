@@ -975,3 +975,15 @@ body:not(.beat-on) .player-btn .spin { animation-play-state: paused; }
 body.forest-night .farewell .fw-win { fill: #ffc873; }
 body.forest-night .farewell .fw-glow { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #entrance .fleck, body.beat-on .player-btn .arm { animation: none; } }
+
+/* 作品名：ビューアは美術館の壁の札のように（題はクラシックな欧文セリフ、年とクレジットは値札と同じ VT323）。
+   目録は、ピンで留めた台紙にマーカーで書き込んだ手書きの題（ストリートの手ざわり）。日本語の題はそれぞれの書体の日本語へ */
+#v-meta { display: grid; gap: 6px; }
+#v-meta .v-title { font-family: "Cormorant Garamond", "Shippori Mincho", serif; font-weight: 600; font-size: clamp(26px, 3.2vw, 40px); line-height: 1; letter-spacing: .01em; opacity: 1; text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
+#v-meta .v-year, #v-meta .v-credit { font-family: "VT323", monospace; font-size: 17px; letter-spacing: .14em; line-height: 1; opacity: .8; }
+#v-meta .v-year::before { content: "— "; opacity: .6; }
+#v-meta .v-credit { opacity: .95; color: rgb(var(--glow)); }
+.spec .name { position: absolute; left: -6px; right: -6px; top: calc(100% + 8px); display: block; text-align: center; font-family: "Permanent Marker", "Zen Kaku Gothic New", sans-serif; font-weight: 400; font-size: 16px; letter-spacing: .03em; color: #33291f; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: rotate(-1.2deg); }
+.spec:nth-child(2n) .name { transform: rotate(.9deg); }
+.spec .name small { display: block; font-family: "VT323", monospace; font-weight: 400; font-size: 13px; letter-spacing: .22em; opacity: .55; margin-top: 3px; }
+.specimen .bed { row-gap: 64px; padding-bottom: 64px; }
