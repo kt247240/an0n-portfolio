@@ -26,7 +26,7 @@ export const PROPS = {
       <rect x="8" y="22" width="44" height="9.4" rx="1.4" fill="#5a3b24"/><rect x="8" y="22" width="44" height="2" rx="1" fill="#7a5234"/>
       <rect x="9.5" y="20.4" width="41" height="3" rx="1" fill="#26221e"/>
       <g transform="translate(27 21.4) scale(1 .32)"><g class="spin"><circle r="16" fill="#141210"/><circle r="12.5" fill="none" stroke="#2a2621" stroke-width=".8"/><circle r="9" fill="none" stroke="#2a2621" stroke-width=".8"/><circle r="5" fill="#df7418"/><circle r=".8" fill="#e8e2d2"/><path d="M-1 -16h2v5h-2z" fill="#3a3630"/></g></g>
-      <path d="M47 17.6L45 21L37 21.4" stroke="#d8d0bc" stroke-width=".9" fill="none" stroke-linecap="round"/><circle cx="47" cy="17.6" r="1.6" fill="#bdb5a0"/>
+      <g class="arm"><path d="M47 17.6L45 21L37 21.4" stroke="#d8d0bc" stroke-width=".9" fill="none" stroke-linecap="round"/><rect x="35.6" y="20.6" width="2.2" height="1.4" rx=".3" fill="#bdb5a0"/></g><circle cx="47" cy="17.6" r="1.6" fill="#bdb5a0"/>
       <circle cx="47.6" cy="27" r="1.1" fill="#c9a36a"/><rect x="11" y="26.4" width="6" height="1.2" rx=".6" fill="#c9a36a" opacity=".8"/></svg>`,
   },
   turntable: {

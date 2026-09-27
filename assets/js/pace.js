@@ -36,7 +36,8 @@ export function paceScroll({ maxSpeed, active }) {
   // ほかの方法（ナビのリンク、キーボード、スクロールバー）で動いたときは、そこから始める
   addEventListener('scroll', () => { if (!running && touchY == null) { cur = target = scrollY; } }, { passive: true });
   addEventListener('touchstart', (e) => {
-    if (!active(e) || e.touches.length > 1) { touchY = null; return; }
+    // ふつうのスクロールに任せるところでは、惰性で動いている途中でもそこで止めて手を離す（ふつうのスクロールとぶつからないように）
+    if (!active(e) || e.touches.length > 1) { touchY = null; vel = 0; cur = target = scrollY; return; }
     touchY = lastMoveY = e.touches[0].clientY; touchT = performance.now(); vel = 0;
     if (!running) cur = target = scrollY; else target = cur; // 惰性で動いている途中にさわったら、そこで止めて指に合わせる
   }, { passive: true });
@@ -58,7 +59,7 @@ export function paceScroll({ maxSpeed, active }) {
   addEventListener('touchend', end, { passive: true });
   addEventListener('touchcancel', end, { passive: true });
   addEventListener('wheel', (e) => {
-    if (!active(e) || e.ctrlKey) return;
+    if (!active(e) || e.ctrlKey) { vel = 0; cur = target = scrollY; return; }
     e.preventDefault();
     const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
     if (!running) cur = target = scrollY;

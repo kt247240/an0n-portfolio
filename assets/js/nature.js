@@ -506,9 +506,9 @@ export function farewellSVG() {
   for (let x = -4; x < 204; x += R(2.2, 4)) back += pine(x, 40, R(9, 16), '#141838', '#1d2350');
   for (let x = -4; x < 204; x += R(3, 5.5)) { if (x > cx - 13 && x < cx + 13) continue; front += pine(x, 41, R(14, 24), '#0a0c20', '#12163a'); }
   const cabin = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#ffc873" stop-opacity=".35"/><stop offset=".35" stop-color="#ffb45a" stop-opacity=".12"/><stop offset="1" stop-color="#ffb45a" stop-opacity="0"/></radialGradient></defs>`
-    + `<circle cx="${cx - 4}" cy="33" r="14" fill="url(#${id})"/>`
+    + `<circle class="fw-glow" cx="${cx - 4}" cy="33" r="14" fill="url(#${id})"/>`
     + `<path d="M${cx - 10} 41V29L${cx} 21L${cx + 10} 29V41Z" fill="#0a0c20"/><path d="M${cx - 12} 29.6L${cx} 19.6L${cx + 12} 29.6" stroke="#0a0c20" stroke-width="1.6" fill="none"/><path d="M${cx + 5.5} 24.2V19.6H${cx + 8}V26.2" fill="#0a0c20"/>`
-    + `<rect x="${cx - 6}" y="31" width="4" height="4" fill="#ffc873"/><path d="M${cx - 4} 31v4M${cx - 6} 33h4" stroke="#0a0c20" stroke-width=".4"/>`
+    + `<rect class="fw-win" x="${cx - 6}" y="31" width="4" height="4" fill="#ffc873"/><path d="M${cx - 4} 31v4M${cx - 6} 33h4" stroke="#0a0c20" stroke-width=".4"/>`
 ;
   const anim = [0, 1, 2].map((k) => `<circle class="fw-puff" style="--d:${n1(-k * 2.3)}s" cx="${cx + 6.7}" cy="18.6" r=".7" fill="#8a90b8" opacity="0"/>`).join('')
     + Array.from({ length: 7 }, (_, k) => `<circle class="fw-fly" style="--d:${n1(-k * 1.7)}s;--dx:${n1(R(-6, 6))}px;--dy:${n1(R(-4, 2))}px" cx="${n1(R(10, 190))}" cy="${n1(R(28, 39))}" r=".38" fill="#d9e28a"/>`).join('')

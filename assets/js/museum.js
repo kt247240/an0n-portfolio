@@ -1044,7 +1044,10 @@ let entLife = null;
 function buildEntranceLife() {
   const L = $('.life', entrance); if (!L || entLife) return;
   L.innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="swimmer gull ent-bird" style="width:${(1.3 + Math.random() * .7).toFixed(2)}vh"><img alt="" src="${swimURL('gull', i, 'forest')}"></div>`).join('')
-    + [0, 1, 2].map((i) => `<div class="swimmer butterfly" style="width:1.6vh"><img alt="" src="${swimURL('butterfly', i, 'forest')}"></div>`).join('');
+    + [0, 1, 2].map((i) => `<div class="swimmer butterfly" style="width:1.6vh"><img alt="" src="${swimURL('butterfly', i, 'forest')}"></div>`).join('')
+    // 小道の木漏れ日：梢の葉が風に揺れるのに合わせて、光のまだらがちらちら明るくなったり小さくなったりする（小道の上だけ）
+    + Array.from({ length: 12 }, (_, i) => { const t = .45 + Math.random() * .55, [px, py] = ENTRANCE_PATH(W)(t), half = Math.min(W * .3, 32) * Math.pow(t, 1.15) * .8, w = (1.2 + t * 4.5) * (.7 + Math.random() * .6);
+      return `<i class="fleck" style="left:${((px + (Math.random() * 2 - 1) * half - w / 2) * U).toFixed(1)}px;top:${((py - w * .12) * U).toFixed(1)}px;width:${w.toFixed(2)}vh;height:${(w * .3).toFixed(2)}vh;animation-duration:${(2.2 + Math.random() * 2.4).toFixed(1)}s;animation-delay:${(-Math.random() * 4).toFixed(1)}s"></i>`; }).join('');
   const birds = [...L.querySelectorAll('.ent-bird')].map((el, i) => ({ el, x0: Math.random() * W, y0: 22 + Math.random() * 14, sp: 1.6 + Math.random() * .8, ph: Math.random() * 6 }));
   const flies = [...L.querySelectorAll('.butterfly')].map((el, i) => ({ el, x0: i < 2 ? W * (.12 + Math.random() * .18) : W * (.68 + Math.random() * .2), y0: 86 + Math.random() * 8, ph: Math.random() * 6 }));
   entLife = { L, birds, flies };
@@ -1663,10 +1666,11 @@ function enterForest(withSound) {
   setTimeout(() => $('#loader')?.remove(), 1600);
   openFromHash();
 }
-// 歩く速さ：速くはじいても、1 秒に画面 1.9 枚ぶんまでしか進まない（作品を開いているとき・金庫・入口の儀式のあいだは、ふつうのスクロール）
+// 歩く速さ：速くはじいても、1 秒に画面 1.9 枚ぶんまでしか進まない（作品を開いているとき・金庫・入口の儀式のあいだ・目録と作家の欄は、ふつうのスクロール）
 paceScroll({
   maxSpeed: () => vh * 1.9,
-  active: (e) => !vOpen && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault'),
+  // 目録と作家の欄（いちばん下）は、ふつうのスクロール。作品を飾っている部屋までは今のまま
+  active: (e) => !vOpen && document.body.classList.contains('loaded') && !e.target.closest?.('#viewer, #vault') && scrollY < $('#catalog').offsetTop - 2,
 });
 $('#enter-sound').addEventListener('click', () => enterForest(true));
 $('#enter-silent').addEventListener('click', () => enterForest(false));

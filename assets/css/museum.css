@@ -959,3 +959,19 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 
 /* 小屋の金庫：広い画面では家具に合わせて大きく（床に置いたまま） */
 @media (min-width: 761px) { .vault-safe { width: 17vh; top: 70.4vh; } }
+
+/* 入口の小道の木漏れ日：葉が風に揺れるのに合わせて、光のまだらがちらつく（要素ごとに明るさと大きさだけを変える） */
+#entrance .fleck { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 246, 200, .55), rgba(255, 246, 200, .18) 60%, transparent); animation: fleck 3s ease-in-out infinite alternate; }
+@keyframes fleck { 0% { opacity: .25; transform: scale(.8, .9); } 45% { opacity: .9; transform: scale(1.1, 1); } 60% { opacity: .5; } 100% { opacity: .85; transform: scale(.95, 1.05) translateX(.4vh); } }
+#entrance.night .fleck { display: none; }
+/* 入口のレコードプレーヤー：音を流していないときは針が盤の外で休み、盤も止まる。流すと針が盤に下りて、盤が回り、針が小さく揺れる */
+.player-btn .arm { transform-box: view-box; transform-origin: 47px 17.6px; transform: rotate(-24deg); transition: transform 1.2s var(--ease-io); }
+body.beat-on .player-btn .arm { transform: rotate(0deg); animation: needle 1.8s ease-in-out 1.2s infinite alternate; }
+@keyframes needle { from { transform: rotate(0deg); } to { transform: rotate(1.4deg); } }
+body:not(.beat-on) .player-btn .spin { animation-play-state: paused; }
+/* 作家の欄の小屋の窓：入口のランプをつけて夜の森にすると灯り、消していると暗い */
+.farewell .fw-win { fill: #1d2140; transition: fill 1.2s; }
+.farewell .fw-glow { opacity: 0; transition: opacity 1.2s; }
+body.forest-night .farewell .fw-win { fill: #ffc873; }
+body.forest-night .farewell .fw-glow { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #entrance .fleck, body.beat-on .player-btn .arm { animation: none; } }
