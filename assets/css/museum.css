@@ -1041,5 +1041,3 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .v-ask .share.copied .done { opacity: 1; transform: translate(-50%, 0); }
 .v-ask { flex-wrap: wrap; row-gap: 10px; }
 .v-ask .tag { white-space: nowrap; }
-.snowcut.board-snow { overflow: hidden; -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 100%, #000 70%, transparent 86%); mask-image: radial-gradient(ellipse 50% 100% at 50% 100%, #000 70%, transparent 86%); } /* スノーボードの根もとを隠す盛り雪（地面の雪の絵を、ふちのやわらかい山の形に切り抜く） */
-.snowcut.board-snow img { max-width: none; }
