@@ -480,10 +480,12 @@ function buildRoomScene(r) {
     const sides = (ks, name, y, h, clipR) => ks.map((k) => part(`snow-${name}-ext.webp`, P.x + k * P.pw, y, h, clipR, k % 2 === 0)).join('');
     r.layerHTML['.far'] += part('snow-mount.webp', P.x, P.y(240), 480 * P.s) + sides(P.farTiles, 'mount', P.y(240), 480 * P.s);
     // スノーボードは、小屋の前の雪に縦に刺す
-    const bh = W < 80 ? 32 : 38, bw = bh * 136 / 640, bx = P.facade0 + 1.2 + bw / 2, by = 94, sunk = 0; // 小屋の前、角の雪だまりに刺す（扉の左の丸太の壁の前。根もとは雪だまりの絵が手前に来て隠す） // 扉（高さ 38）と比べて、人の背丈より少し低いくらいに見える大きさ
+    const bh = W < 80 ? 32 : 38, bw = bh * 136 / 640, bx = P.facade0 + 1.2 + bw / 2, by = 97; // 小屋の前の雪に刺す（扉の左、角の雪だまりの手前。根もとは土台より下の雪の中） // 扉（高さ 38）と比べて、人の背丈より少し低いくらいに見える大きさ
     r.layerHTML['.mid'] += part('snow-ground.webp', P.x, P.y(600), 722 * P.s, P.facade0) + sides(P.midTiles, 'ground', P.y(600), 722 * P.s, P.facade0)
+      + `<svg class="snowcut" viewBox="${P.corner[0]} 0 ${P.corner[1]} 100" preserveAspectRatio="none" style="${box(P.corner[0], 0, P.corner[1], 100)};overflow:visible" aria-hidden="true">${gradeColors(P.corner[2], GRADES.attic)}</svg>`
       + `<div class="snowcut board" style="${box(bx - bw / 2, by - bh, bw, bh)}">${im('snow-board.webp', bw, bh)}</div>`
-      + `<svg class="snowcut" viewBox="${P.corner[0]} 0 ${P.corner[1]} 100" preserveAspectRatio="none" style="${box(P.corner[0], 0, P.corner[1], 100)};overflow:visible" aria-hidden="true">${gradeColors(P.corner[2], GRADES.attic)}</svg>`;
+      // ボードの根もとの雪：角の雪だまりと同じ色の段で、ボードの足もとを小さく盛り上げて隠す（雪から生えて見えるように）
+      + gradeColors(`<svg class="snowcut" viewBox="${bx - 10} 0 20 100" preserveAspectRatio="none" style="${box(bx - 10, 0, 20, 100)};overflow:visible" aria-hidden="true"><defs><linearGradient id="boardDrift" gradientUnits="userSpaceOnUse" x1="0" y1="84.6" x2="0" y2="106"><stop offset="0" stop-color="#b4c4f6"/><stop offset=".4" stop-color="#a3b5f1"/><stop offset="1" stop-color="#97a9e5"/></linearGradient></defs><path d="M${bx - 8} 104Q${bx - 5.6} 93 ${bx - 1.8} 91.3Q${bx + .6} 90.4 ${bx + 3.2} 91.4Q${bx + 6.6} 93 ${bx + 8.4} 104Z" fill="url(#boardDrift)"/><path d="M${bx - 5.8} 93.6Q${bx - 3.6} 91.6 ${bx - 1.2} 91.2Q${bx + 1} 90.8 ${bx + 3} 91.5" stroke="#c6d3fa" stroke-width=".55" fill="none" stroke-linecap="round" opacity=".8"/></svg>`, GRADES.attic);
   }
 
   r.glow = S.glowDefault;
