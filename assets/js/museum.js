@@ -485,7 +485,10 @@ function buildRoomScene(r) {
     const mound = `<svg class="snowcut" viewBox="-10 -3 20 6" preserveAspectRatio="none" style="${box(bx - bw * 1.9, by - 2.4, bw * 3.8, 4.6)};overflow:visible" aria-hidden="true"><defs><radialGradient id="boardSnow" cx="50%" cy="45%" r="55%"><stop offset="0" stop-color="#d2dcfb" stop-opacity=".42"/><stop offset=".55" stop-color="#c3cff8" stop-opacity=".22"/><stop offset="1" stop-color="#c3cff8" stop-opacity="0"/></radialGradient></defs><ellipse cx="0" cy=".9" rx="10" ry="2.9" fill="url(#boardSnow)"/><path d="M-5.2 1.9Q-2.6 -.9 0 -1.5Q2.4 -1.1 4.8 1.7Q2.5 2.6 0 2.6Q-2.6 2.6 -5.2 1.9Z" fill="#d2dcfb" opacity=".5"/><ellipse cx="2.8" cy="1.9" rx="3.2" ry=".6" fill="#2c3264" opacity=".22"/><path d="M-3.8 .7Q-1.6 -1 0 -1.2Q1.8 -1 3.4 .5" stroke="#dfe6fc" stroke-width=".35" fill="none" stroke-linecap="round" opacity=".55"/></svg>`;
     r.layerHTML['.mid'] += part('snow-ground.webp', P.x, P.y(600), 722 * P.s, P.facade0) + sides(P.midTiles, 'ground', P.y(600), 722 * P.s, P.facade0)
       + `<svg class="snowcut" viewBox="${P.corner[0]} 0 ${P.corner[1]} 100" preserveAspectRatio="none" style="${box(P.corner[0], 0, P.corner[1], 100)};overflow:visible" aria-hidden="true">${gradeColors(P.corner[2], GRADES.attic)}</svg>`
-      + `<div class="snowcut board" style="${box(bx - bw / 2, by - bh + sunk, bw, bh - sunk)}">${im('snow-board.webp', bw, bh)}</div>` + gradeColors(mound, GRADES.attic);
+      + `<div class="snowcut board" style="${box(bx - bw / 2, by - bh + sunk, bw, bh - sunk)}">${im('snow-board.webp', bw, bh)}</div>`
+      // ボードの根もとの前に、地面の雪の絵そのものを盛り雪の形に切り抜いて重ねる（色も明るさも周りの雪と同じになるので、透けも浮きもしない）
+      + (() => { const L = bx - bw * 1.15, T = by - 2.8, gw = P.pw + .3, gh = 722 * P.s; return `<div class="snowcut board-snow" style="${box(L, T, bw * 2.3, 5.6)}"><img src="assets/scene/snow-ground.webp" alt="" decoding="async" draggable="false" style="position:absolute;left:${(P.x - .15 - L) * U}px;top:${(P.y(600) - T) * U}px;width:${gw * U}px;height:${gh * U}px"></div>`; })()
+      + gradeColors(mound, GRADES.attic);
   }
 
   r.glow = S.glowDefault;
