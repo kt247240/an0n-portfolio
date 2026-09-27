@@ -313,9 +313,17 @@ const ICON = {
 const icon = (scene) => `<svg viewBox="0 0 20 20" aria-hidden="true">${ICON[scene] || ''}</svg>`;
 const worksIn = (roomId) => WORKS.filter((w) => w.room === roomId);
 const workNo = (w) => String(WORKS.indexOf(w) + 1).padStart(2, '0');
-const mediaHTML = (w, { autoplay = false } = {}) => (w.type === 'video'
-  ? `<video muted loop playsinline preload="${autoplay ? 'auto' : 'none'}" ${autoplay ? 'autoplay' : ''} poster="${esc(w.poster)}" src="${esc(w.src)}"></video>`
-  : `<img src="${esc(w.src)}" alt="${esc(w.title)}" decoding="async">`);
+// 部屋の作品（lazy）は、表紙の絵も部屋が画面に入ってから読み込む（全部屋ぶんの表紙を最初から持たないように）
+const mediaHTML = (w, { autoplay = false, lazy = false } = {}) => (w.type === 'video'
+  ? `<video muted loop playsinline preload="${autoplay ? 'auto' : 'none'}" ${autoplay ? 'autoplay' : ''} ${lazy ? 'data-poster' : 'poster'}="${esc(w.poster)}" src="${esc(w.src)}"></video>`
+  : `<img ${lazy ? 'data-src' : 'src'}="${esc(w.src)}" alt="${esc(w.title)}" decoding="async">`);
+// 部屋が画面に入ったら表紙を付け、離れたら外す
+function roomMedia(r, on) {
+  r.el.querySelectorAll('.work video, .work img').forEach((m) => {
+    if (m.tagName === 'VIDEO') { if (on && m.dataset.poster) { m.poster = m.dataset.poster; delete m.dataset.poster; } else if (!on && m.poster) { m.dataset.poster = m.poster; m.removeAttribute('poster'); } }
+    else if (on && m.dataset.src) { m.src = m.dataset.src; delete m.dataset.src; } else if (!on && m.getAttribute('src')) { m.dataset.src = m.getAttribute('src'); m.removeAttribute('src'); }
+  });
+}
 
 /* ---------- 作品の色を読む（空間の光の色にする） ---------- */
 const glowOf = new Map();
@@ -462,7 +470,7 @@ function buildRoomScene(r) {
       if (W < 70) h = Math.min(h, 46);
       el.className = 'work';
       const standing = ['easel', 'lamp', 'lightbox', 'post'].includes(r.room.frame);
-      el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), gradeOf(r.room.scene))}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w)}</button>`;
+      el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), gradeOf(r.room.scene))}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w, { lazy: COARSE })}</button>`;
       // 台座・柱が、作品の大きさによらず地面（遊歩道・桟橋・砂浜）まで届くように
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
       if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
@@ -741,6 +749,8 @@ function updateRoom(r, now) {
   const p = clamp((sy - top) / len);
   const onScreen = sy + vh > top && sy < top + len + vh;
   if (onScreen !== r.live) { r.live = onScreen; r.el.classList.toggle('live', onScreen); }
+  // 表紙の絵は、部屋の 1 画面手前で付け、1 画面以上離れたら外す（スマホ）
+  if (COARSE) { const nearRoom = sy + vh * 2 > top && sy < top + len + vh * 2; if (nearRoom !== r.mediaOn) { r.mediaOn = nearRoom; roomMedia(r, nearRoom); } }
   if (!onScreen) {
     pauseRoomVideos(r); updateCurtain(r, 0); if (r.leaveC) updateCurtain(r.leaveC, 0); r.curS = null;
     // 水辺の光る水の canvas も空にする（部屋を離れたあとも画像を持ち続けないように）
