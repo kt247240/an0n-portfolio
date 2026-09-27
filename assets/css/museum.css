@@ -950,3 +950,6 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .room .hush, .room .vig { transition: opacity .6s; }
 .room.spot .work.near .canvas { box-shadow: 0 0 0 0 transparent, 0 3vh 8vh rgba(0, 0, 0, .5), 0 0 14vh rgba(var(--glow), .6); }
 .work .canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* 小屋の金庫：広い画面では家具に合わせて大きく（床に置いたまま） */
+@media (min-width: 761px) { .vault-safe { width: 17vh; top: 70.4vh; } }

@@ -1829,8 +1829,23 @@ function shelf(x, y, w) {
   }
   return s;
 }
+// 壁に掛けたスケートボード（裏を見せて縦に掛ける）：丸いノーズとテール、トラックとウィール、デッキ裏のグラフィック
 function skateboard(x, y, h, c, c2) {
-  return `<rect x="${n1(x - h * .13)}" y="${n1(y)}" width="${n1(h * .26)}" height="${n1(h)}" rx="${n1(h * .13)}" fill="${c}"/><path d="M${n1(x - h * .08)} ${n1(y + h * .3)}q${n1(h * .08)} ${n1(h * .15)} ${n1(h * .16)} 0M${n1(x - h * .08)} ${n1(y + h * .6)}q${n1(h * .08)} ${n1(h * .12)} ${n1(h * .16)} 0" stroke="${c2}" stroke-width="${n1(h * .05)}" fill="none"/>`;
+  const w = h * .26, r = w / 2, cx = x;
+  let s = `<rect x="${n1(cx - w / 2 + .3)}" y="${n1(y + .5)}" width="${n1(w)}" height="${n1(h)}" rx="${n1(r)}" fill="#000" opacity=".25"/>`; // 壁に落ちる影
+  s += `<rect x="${n1(cx - w / 2)}" y="${n1(y)}" width="${n1(w)}" height="${n1(h)}" rx="${n1(r)}" fill="${c}"/>`;
+  s += `<rect x="${n1(cx - w / 2)}" y="${n1(y)}" width="${n1(w * .22)}" height="${n1(h)}" rx="${n1(r * .3)}" fill="#000" opacity=".12"/>`; // 板の厚み
+  // デッキ裏のグラフィック：斜めの太い帯と丸（作品の色で）
+  s += `<path d="M${n1(cx - w / 2)} ${n1(y + h * .52)}L${n1(cx + w / 2)} ${n1(y + h * .36)}L${n1(cx + w / 2)} ${n1(y + h * .48)}L${n1(cx - w / 2)} ${n1(y + h * .64)}Z" fill="${c2}" opacity=".85"/>`;
+  s += `<circle cx="${n1(cx)}" cy="${n1(y + h * .72)}" r="${n1(w * .22)}" fill="none" stroke="${c2}" stroke-width="${n1(w * .07)}" opacity=".85"/>`;
+  // トラックとウィール（前後）
+  for (const t of [.2, .8]) {
+    const ty = y + h * t;
+    s += `<rect x="${n1(cx - w * .42)}" y="${n1(ty - w * .1)}" width="${n1(w * .84)}" height="${n1(w * .2)}" rx="${n1(w * .06)}" fill="#8a8a92"/>`;
+    for (const d of [-1, 1]) s += `<rect x="${n1(cx + d * w * .5 - w * .14)}" y="${n1(ty - w * .2)}" width="${n1(w * .28)}" height="${n1(w * .4)}" rx="${n1(w * .1)}" fill="#e8dcc0"/>`;
+  }
+  s += `<path d="M${n1(cx)} ${n1(y - 1.2)}v1.4" stroke="#2a1c12" stroke-width=".3"/><circle cx="${n1(cx)}" cy="${n1(y - 1.3)}" r=".35" fill="#b8925e"/>`; // 掛けている釘
+  return s;
 }
 function pot(x, y, s, c = '#b08a64') {
   track(x - s * 1.4, y - s * 2.2); track(x + s * 1.4, y);
@@ -2093,7 +2108,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k, top = 80 - sh; mid += rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45) + `<path d="M${n1(m - sw / 2)} ${n1(79)}v${n1(-sh + 1)}h${n1(sw)}v${n1(sh - 1)}Z" fill="#1d1916"/><path d="M${n1(m - sw / 2 - .6)} ${n1(top)}h${n1(sw + 1.2)}v1h${n1(-sw - 1.2)}Z" fill="#2a2522"/><path d="M${n1(m - sw / 2 + .6)} 79v1.2M${n1(m + sw / 2 - .6)} 79v1.2" stroke="#1d1916" stroke-width=".8"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="#ff8a3a"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="none" stroke="#3a3430" stroke-width=".6"/><path d="M${n1(m + 2 * k)} ${n1(top)}V52h${n1(1.4 * k)}V${n1(top)}Z" fill="#1d1916"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(2.2 * k)}" ry="${n1(1.3 * k)}" fill="#2a1c12"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(1.5 * k)}" ry="${n1(.85 * k)}" fill="#4a3a2c"/>`; stove = [m, 80, k]; }
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
-  const sk = [[wallX + 8, 26, '#d4d0b5', '#382a1d'], [wallX + 14, 27, '#e3dcc0', '#7f6032']];
+  const sk = [[wallX + 8, 26, '#d4d0b5', '#b8604a'], [wallX + 14, 27, '#3f5d59', '#e2b36f']];
   if (sk.every(([x]) => clearOfWorks(W, stops, x - 2, 1) && clearOfWorks(W, stops, x + 3, 1))) mid += sk.map(([x, y, c, c2]) => skateboard(x, y, 20, c, c2)).join('');
   // 手前：外は雪の枝、中は鉢植え
   for (let s = 0; s < stops - 1; s++) {
