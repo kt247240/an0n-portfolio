@@ -685,8 +685,8 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 /* 夕凪：歩くほど夕日が沈み、海面のきらめきが揺れる */
 .scene-cove .lightplay i { mix-blend-mode: screen; }
 .scene-cove .l1 { background: radial-gradient(55% 34% at 50% 58%, rgba(255, 176, 96, .46), rgba(255, 150, 90, .12) 55%, transparent 75%); transform: translateY(calc(var(--p, 0) * 16vh)); opacity: calc(1 - var(--p, 0) * .55); }
-.scene-cove .l2 { top: 50%; bottom: 20%; background: repeating-linear-gradient(90deg, transparent 0 5%, rgba(255, 226, 170, .22) 5.6%, transparent 6.8%, transparent 11%, rgba(255, 226, 170, .14) 11.5%, transparent 12.6%); -webkit-mask-image: radial-gradient(40% 60% at 50% 30%, #000, transparent); mask-image: radial-gradient(40% 60% at 50% 30%, #000, transparent); animation: glints 3.4s ease-in-out infinite alternate; }
-@keyframes glints { from { transform: translateX(-1.2%); opacity: .35; } to { transform: translateX(1.2%); opacity: 1; } }
+.scene-cove .l2 { top: 62.4%; bottom: 12%; background: repeating-linear-gradient(transparent 0 1.2vh, rgba(255, 226, 170, .3) 1.2vh 1.45vh); -webkit-mask-image: radial-gradient(22% 100% at 50% 0%, #000, transparent); mask-image: radial-gradient(22% 100% at 50% 0%, #000, transparent); animation: glints 3.4s ease-in-out infinite alternate; } /* 夕日が水面に映る横向きのきらめき（水平線から下だけ。縦の筋に見えないように横線で） */
+@keyframes glints { from { transform: translateY(.25vh); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
 /* 夜の庭：斜めに落ちる月明かりと、ネオンの霞がゆっくり息をする */
 .scene-night .lightplay i { mix-blend-mode: screen; }
 .scene-night .l1 { inset: -10% -20%; background: linear-gradient(-112deg, transparent 18%, rgba(170, 190, 255, .16) 23%, transparent 31%, transparent 56%, rgba(170, 190, 255, .13) 60%, transparent 67%); -webkit-mask-image: linear-gradient(#000, transparent 85%); mask-image: linear-gradient(#000, transparent 85%); animation: shafts 16s ease-in-out infinite alternate; }
