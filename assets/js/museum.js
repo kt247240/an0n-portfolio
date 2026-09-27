@@ -555,7 +555,7 @@ function propHTML(kind, scene) {
 // スクロールに合わせて動く生きもの：水辺の鯉（歩くと先へ泳ぐ）、夕凪のカモメ（夕日のほうへ渡る）、森の白い蝶（ひらひらと先へ）
 // [種類, 数, 高さの範囲（vh）, 大きさ（vh）, 歩く速さ（vh／立ち止まる場所 1 つぶん）, 向き（1＝右へ）, 置く層（奥＝swim、中景＝props。蝶は木の前を飛ぶので中景）]
 const SWIMMERS = {
-  water: [['koi', 5, [44, 94], [10, 13], [8, 16], 1, 'drift'], ['dragonfly', 2, [38, 60], [1.6, 2.1], [12, 20], 1, 'props']],
+  water: [['koi', 5, [64, 84], [10, 13], [8, 16], 1, 'drift'], ['dragonfly', 2, [38, 60], [1.6, 2.1], [12, 20], 1, 'props']],
   dusk: [['gull', 4, [12, 38], [3, 4.4], [40, 70], -1, 'drift']],
   dapple: [['butterfly', 3, [64, 92], [2, 2.8], [30, 50], 1, 'props']],
   night: [['boat', 2, [68.5, 71.5], [3, 4.2], [6, 10], -1, 'drift']],
@@ -581,7 +581,7 @@ function buildSwimmers(r) {
       L.append(el);
       // 部屋の端から端まで均等に散らす（最初の作品から、どこでも鯉が見えるように）
       const x0 = (i + .2 + Math.random() * .6) / n * fw, y0 = ys[0] + Math.random() * (ys[1] - ys[0]);
-      r.swimmers.push({ el, L, kind, i, n, x0, y0, x: x0, y: y0, a: dir > 0 ? 90 : -90, w, sp: sp[0] + Math.random() * (sp[1] - sp[0]), ph: Math.random() * 10, dir, fw, f, gather: kind === 'koi' || kind === 'butterfly', gy: kind === 'koi' ? [76, 92] : [86, 94], lastRipple: 0 });
+      r.swimmers.push({ el, L, kind, i, n, x0, y0, x: x0, y: y0, a: dir > 0 ? 90 : -90, w, sp: sp[0] + Math.random() * (sp[1] - sp[0]), ph: Math.random() * 10, dir, fw, f, gather: kind === 'koi' || kind === 'butterfly', gy: kind === 'koi' ? [72, 83] : [86, 94], lastRipple: 0 });
     }
   }
 }
@@ -616,9 +616,11 @@ function updateSwimmers(r, now, focus) {
     // 鯉は体を左右に小さく振って泳ぐ（速く泳ぐほど速く）。要素ごとの回転だけなので軽い
     if (s.kind === 'koi') { const v = Math.hypot(mx, my) / Math.max(dt, .001); s.wagT = (s.wagT || 0) + dt * (3 + Math.min(6, v * .35)); }
     const wob = s.kind === 'koi' ? Math.sin(s.wagT || 0) * 4 : Math.sin(t * 1.1 + s.ph) * 6;
+    // 鯉は奥（上）ほど小さく見せる（遠近）
+    const depth = s.kind === 'koi' ? `scale(${(.72 + (s.y - 64) / 20 * .28).toFixed(3)}) ` : '';
     // 鳥は作品と同じ横向きの影絵なので回さず、進む向きに反転して少し傾けるだけ
     const turn = NO_TURN.has(s.kind) ? `scaleX(${s.dir}) rotate(${(wob * (s.kind === 'boat' ? .15 : .5)).toFixed(1)}deg)` : `rotate(${(s.a + wob).toFixed(1)}deg)`;
-    put(s.el, 'transform', `translate3d(${(s.x * U).toFixed(1)}px, ${(s.y * U).toFixed(1)}px, 0) ${turn}`);
+    put(s.el, 'transform', `translate3d(${(s.x * U).toFixed(1)}px, ${(s.y * U).toFixed(1)}px, 0) ${depth}${turn}`);
     // 鯉が通ったあとに波紋（動いているときだけ、1 匹あたり 1.3 秒に 1 つ。同時に多く残さない）
     if (s.kind === 'koi' && !REDUCED && !COARSE && now - s.lastRipple > 2200 && Math.hypot(mx, my) > .02 && (r.rippleN || 0) < 4) {
       s.lastRipple = now;
