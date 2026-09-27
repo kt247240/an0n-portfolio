@@ -1586,7 +1586,10 @@ export function sceneNight(W, stops) {
   far += `<path d="M-5 106L-5 ${hz - 4}${smoothD(Array.from({ length: 9 }, (_, i) => [-5 + (fw + 10) * i / 8, hz - 6 + R(-3, 2)]))}L${n1(fw + 5)} 106Z" fill="#282c55"/>`;
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
   for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); far += townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); }
-  const ferris = { x: at(W, FACTORS.far)(Math.max(1, Math.floor(stops / 2)), W * .82), y: hz - 8.5, r: 6.5 }; // 作品の右に見える位置 // 観覧車は museum.js が回るものとして置く
+  // 観覧車：対岸の水ぎわに立つ（脚の足もとが水平線）。museum.js が脚・回る輪・ゴンドラ・水面の映り込みを置く
+  // 作品と作品のあいだで立ち止まったとき、画面の真ん中（作品のない所）に見える位置。狭い画面では小さく
+  const ferris = { x: at(W, FACTORS.far)(Math.max(1, Math.floor(stops / 2)) + .5, W * .5), r: W < 80 ? 7 : 10, base: hz };
+  ferris.y = ferris.base - ferris.r - 3.8; // いちばん下のゴンドラが足もとの台にかからない高さ
   const lighthouse = { x: at(W, FACTORS.far)(stops - 1, W * .85), y: hz - 9.6 };
   { const lx = lighthouse.x; far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
   const [sg, sd] = lgrad([[0, '#2d3263'], [1, '#141733']]);
@@ -1718,14 +1721,39 @@ export function swimmerSVG(kind, seed = 0) {
 }
 
 // 観覧車（回るもの）：脚は止まり、輪だけが回る。r を半径として、viewBox は -r-1.5 〜 r+1.5、下は脚のぶん
-// 観覧車：脚（止まる）と輪（回る）を別の絵にする。輪は要素ごと回すので、中身を描き直さない
+// 観覧車：脚（止まる）・輪（回る）・ゴンドラ（輪と逆に回って、いつも下向きに吊り下がる）を別の絵にする。
+// 回るものは要素ごと回すので、中身を描き直さない。viewBox の原点が輪の中心
+export const FERRIS_N = 12;
 export function ferrisSVG(r, part = 'wheel') {
-  const c = '#1d1f3c', R2 = r + 1.5;
-  if (part === 'legs') return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2 + 1.5)}" xmlns="http://www.w3.org/2000/svg">${rglow(0, 0, r * 1.5, '#ff9ad0', .16)}<path d="M${n1(-r * .55)} ${n1(r + 1)}L0 0L${n1(r * .55)} ${n1(r + 1)}" stroke="${c}" stroke-width=".5" fill="none"/><circle r=".7" fill="#ffe7a8"/></svg>`;
+  const c = '#1d1f3c', steel = '#3d3f6e', R2 = r + 3, lamp = ['#ffb45a', '#e88ab8', '#ffe7a8', '#f0c890'];
+  if (part === 'legs') {
+    const h = r + 3.8; // 中心から地面まで（いちばん下のゴンドラが台にかからないように）
+    let s = rglow(0, 0, r * 1.7, '#ff9ad0', .14);
+    // A 字の脚を前後 2 組（奥は細く暗く）、筋交い、足もとの台と切符売り場
+    for (const [dx, w, col] of [[.6, .35, '#15173a'], [0, .55, c]]) {
+      s += `<path d="M${n1(-r * .62 + dx)} ${n1(h)}L${n1(dx)} 0L${n1(r * .62 + dx)} ${n1(h)}" stroke="${col}" stroke-width="${w}" fill="none" stroke-linejoin="round"/>`;
+      for (let t = .3; t < 1; t += .23) s += `<path d="M${n1(-r * .62 * t + dx)} ${n1(h * t)}L${n1(r * .62 * t + dx)} ${n1(h * t)}" stroke="${col}" stroke-width="${n1(w * .6)}"/>`;
+      for (let t = .3; t < .95; t += .23) s += `<path d="M${n1(-r * .62 * t + dx)} ${n1(h * t)}L${n1(r * .62 * (t + .23) + dx)} ${n1(h * (t + .23))}M${n1(r * .62 * t + dx)} ${n1(h * t)}L${n1(-r * .62 * (t + .23) + dx)} ${n1(h * (t + .23))}" stroke="${col}" stroke-width="${n1(w * .35)}" opacity=".8"/>`;
+    }
+    s += `<path d="M${n1(-r * .9)} ${n1(h)}h${n1(r * 1.8)}v.8h${n1(-r * 1.8)}Z" fill="#15173a"/>`;
+    s += `<path d="M${n1(-r * .28)} ${n1(h)}v-1.8h${n1(r * .56)}v1.8Z" fill="#20224a"/><path d="M${n1(-r * .32)} ${n1(h - 1.8)}h${n1(r * .64)}l-.4 -.6h${n1(-r * .56)}Z" fill="#e88ab8" opacity=".85"/><rect x="${n1(-r * .18)}" y="${n1(h - 1.4)}" width="${n1(r * .36)}" height=".7" fill="#ffe7a8" opacity=".9"/>`;
+    for (let k = 0; k < 7; k++) s += `<circle cx="${n1(-r * .85 + k * r * .28)}" cy="${n1(h - .15)}" r=".18" fill="${lamp[k % 4]}"/>`;
+    s += `<circle r="1" fill="#2a2c55"/><circle r=".55" fill="#ffe7a8"/>`;
+    return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 + h + 1)}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+  }
+  if (part === 'gondola') {
+    // 吊り金具（原点）から下がる小さな箱。窓に灯り、屋根
+    return `<svg viewBox="-1.3 0 2.6 3.4" xmlns="http://www.w3.org/2000/svg"><path d="M0 0v.7" stroke="${steel}" stroke-width=".18"/><path d="M-1 .9Q0 .4 1 .9V1Z" fill="${c}"/><rect x="-1" y=".95" width="2" height="2.1" rx=".35" fill="${c}"/><rect x="-.72" y="1.25" width="1.44" height=".95" rx=".15" fill="#ffd9a0" opacity=".9"/><path d="M0 1.25v.95" stroke="${c}" stroke-width=".12"/></svg>`;
+  }
   let s = '';
-  for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, gx = Math.cos(a) * r, gy = Math.sin(a) * r; s += `<path d="M0 0L${n1(gx)} ${n1(gy)}" stroke="#3d3f6e" stroke-width=".18"/><circle cx="${n1(gx)}" cy="${n1(gy)}" r=".55" fill="${['#ffb45a', '#e88ab8', '#ffe7a8', '#f0c890'][k % 4]}"/>`; }
-  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r * .82)}" cy="${n1(Math.sin(a) * r * .82)}" r=".2" fill="#ffe7a8" opacity=".8"/>`; }
-  return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2)}" xmlns="http://www.w3.org/2000/svg"><circle r="${n1(r)}" stroke="#3d3f6e" stroke-width=".35" fill="none"/><circle r="${n1(r * .82)}" stroke="#3d3f6e" stroke-width=".2" fill="none"/>${s}</svg>`;
+  // 外と内の二重の輪、そのあいだの格子、中心からのスポーク
+  s += `<circle r="${n1(r)}" stroke="${steel}" stroke-width=".4" fill="none"/><circle r="${n1(r * .86)}" stroke="${steel}" stroke-width=".25" fill="none"/><circle r="${n1(r * .22)}" stroke="${steel}" stroke-width=".3" fill="none"/>`;
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, b = (k + .5) / 24 * Math.PI * 2; s += `<path d="M${n1(Math.cos(a) * r * .86)} ${n1(Math.sin(a) * r * .86)}L${n1(Math.cos(b) * r)} ${n1(Math.sin(b) * r)}L${n1(Math.cos(a + Math.PI / 12) * r * .86)} ${n1(Math.sin(a + Math.PI / 12) * r * .86)}" stroke="${steel}" stroke-width=".12" fill="none"/>`; }
+  for (let k = 0; k < FERRIS_N; k++) { const a = k / FERRIS_N * Math.PI * 2; s += `<path d="M${n1(Math.cos(a) * r * .22)} ${n1(Math.sin(a) * r * .22)}L${n1(Math.cos(a) * r)} ${n1(Math.sin(a) * r)}" stroke="${steel}" stroke-width=".18"/>`; }
+  // 輪の電飾：外周に 36 個、スポークに沿って 4 個ずつ
+  for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r)}" cy="${n1(Math.sin(a) * r)}" r=".26" fill="${lamp[k % 4]}"/>`; }
+  for (let k = 0; k < FERRIS_N; k++) for (let t = .38; t < .86; t += .14) { const a = k / FERRIS_N * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r * t)}" cy="${n1(Math.sin(a) * r * t)}" r=".14" fill="#ffe7a8" opacity=".75"/>`; }
+  return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2)}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
 }
 // 薪ストーブの火（揺れる炎と、舞い上がる火の粉）
 export function fireSVG() {

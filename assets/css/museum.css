@@ -871,7 +871,13 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* 部屋の中の小さな動き */
 .living, .flyer { position: absolute; left: 0; top: 0; pointer-events: none; }
 .living svg, .flyer svg { display: block; width: 100%; height: auto; }
-.ferris-wheel { will-change: transform; animation: spin 70s linear infinite; }
+.ferris-wheel { will-change: transform; animation: spin 90s linear infinite; }
+.ferris-wheel > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* ゴンドラは輪と逆向きに同じ速さで回して、いつも真下に吊り下がる（吊り金具を軸に） */
+.ferris-wheel .gondola { position: absolute; height: auto; transform-origin: 50% 0; animation: spin 90s linear infinite reverse; }
+.ferris-refl { overflow: hidden; -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); }
+.ferris-refl i { position: absolute; left: 50%; height: .3vh; border-radius: .2vh; opacity: .45; transform: translateX(-50%); animation: refl 2.6s ease-in-out infinite alternate; }
+@keyframes refl { from { transform: translateX(-56%) scaleX(.8); opacity: .25; } to { transform: translateX(-44%) scaleX(1.1); opacity: .55; } }
 .puddle-shine { border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 220, 150, .5), rgba(255, 200, 115, .18) 55%, transparent); mix-blend-mode: screen; animation: pshine 3.2s ease-in-out infinite alternate; }
 @keyframes pshine { from { opacity: .35; transform: scaleX(.92); } to { opacity: 1; transform: scaleX(1.06); } }
 .stove-fire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame .55s steps(3, end) infinite alternate; }
@@ -942,7 +948,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
 .flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
 @keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
-@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .foam, .steam i, .flyer.koijump svg { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .foam, .steam i, .flyer.koijump svg { animation: none !important; } }
 
 /* 長押し：作品だけが照らされる */
 .room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }

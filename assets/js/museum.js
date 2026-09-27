@@ -5,7 +5,7 @@ import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
-import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG } from './nature.js';
+import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG, FERRIS_N } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
 import { introSVG } from './intros.js';
@@ -568,6 +568,8 @@ function swimURL(kind, i, scene) {
   return SWIM_URL.get(k);
 }
 function buildSwimmers(r) {
+  // 作り直すときは、前に置いた奥の動くもの（観覧車・灯台・鯉など）を先に片づける（画面の大きさが変わると二重になっていた）
+  const DR = $('.drift', r.el); if (DR) DR.innerHTML = '';
   const cfgs = SWIMMERS[r.room.id]; if (!cfgs) return;
   r.swimmers = [];
   for (const [kind, n0, ys, ws, sp, dir, plane] of cfgs) {
@@ -632,7 +634,13 @@ function updateSwimmers(r, now, focus) {
 // 部屋の中の小さな動き：夜の庭の観覧車と水たまりの光、小屋の火と窓の外の雪
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
-  if (D.ferris) { const { x, y, r: rr } = D.ferris, R2 = rr + 1.5, pos = `left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh`; S.insertAdjacentHTML('beforeend', `<div class="living ferris" style="${pos}">${ferrisSVG(rr, 'legs')}</div><div class="living ferris-wheel" style="${pos}">${ferrisSVG(rr)}</div>`); }
+  if (D.ferris) {
+    const { x, y, r: rr } = D.ferris, R2 = rr + 3, h = rr + 3.8, G = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(svg, gradeOf(r.room.scene)))}`;
+    const gon = Array.from({ length: FERRIS_N }, (_, k) => { const a = k / FERRIS_N * Math.PI * 2; return `<img class="gondola" alt="" src="${G(ferrisSVG(rr, 'gondola'))}" style="left:${((R2 + Math.cos(a) * rr - 1.3) / (R2 * 2) * 100).toFixed(2)}%;top:${((R2 + Math.sin(a) * rr) / (R2 * 2) * 100).toFixed(2)}%;width:${(2.6 / (R2 * 2) * 100).toFixed(2)}%">`; }).join('');
+    // 水面の映り込み：色の違う灯りの短い横線を、水平線の下に縦に並べる（ゆらゆら）
+    const refl = Array.from({ length: 9 }, (_, k) => `<i style="top:${(k * 11).toFixed(0)}%;width:${(70 - k * 6).toFixed(0)}%;background:${['#ffb45a', '#e88ab8', '#ffe7a8'][k % 3]};animation-delay:${(-k * .4).toFixed(1)}s"></i>`).join('');
+    S.insertAdjacentHTML('beforeend', `<img class="living ferris" alt="" src="${G(ferrisSVG(rr, 'legs'))}" style="left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh;height:${(R2 + h + 1).toFixed(2)}vh"><div class="living ferris-wheel" style="left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh;height:${R2 * 2}vh"><img alt="" src="${G(ferrisSVG(rr))}">${gon}</div><div class="living ferris-refl" style="left:${((x - rr * .6) * U).toFixed(1)}px;top:${((D.ferris.base + .6) * U).toFixed(1)}px;width:${rr * 1.2}vh;height:${rr * .9}vh">${refl}</div>`);
+  }
   if (D.puddles) P.insertAdjacentHTML('beforeend', D.puddles.map(([x, y, w], i) => `<i class="living puddle-shine" style="left:${((x - w * .9) * U).toFixed(1)}px;top:${((y - w * .13) * U).toFixed(1)}px;width:${(w * 1.8).toFixed(2)}vh;height:${(w * .26).toFixed(2)}vh;animation-delay:${-(i * .7)}s"></i>`).join(''));
   if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
   if (D.foam) { const mw = W + (r.stops - 1) * W * FACTORS.mid + 40; P.insertAdjacentHTML('beforeend', `<i class="living foam" style="left:-5vh;top:${(D.foam - 1.2) * U}px;width:${mw + 10}vh"></i><i class="living foam f2" style="left:-5vh;top:${(D.foam + .2) * U}px;width:${mw + 10}vh"></i>`); }
