@@ -931,7 +931,9 @@ function updateRoom(r, now) {
   // 小屋の中の最初の作品の前では、画面の左端がちょうど外壁との境目。
   // マウスや傾きで背景が右へずれると外の雪がのぞくので、室内にいる間はその向きのずれを止める
   const mxc = r.room.scene === 'attic' && cam >= 1.5 && cam < 2.6 ? Math.max(mx, 0) : mx;
-  const tr = (sel, f, extra = '') => put(q(r, sel), 'transform', `translate3d(${((-(cam * W * f) - mxc * f * 2) * U).toFixed(2)}px, ${((my * f * -1.2 + bob * f) * U).toFixed(2)}px, 0)${extra}`);
+  // 傾き・マウスの視差で層を動かすとき、層の絵の端が画面の内側に入らないように、はみ出している分までに抑える
+  // （縦は層の絵が画面ぴったりなので動かさない：上下の端に奥の空が帯のように見えてしまう）
+  const tr = (sel, f, extra = '') => { const pw = W + (r.stops - 1) * W * f + 40, x = Math.min(0, Math.max(-(pw - W), -(cam * W * f) - mxc * f * 2)); put(q(r, sel), 'transform', `translate3d(${(x * U).toFixed(2)}px, 0px, 0)${extra}`); };
   tr('.far', FACTORS.far); tr('.drift', FACTORS.far); tr('.mid', FACTORS.mid); tr('.props', FACTORS.mid); tr('.art', FACTORS.mid); tr('.move', FACTORS.move);
   if (r.room.scene === 'jungle') updateWater(r, p, cam, mxc, now);
   // 部屋の出入りで、手前の植物をくぐる
@@ -964,7 +966,9 @@ function updateRoom(r, now) {
   // 立ち止まって 2.5 秒たったら、その場所で 1 回だけ小さな動き
   if (focus > .6 && currentRoom === r) { const k = Math.round(r.c); if (r.idleAt !== k) { r.idleAt = k; r.idleSince = now; r.idleFired = false; } else if (!r.idleFired && now - r.idleSince > 2500) { r.idleFired = true; fireIdle(r, k); } } else r.idleAt = -1;
   const fs = 1 + Math.max(r.curS * .45, leave * .6) + focus * .05;
-  put(q(r, '.frame'), 'transform', `translate3d(${(-mx * 2.4 * U).toFixed(2)}px, ${(-my * 1.6 * U).toFixed(2)}px, 0) scale(${(fs + kick * .006).toFixed(4)})`);
+  // 額縁（手前の葉）は、拡大してはみ出している分の中でだけ動かす
+  { const sc = fs + kick * .006, ox = (sc - 1) / 2 * W, oy = (sc - 1) / 2 * 100, fx = Math.max(-ox, Math.min(ox, -mx * 2.4)), fy = Math.max(-oy, Math.min(oy, -my * 1.6));
+    put(q(r, '.frame'), 'transform', `translate3d(${(fx * U).toFixed(2)}px, ${(fy * U).toFixed(2)}px, 0) scale(${sc.toFixed(4)})`); }
   // 部屋の出入りで、葉のカーテンが閉じて開く
   // 真上の部屋（入口）がまだ見えている間は、自分のカーテンを作らない（閉じきったら、その葉を引き継ぐ）
   const above = rooms.indexOf(r) ? rooms[rooms.indexOf(r) - 1].el : entrance;
@@ -1043,21 +1047,26 @@ function updateEntrance() {
   buildEntranceLife();
   const len = GEO.entH - vh, p = clamp(sy / len);
   const mx = mouse.x, my = mouse.y;
-  $('.far', entrance).style.transform = `translate3d(${-mx * .6 * U}px, ${-my * .4 * U}px, 0) scale(${1 + p * .08})`;
+  // 傾き・マウスの視差は、拡大してはみ出している分までに抑える（絵の端が画面の内側に入って隙間が見えないように）
+  const lim = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  { const sf = 1 + p * .08, fwE = W + 40, fx = lim(-mx * .6, -((sf - 1) * fwE * .5 + fwE - W), (sf - 1) * fwE * .5), fy = lim(-my * .4, -(sf - 1) * 30, (sf - 1) * 70);
+    $('.far', entrance).style.transform = `translate3d(${fx * U}px, ${fy * U}px, 0) scale(${sf})`; }
   // 地面（中景）は、看板の足もとを中心に寄っていく。看板の足もとの地面は動かないので、画面に立てたままの看板が地面から離れない
   const sign = $('.sign', entrance);
   if (!sign._foot) { const cs = getComputedStyle(sign); sign._foot = [(parseFloat(cs.left) + parseFloat(cs.width) / 2) / U, 100 - parseFloat(cs.bottom) / U - .6]; }
   const [FX, FY] = sign._foot, zoom = .22;
   const midEl = $('.mid', entrance);
   midEl.style.transformOrigin = `${FX * U}px ${FY * U}px`;
-  midEl.style.transform = `translate3d(${-mx * 1.4 * U}px, ${-my * .8 * U}px, 0) scale(${1 + p * zoom})`;
+  const sm = 1 + p * zoom, mwE = W + 40, gx0 = lim(-mx * 1.4, -((sm - 1) * (mwE - FX) + mwE - W), (sm - 1) * FX), gy0 = lim(-my * .8, -(sm - 1) * (100 - FY), (sm - 1) * FY);
+  midEl.style.transform = `translate3d(${gx0 * U}px, ${gy0 * U}px, 0) scale(${sm})`;
   updateEntranceLife(midEl.style.transformOrigin, midEl.style.transform);
-  sign.style.translate = $('.sign-bird', entrance).style.translate = `${-mx * 1.4 * U}px ${-my * .8 * U}px`; // マウスの視差だけは地面と一緒に
-  $('.frame', entrance).style.transform = `translate3d(${-mx * 3 * U}px, ${-my * 2 * U}px, 0) scale(${1 + p * 1.7})`;
+  sign.style.translate = $('.sign-bird', entrance).style.translate = `${gx0 * U}px ${gy0 * U}px`; // マウスの視差だけは地面と一緒に
+  { const sfr = 1 + p * 1.7, ox = (sfr - 1) / 2 * W, oy = (sfr - 1) / 2 * 100;
+    $('.frame', entrance).style.transform = `translate3d(${lim(-mx * 3, -ox, ox) * U}px, ${lim(-my * 2, -oy, oy) * U}px, 0) scale(${sfr})`; }
   // 案内人は小道の中心線の上を、奥へ歩いていく（中景と同じ拡大・視差をかけて、道から外れないように）
   const t0 = .507, tg = t0 - Math.min(p, .9) * .42, [X, Y] = ENTRANCE_PATH(W)(tg), s = 1 + p * zoom;
   // 中景の 1 点 (x, y) が、いま画面のどこに見えるか（中景と同じ拡大・視差）
-  const onGround = (x, y) => [FX + (x - FX) * s - mx * 1.4, FY + (y - FY) * s - my * .8];
+  const onGround = (x, y) => [FX + (x - FX) * s + gx0, FY + (y - FY) * s + gy0];
   const guide = $('.guide', entrance);
   if (guide._feetU !== U) { guide._feetU = U; guide._feetY = 100 - parseFloat(getComputedStyle(guide).bottom) / U; }
   const feetY = guide._feetY;
