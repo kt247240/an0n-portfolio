@@ -2053,25 +2053,34 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   for (let i = 0; i < (mw - wallX) / 3; i++) { const x = R(wallX, mw), y = R(81, 105); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(2, 4))} ${n1(R(-.3, .3))} ${n1(R(5, 9))} 0" stroke="#7a5638" stroke-width=".18" fill="none" opacity=".45"/>`; }
   mid += `<rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height="1.6" fill="#3a2718"/><rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height=".35" fill="#7a5638" opacity=".7"/>`;
   for (let k = 2; k < stops; k++) mid += rglow(workX(k), 86, 22, '#ffcf85', .16);
-  // ラグ：外の縁取り、内側の二重線、菱形の模様、端のフリンジ
-  for (let k = 2; k < stops; k++) {
-    const x = workX(k), rx = W * .18;
-    mid += `<ellipse cx="${n1(x)}" cy="94.4" rx="${n1(rx + .6)}" ry="3.6" fill="#2a1a12" opacity=".35"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx)}" ry="3.2" fill="#7a3f33"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx * .86)}" ry="2.55" fill="#8d4a3a"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(W * .15)}" ry="2.4" fill="none" stroke="#d9a35a" stroke-width=".5" stroke-dasharray="1.2 .8"/><ellipse cx="${n1(x)}" cy="94" rx="${n1(rx * .6)}" ry="1.7" fill="none" stroke="#e8c18a" stroke-width=".22"/>`;
-    for (let t = -3; t <= 3; t++) mid += `<path d="M${n1(x + t * rx * .13)} 93.1l${n1(rx * .045)} .9l${n1(-rx * .045)} .9l${n1(-rx * .045)} -.9Z" fill="${t % 2 ? '#e2b36f' : '#3f5d59'}" opacity=".8"/>`;
-    for (const side of [-1, 1]) for (let f = -3; f <= 3; f++) mid += `<path d="M${n1(x + side * rx)} ${n1(94 + f * .45)}h${n1(side * .9)}" stroke="#e8d3ad" stroke-width=".14" opacity=".75"/>`;
+  // ラグ：部屋の奥まで続く 1 本の長い敷物（ランナー）。縁取り、内側の二重線、菱形の模様、両端のフリンジ
+  {
+    const x0 = wallX + 6, x1 = mw + 6, y0 = 90.6, y1 = 97.4;
+    mid += `<rect x="${n1(x0 + .4)}" y="${n1(y0 + .6)}" width="${n1(x1 - x0)}" height="${n1(y1 - y0)}" fill="#2a1a12" opacity=".35"/>`;
+    mid += `<rect x="${n1(x0)}" y="${n1(y0)}" width="${n1(x1 - x0)}" height="${n1(y1 - y0)}" fill="#7a3f33"/><rect x="${n1(x0)}" y="${n1(y0 + .9)}" width="${n1(x1 - x0)}" height="${n1(y1 - y0 - 1.8)}" fill="#8d4a3a"/>`;
+    mid += `<path d="M${n1(x0)} ${n1(y0 + .45)}H${n1(x1)}M${n1(x0)} ${n1(y1 - .45)}H${n1(x1)}" stroke="#d9a35a" stroke-width=".35" stroke-dasharray="1.2 .8"/>`;
+    mid += `<path d="M${n1(x0)} ${n1(y0 + 1.6)}H${n1(x1)}M${n1(x0)} ${n1(y1 - 1.6)}H${n1(x1)}" stroke="#e8c18a" stroke-width=".18"/>`;
+    const cy = (y0 + y1) / 2;
+    for (let x = x0 + 2, i = 0; x < x1 - 2; x += 3.2, i++) {
+      mid += `<path d="M${n1(x)} ${n1(cy - 1.3)}l1.2 1.3l-1.2 1.3l-1.2 -1.3Z" fill="${i % 3 === 1 ? '#3f5d59' : '#e2b36f'}" opacity=".85"/>`;
+      if (i % 3 === 1) mid += `<path d="M${n1(x)} ${n1(cy - .5)}l.45 .5l-.45 .5l-.45 -.5Z" fill="#e8d3ad" opacity=".8"/>`;
+    }
+    for (const ex of [x0]) for (let f = y0 + .4; f < y1; f += .55) mid += `<path d="M${n1(ex)} ${n1(f)}h-1" stroke="#e8d3ad" stroke-width=".14" opacity=".75"/>`;
+    // すり切れた毛足：ところどころ明るく
+    for (let i = 0; i < (x1 - x0) / 6; i++) mid += `<ellipse cx="${n1(R(x0 + 2, x1 - 2))}" cy="${n1(R(y0 + 2, y1 - 2))}" rx="${n1(R(1, 2.5))}" ry=".35" fill="#a85a48" opacity=".35"/>`;
   }
   // 床と壁の小物（作品と作品のあいだ。レコードプレーヤー・ソファ・木箱のあるすき間は避ける）
   for (let k = 1; k < stops - 1; k++) {
     if (k === 3 || k === 4 || k === 5) continue;
     const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
     // 手前の鉢植えがすき間の真ん中に来るので、床の小物は左右に寄せる
-    const off = Math.max(12, W * .11);
+    const off = Math.max(12, W * .11), FK = W < 80 ? 1.25 : 2.1; // 家具の大きさ（絵と比べて部屋が大きすぎて見えないように）
     // 1 つ目のすき間は左半分が小屋の外（雪の中）なので、ギターは置かない。スツールとマグは小屋の中にあるときだけ
-    if (k === 1) { if (gx + off > wallX + 3) { mid += stoolMug(gx + off, 90.5, 2.2); mug = [gx + off, 90.5 - 2.2 * 1.75 - 2.2 * .42 * 1.1]; } }
-    else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6); }
-    else { mid += skis(gx - off, 90, 30); }
+    if (k === 1) { if (gx + off > wallX + 3) { mid += stoolMug(gx + off, 90.5, 2.2 * FK); mug = [gx + off, 90.5 - 2.2 * FK * 1.75 - 2.2 * FK * .42 * 1.1]; } }
+    else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6 * FK); }
+    else { mid += skis(gx - off, 90, 30 * Math.min(FK, 1.6)); }
     // 壁の小物は、作品にかからないときだけ（広い画面）
-    if (k === 1) mid += guard(Zk, () => coatRack(gx, 30, 14), { min: 1 });
+    if (k === 1) mid += guard(Zk, () => coatRack(gx, 30, 14 * Math.min(FK, 1.4)), { min: 1 });
     if (k === 2) mid += guard(Zk, () => sconce(gx, 38, 2.6), { min: 1 });
   }
   // 天井のドライハーブ：電球のあいだに、作品にかからないところへ
@@ -2080,8 +2089,8 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     const m = mids[0], shW = Math.min(22, gap - 2);
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
     // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
-    if (gap >= 11) stove = [m, 80];
-    if (gap >= 11) mid += rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V53h1.4V71Z" fill="#1d1916"/><path d="M${n1(m + 1.6)} 60.5h2.2v.6h-2.2Z" fill="#3a3430"/><ellipse cx="${n1(m + 2.7)}" cy="52.4" rx="2.2" ry="1.3" fill="#2a1c12"/><ellipse cx="${n1(m + 2.7)}" cy="52.4" rx="1.5" ry=".85" fill="#4a3a2c"/><ellipse cx="${n1(m + 2.7)}" cy="52.5" rx=".8" ry=".45" fill="#141110"/>`; // 煙突は壁の丸い受け口に差し込む
+    // 薪ストーブ（鋳物の箱に脚、焚き口のガラス、上に煙突）。家具に合わせて大きめに
+    if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k, top = 80 - sh; mid += rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45) + `<path d="M${n1(m - sw / 2)} ${n1(79)}v${n1(-sh + 1)}h${n1(sw)}v${n1(sh - 1)}Z" fill="#1d1916"/><path d="M${n1(m - sw / 2 - .6)} ${n1(top)}h${n1(sw + 1.2)}v1h${n1(-sw - 1.2)}Z" fill="#2a2522"/><path d="M${n1(m - sw / 2 + .6)} 79v1.2M${n1(m + sw / 2 - .6)} 79v1.2" stroke="#1d1916" stroke-width=".8"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="#ff8a3a"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="none" stroke="#3a3430" stroke-width=".6"/><path d="M${n1(m + 2 * k)} ${n1(top)}V52h${n1(1.4 * k)}V${n1(top)}Z" fill="#1d1916"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(2.2 * k)}" ry="${n1(1.3 * k)}" fill="#2a1c12"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(1.5 * k)}" ry="${n1(.85 * k)}" fill="#4a3a2c"/>`; stove = [m, 80, k]; }
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
   const sk = [[wallX + 8, 26, '#d4d0b5', '#382a1d'], [wallX + 14, 27, '#e3dcc0', '#7f6032']];

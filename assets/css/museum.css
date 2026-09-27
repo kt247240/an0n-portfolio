@@ -460,6 +460,7 @@ body.party::after { content: ""; position: fixed; inset: 0; z-index: 55; pointer
 
 /* 閉館後の部屋の深夜テレビ（3 作品をチャンネルで） */
 .egg-prop.tv { width: 22vh; bottom: 12.6vh; }
+@media (min-width: 761px) { .egg-prop.tv { width: 38vh; } } /* 広い画面では家具に合わせて大きく */
 /* インコ：ときどき首をかしげ、タップで跳ねる */
 .prop.bird-prop { height: 5.4vh; aspect-ratio: 257 / 300; padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 .4vh .3vh rgba(0, 0, 0, .25)); }
 .prop.bird-prop img { display: block; width: 100%; height: 100%; transform-origin: 50% 100%; animation: bird-look 7s ease-in-out infinite; }

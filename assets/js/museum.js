@@ -635,7 +635,7 @@ function buildLiving(r) {
   if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
   if (D.foam) { const mw = W + (r.stops - 1) * W * FACTORS.mid + 40; P.insertAdjacentHTML('beforeend', `<i class="living foam" style="left:-5vh;top:${(D.foam - 1.2) * U}px;width:${mw + 10}vh"></i><i class="living foam f2" style="left:-5vh;top:${(D.foam + .2) * U}px;width:${mw + 10}vh"></i>`); }
   if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
-  if (D.stove) { const [x, y] = D.stove; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - 2.4) * U).toFixed(1)}px;top:${((y - 3.2 - 7.8) * U).toFixed(1)}px;width:4.8vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
+  if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, fw = 4.8 * k * .9; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - fw / 2) * U).toFixed(1)}px;top:${((y - sh + sh * .3 + sh * .42 - fw * 13 / 8 + .3) * U).toFixed(1)}px;width:${fw.toFixed(2)}vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
 }
 // 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける
@@ -657,6 +657,7 @@ function buildProps(r) {
   (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + dx, kind])); // dx：金庫などとぶつからないよう横にずらす（vh）
   L.innerHTML = spots.map(([s, x, kind]) => {
     const p = propHTML(kind, r.room.scene);
+    if (r.room.scene === 'attic') p.w *= W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように
     p.html = gradeColors(p.html, gradeOf(r.room.scene));
     const pos = p.bottom == null ? 'top:0' : `bottom:${p.bottom}vh`;
     const eggKind = kind === 'recordStand' ? 'turntable' : kind;
