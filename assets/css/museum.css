@@ -750,7 +750,7 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .snowcut { position: absolute; overflow: hidden; }
 .snowcut img { display: block; max-width: none; user-select: none; }
 .snowcut.flip img { transform: scaleX(-1); }
-.snowcut.board { overflow: hidden; transform-origin: 50% 100%; transform: rotate(-4deg); } /* 下の 2 割は雪の中（切り取って、根もとを雪の盛り上がりで隠す） */
+.snowcut.board { overflow: hidden; transform-origin: 50% 100%; transform: rotate(-2deg); } /* 下の 2 割は雪の中（切り取って、根もとを雪の盛り上がりで隠す） */
 .cabin-door { position: absolute; top: 44vh; width: 12vh; height: 38vh; perspective: 60vh; pointer-events: none; --open: 0; }
 .cabin-door { perspective: 120vh; perspective-origin: 50% 100%; } /* 遠近の中心を敷居の高さに：開いても扉の下の辺は敷居の線のまま（土台にはみ出さない） */
 .cabin-door .leaf { position: absolute; inset: 0; transform-origin: 0 50%; transform: rotateY(calc(var(--open) * -104deg)); filter: brightness(calc(1 - var(--open) * .35)); }
@@ -1042,4 +1042,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .v-ask { flex-wrap: wrap; row-gap: 10px; }
 .v-ask .tag { white-space: nowrap; }
 /* スノーボードの下の端は、雪の中へ溶かす（まっすぐ切れた端が見えないように） */
-.snowcut.board { -webkit-mask-image: linear-gradient(#000 86%, transparent 100%); mask-image: linear-gradient(#000 86%, transparent 100%); }
+.snowcut.board { -webkit-mask-image: linear-gradient(#000 80%, transparent 98%); mask-image: linear-gradient(#000 80%, transparent 98%); }
