@@ -4,6 +4,7 @@
 import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
+import PRE_MANIFEST from './pre-manifest.js';
 import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
@@ -43,6 +44,16 @@ const splitTitle = (txt) => { let i = 0; return txt.split(' ').map((word) => `<s
 //   そこで 1.5 倍の密度で <canvas> に一度だけ焼き付けて表示する（メモリはおよそ 1/4）。
 //   横に長い層は、幅 4096px 以下のタイルに分けて焼く（iOS の canvas の大きさの上限をこえないように）
 const RASTER = COARSE ? Math.min(DPR, 1.5) : 0;
+// 前もって描いておいた背景（lite.html）：背景の層を、その場で SVG から組み立てるのではなく、書き出し済みの画像（タイル）で置く。
+// 画面の縦横比ごとに用意してあるので、いちばん近いものを選ぶ（近いものがなければ、ふつうに SVG から組み立てる）
+const PRE_BUCKET = (() => {
+  if (document.documentElement.dataset.pre !== '1') return null;
+  let best = null;
+  for (const k of Object.keys(PRE_MANIFEST)) { const bw = PRE_MANIFEST[k].W, e = Math.abs(W - bw) / bw; if (e < .14 && (!best || e < best.e)) best = { k, e }; }
+  return best ? best.k : null;
+})();
+const PRE = PRE_BUCKET ? PRE_MANIFEST[PRE_BUCKET].layers : null;
+const preBox = (key, w, cls = '') => (PRE && PRE[key] ? `<div class="raster pre ${cls}" data-pre="${key}" style="width:${w * U}px"></div>` : null);
 const SVG_STORE = new Map();
 let svgSeq = 0;
 // いま組み立てている場面の色調（GRADES）。背景の絵を描くときに色を変換する
@@ -96,9 +107,35 @@ const leafImg = (q) => {
 const rasterQueue = [];
 let rastering = false;
 function hydrate(root) {
+  root.querySelectorAll('.raster.pre[data-pre]').forEach(setupPre);
   if (!RASTER) return;
   root.querySelectorAll('.raster[data-svg]').forEach((el) => rasterQueue.push(el));
   if (!rastering) pumpRaster();
+}
+// 書き出し済みの背景：層をタイル（画面 1 枚ぶんの幅の画像）に分けてあり、見えているあたりのタイルだけを置く（遠いタイルは外す）
+const preBoxes = new Set();
+function setupPre(el) {
+  const key = el.dataset.pre, L = PRE[key]; el.removeAttribute('data-pre');
+  el._tiles = L.tiles.map((t, i) => ({ x: t.x, w: t.w, src: `assets/pre/${PRE_BUCKET}/${key}-${i}.webp`, img: null }));
+  if (el._tiles.length === 1) { placePre(el, el._tiles[0]); return; }
+  preBoxes.add(el); tickPre();
+}
+function placePre(el, t) {
+  const img = new Image(); img.decoding = 'async'; img.draggable = false;
+  img.style.cssText = `position:absolute;top:0;left:${(t.x * 100).toFixed(4)}%;width:${(t.w * 100).toFixed(4)}%;height:100%;max-width:none`;
+  img.src = t.src; el.append(img); t.img = img;
+}
+function tickPre() {
+  for (const el of preBoxes) {
+    if (!el.isConnected) { preBoxes.delete(el); el._tiles.forEach((t) => { if (t.img) { t.img.src = ''; t.img = null; } }); continue; }
+    const r = el.getBoundingClientRect(); if (!r.width) continue;
+    const x0 = -r.left / r.width, x1 = (vw - r.left) / r.width, pad = vw * .8 / r.width;
+    for (const t of el._tiles) {
+      const want = t.x + t.w > x0 - pad && t.x < x1 + pad;
+      if (want && !t.img) placePre(el, t);
+      else if (!want && t.img && (t.x + t.w < x0 - pad * 2 || t.x > x1 + pad * 2)) { t.img.src = ''; t.img.remove(); t.img = null; }
+    }
+  }
 }
 // 1 枚のタイルを焼く。
 // 層の絵（SVG）は層ごとに 1 回だけ読み込み、タイルはそこから切り出して描く。
@@ -385,12 +422,14 @@ function buildRoomScene(r) {
   // 背景の絵は HTML として用意だけしておき、部屋に近づいたときに付ける（attachLayers）
   // 奥の層は、描くときに一度だけ薄くぼかしておく（被写界深度。スクロール中の負担はない）
   r.leaves = S.curtain ? curtainLeaves(W, S.curtain) : null;
+  // 書き出し済みの背景（lite.html）があれば、その場で SVG を組み立てずに画像を置く
+  const pk = (l) => `${r.room.id}-${l}${moonlit ? '-night' : ''}`;
   r.layerHTML = {
     // 空（skyArt）はぼかさずにいちばん下へ。その上の遠景（山・町）だけを薄くぼかす
-    '.far': svgImg(S.far[0], `${S.skyArt || ''}<defs><filter id="dof" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation=".12"/></filter></defs><g filter="url(#dof)">${S.far[1]}</g>`, 'far-r') + skyDomHTML(S.skyDom) + farHotspot(r.room.id, S.far[0], U),
-    '.mid': svgImg(...S.mid),
-    '.move': svgImg(...S.move),
-    '.frame': svgImg(W, S.frame, 'wind') + frameHotspot(r.room.id),
+    '.far': (preBox(pk('far'), S.far[0], 'far-r') || svgImg(S.far[0], `${S.skyArt || ''}<defs><filter id="dof" x="-2%" y="-2%" width="104%" height="104%"><feGaussianBlur stdDeviation=".12"/></filter></defs><g filter="url(#dof)">${S.far[1]}</g>`, 'far-r')) + skyDomHTML(S.skyDom) + farHotspot(r.room.id, S.far[0], U),
+    '.mid': preBox(pk('mid'), S.mid[0]) || svgImg(...S.mid),
+    '.move': preBox(pk('move'), S.move[0]) || svgImg(...S.move),
+    '.frame': (preBox(pk('frame'), W, 'wind') || svgImg(W, S.frame, 'wind')) + frameHotspot(r.room.id),
   };
   r.curtainHTML = r.leaves ? r.leaves.map((q) => leafImg(q)).join('') : '';
   GRADE = null;
@@ -502,13 +541,15 @@ document.addEventListener('click', (e) => {
   b.classList.remove('hop'); void b.getBoundingClientRect(); b.classList.add('hop');
 }, true);
 
+// 背景の書き出し（tools/prerender.mjs）用：組み立てた SVG を外から読めるように
+if (location.search.includes('prerender')) window.__pre = { W, U, vw, vh, store: SVG_STORE, rooms, get entrance() { return entrance.layerHTML; }, setForestNight, svgDoc };
 /* ---------- 入口 ---------- */
 const entrance = $('#entrance');
 function buildEntrance() {
   const S = sceneForest(W, 1, { entrance: true });
   GRADE = GRADES.forest;
   $('.sky', entrance).style.background = gradeColors(S.sky, GRADE);
-  entrance.layerHTML = { '.far': svgImg(S.far[0], S.far[1], 'far-r'), '.mid': svgImg(...S.mid), '.frame': svgImg(W, S.frame, 'wind') };
+  entrance.layerHTML = { '.far': preBox('entrance-far', S.far[0], 'far-r') || svgImg(S.far[0], S.far[1], 'far-r'), '.mid': preBox('entrance-mid', S.mid[0]) || svgImg(...S.mid), '.frame': preBox('entrance-frame', W, 'wind') || svgImg(W, S.frame, 'wind') };
   GRADE = null;
   entrance.attached = false; attachEntrance();
 }
@@ -741,7 +782,11 @@ function updateRoom(r, now) {
   // 出るときは、次の部屋の葉のカーテンがスクロールどおりに閉じる。閉じきったところで次の部屋（真下に重ねてある）に入れ替わり、
   // そのまま同じ葉がひらくので、部屋の切り替わりが見えない（最後の部屋だけは自分の葉で閉じる）
   const next = rooms[rooms.indexOf(r) + 1];
-  const target = next ? enter : Math.max(enter, leave);
+  // 部屋の絵がまだ描き終わっていなければ、葉のカーテンは閉じたまま待つ（描きかけの部屋を見せない）。ただし待つのは 2.5 秒まで
+  const painted = layersPainted(r);
+  if (painted) r.holdSince = null; else if (r.holdSince == null) r.holdSince = now;
+  const hold = !painted && now - r.holdSince < 2500;
+  const target = hold ? 1 : next ? enter : Math.max(enter, leave);
   r.curS = r.curS == null ? target : r.curS + (target - r.curS) * (1 - Math.exp(-dtc / .9));
   if (Math.abs(r.curS - target) < .015) r.curS = target; // ほぼ開いた（閉じた）ら、そこで止める（端に葉が残らないように）
   // 作品の前では、手前の植物が少しひらいて作品に場所をゆずる
@@ -944,6 +989,7 @@ function measureGeo() {
   // 画面の粒子をよける作品の枠（前のフレームの位置。1 フレームの遅れは、よける幅を少し広げて吸収する）
   GEO.workRects = currentRoom ? [...currentRoom.el.querySelectorAll('.work .canvas')].map((el) => el.getBoundingClientRect()).filter((b) => b.width && b.right > 0 && b.left < innerWidth) : null;
   if (RASTER) tickTiles();
+  if (PRE) tickPre();
 }
 function clipOutRects(c, rects, pad = 0) {
   if (!rects.length) return false;
@@ -1147,6 +1193,17 @@ function prefetchNext(from) {
   if (!d) return;
   prefetching = true; r.prefetched = true;
   loadSVG(d).then(() => { prefetching = false; });
+}
+// 部屋の背景（奥・中・手前の層）がすべて描き終わっているか
+function layersPainted(r) {
+  if (!r.attached || r.pending?.length) return false;
+  for (const el of r.el.querySelectorAll('.plane > .raster')) {
+    if (el.dataset.pre) return false;
+    if (el._tiles && el._tiles[0]?.src) { if (!el._tiles.some((t) => t.img && t.img.complete)) return false; continue; } // 書き出し済みの画像：1 枚でも読み込めていれば
+    if (el.dataset.svg) return false; // まだ焼く順番が来ていない
+    if (el._win ? !el._win.c : !(el._tiles && el._tiles.every((t) => t.canvas))) return false;
+  }
+  return true;
 }
 function attachNext(r) {
   if (!r.pending?.length) return;

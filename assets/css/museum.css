@@ -753,6 +753,7 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 
 /* スマホ・タブレットで焼いた絵（canvas のタイル）を入れる箱。img と同じ並べ方 */
 .plane > .raster { position: relative; display: block; height: 100%; }
+.raster.pre img { position: absolute; top: 0; height: 100%; display: block; max-width: none; user-select: none; pointer-events: none; }
 .frame > .raster { position: relative; width: 100%; height: 100%; }
 .curtain .raster { position: absolute; will-change: transform; transform-origin: 50% 50%; }
 .curtain .raster canvas { height: 100% !important; }
