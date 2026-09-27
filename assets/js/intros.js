@@ -14,9 +14,10 @@ function forest() {
   s = 11;
   let birds = '';
   for (let i = 0; i < 7; i++) {
-    const y = R(22, 40), sc = R(.7, 1.15), d = R(0, 1.6);
-    birds += `<g class="ib-fly" style="--y:${f1(y)}px;--d:${f1(d)}s;--dur:${f1(R(7, 9))}s"><g transform="scale(${f1(sc)})"><g class="ib-flap" style="--d:${f1(R(0, .4))}s">
-      <path d="M0 0Q-3 -3.2 -6 -1.6Q-3 -1.4 0 .6Z" fill="#3f5a3a"/><path d="M0 0Q3 -3.2 6 -1.6Q3 -1.4 0 .6Z" fill="#4d6b45"/></g><ellipse cx="0" cy=".4" rx="1.6" ry=".9" fill="#2f4630"/></g></g>`;
+    // 小さく、先の細い翼で（大きいと平たい影に見える）
+    const y = R(20, 36), sc = R(.3, .48), d = R(0, 1.6);
+    birds += `<g class="ib-fly" style="--y:${f1(y)}px;--d:${f1(d)}s;--dur:${f1(R(7, 9))}s"><g transform="scale(${Math.round(sc * 100) / 100})"><g class="ib-flap" style="--d:${f1(R(0, .4))}s">
+      <path d="M-.3 0Q-2.8 -2.6 -5.6 -.8Q-2.8 -1 -.3 .6Z" fill="#4a5e46"/><path d="M.3 0Q2.8 -2.6 5.6 -.8Q2.8 -1 .3 .6Z" fill="#56694f"/></g><ellipse cx="0" cy=".2" rx=".9" ry=".4" fill="#3f5240"/><path d="M.7 .1l.9 -.1l-.7 .35Z" fill="#3f5240"/></g></g>`;
   }
   const leaves = [0, 1, 2].map((i) => `<g class="ib-fall" style="--x:${f1(R(70, 130))}px;--d:${i * 2.4}s"><g class="ib-spin"><path d="M0 0C1.6 -.6 1.6 -3.4 0 -4.2C-1.6 -3.4 -1.6 -.6 0 0Z" fill="${['#a5c23e', '#769721', '#c9d77a'][i]}"/></g></g>`).join('');
   return birds + leaves;

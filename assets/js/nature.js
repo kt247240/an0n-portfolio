@@ -509,10 +509,12 @@ export function farewellSVG() {
     + `<circle cx="${cx - 4}" cy="33" r="14" fill="url(#${id})"/>`
     + `<path d="M${cx - 10} 41V29L${cx} 21L${cx + 10} 29V41Z" fill="#0a0c20"/><path d="M${cx - 12} 29.6L${cx} 19.6L${cx + 12} 29.6" stroke="#0a0c20" stroke-width="1.6" fill="none"/><path d="M${cx + 5.5} 24.2V19.6H${cx + 8}V26.2" fill="#0a0c20"/>`
     + `<rect x="${cx - 6}" y="31" width="4" height="4" fill="#ffc873"/><path d="M${cx - 4} 31v4M${cx - 6} 33h4" stroke="#0a0c20" stroke-width=".4"/>`
-    + [0, 1, 2].map((k) => `<circle class="fw-puff" style="--d:${n1(-k * 2.3)}s" cx="${cx + 6.7}" cy="18.6" r=".7" fill="#8a90b8" opacity="0"/>`).join('')
+;
+  const anim = [0, 1, 2].map((k) => `<circle class="fw-puff" style="--d:${n1(-k * 2.3)}s" cx="${cx + 6.7}" cy="18.6" r=".7" fill="#8a90b8" opacity="0"/>`).join('')
     + Array.from({ length: 7 }, (_, k) => `<circle class="fw-fly" style="--d:${n1(-k * 1.7)}s;--dx:${n1(R(-6, 6))}px;--dy:${n1(R(-4, 2))}px" cx="${n1(R(10, 190))}" cy="${n1(R(28, 39))}" r=".38" fill="#d9e28a"/>`).join('')
     + `<path class="fw-star" d="M0 -.25H9V.25H0Z" fill="#fff"/>`;
-  return `<svg viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${back}${cabin}${front}<rect x="-5" y="40.5" width="210" height="5" fill="#0a0c20"/></svg>`;
+  // 動くもの（煙・ホタル・流れ星）は別の薄い絵に分ける：動くたびに森と小屋まで描き直さないように
+  return `<svg class="fw-land" viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${back}${cabin}${front}<rect x="-5" y="40.5" width="210" height="5" fill="#0a0c20"/></svg><svg class="fw-anim" viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${anim}</svg>`;
 }
 // 月（画面に直接置く、ぼやけない月）。viewBox は -50〜50、月の半径は 10。kind：'full' 満月 / 'crescent' 三日月（欠けた側も地球照でほのかに見える）
 export function moonSVG(kind = 'full', halo = false) {
@@ -1013,8 +1015,6 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   let far = forestFar(fw, 64), mid = '', move = '';
   far += groundPath(-10, fw + 10, 65, 1, '#cad79d', '#b3c581');
   // 遠くの草地に立つ鹿（霞んだ影）と、朝の霧
-  far += deer(fw * .58, 66.5, 6.5, mixC('#6b5a3e', '#e3e9c4', .45));
-  far += deer(fw * .58 + 9, 65.5, 4.2, mixC('#6b5a3e', '#e3e9c4', .55));
   far += mist(-10, fw + 10, 66, 4, '#eef2da', .32);
   // 梢の間から差し込む朝の光の筋（遠い森の上に、斜めに）
   far += godRays(-10, fw + 10, -5, 80, Math.round(fw / 9), '#fff6d2', -.3);
@@ -1074,8 +1074,6 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   // 花の上を舞う蝶（作品の下の草地に）
   for (let s = 0; s < stops; s++) {
     const x = at(W, FACTORS.mid)(s, W / 2);
-    mid += butterfly(x + R(-16, 16), R(84, 89), R(1.5, 1.9), pick(['#fbf7ea', '#f4ecd6', '#f6e6e8']));
-    if (rnd() < .6) mid += butterfly(x + R(-18, 18), R(94, 99), R(1.1, 1.4), pick(['#fbf7ea', '#f4ecd6']));
   }
   for (let x = -5; x < mw; x += R(9, 14)) mid += bushMass(x, R(-5, -1), R(9, 13), [P.deep, P.dark, P.mid, P.leaf], 22);
   for (let x = R(0, 10); x < mw; x += R(22, 36)) mid += sprig(x, -3, R(12, 20), 180 + R(-20, 20), [P.leaf, P.fresh, P.lime, P.pale], { leaf: 2.8, cls: 'hang', stem: '#3d5a2a' });
@@ -1109,8 +1107,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   far += cloudReflections(-10, fw + 10, 8, 95, Math.round(fw / 14));
   // 対岸の茂み（上のほう）と、その映り込み
   far += farBank(-10, fw + 10, 22, ['#1f3a22', '#2b5230', '#3d6b3a', '#5a8a3c']);
-  // 水中を泳ぐ鯉（水面の下なので薄く）
-  for (let i = 0; i < fw / 16; i++) far += `<g opacity=".62">${koi(R(0, fw), R(40, 96), R(6, 9), R(0, 360), pick([['#f2eee2', '#e07a48'], ['#e07a48', '#f2eee2'], ['#f2eee2', '#3a3a3a'], ['#e8934a', '#f2eee2']]))}</g>`;
+  // （鯉は背景に焼かず、museum.js のスクロールで泳ぐ鯉だけにする：止まった鯉が混ざらないように）
   far += caustics(-5, fw, 5, 100, Math.round(fw * 1.2), 'rgba(210,222,170,.35)');
   for (let i = 0; i < fw / 12; i++) far += `<path d="M${n1(R(0, fw))} ${n1(R(10, 90))}q${n1(R(-8, 8))} ${n1(R(4, 10))} ${n1(R(-10, 10))} ${n1(R(10, 20))}" stroke="#5f6a40" stroke-width="${n1(R(.4, 1))}" fill="none" opacity=".45" stroke-linecap="round"/>`;
   for (let i = 0; i < fw / 7; i++) { const x = R(0, fw), y = R(15, 95); far += lily(x, y, R(1.5, 3), pick(['#9fb86a', '#8aa35a', '#b3c97a'])); }
@@ -1144,11 +1141,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 15, 66), [cx - 9, 60, cx + 9, 94], artZone(W, nx, 15, 66), [nx - 9, 60, nx + 9, 94]];
     const gx = cx + W * FACTORS.mid * .5;
     mid += guard(Z, () => { const r = R(3.5, 4.5), x = gx + R(-12, 12), y = R(66, 78); return lily(x, y, r, Q.pad) + waterLily(x + r * .2, y - .3, r * .5); }, { min: 1 });
-    mid += guard(Z, () => dragonfly(gx + R(-14, 14), R(40, 62), R(1.4, 1.9)), { min: 1 });
-    mid += guard(Z, () => striders(gx - 12, gx + 12, 66, 86, 3), { min: 1 });
-    if (s % 3 === 1) mid += guard(Z, () => turtleLog(gx + R(-6, 6), R(72, 80), R(11, 14)), { min: 1 });
-    if (s % 3 === 2) mid += guard(Z, () => heron(gx + R(-8, 8), R(84, 87), R(17, 20), rnd() < .5), { min: 1 });
-    if (s % 3 === 0 && s > 0) mid += guard(Z, () => { const x = gx + R(-8, 8), len = R(24, 34); return vine(x, 6, len, '#4c5a2a', [P.fresh, P.lime, P.leaf], { cls: '' }) + kingfisher(x + .3, 6 + len + 1.2, 1.9, rnd() < .5); }, { min: 1 });
+    if (s % 3 === 0 && s > 0) mid += guard(Z, () => { const x = gx + R(-8, 8), len = R(24, 34); return vine(x, 6, len, '#4c5a2a', [P.fresh, P.lime, P.leaf], { cls: '' }); }, { min: 1 });
   }
   // 手前の水ぎわ：苔むした石と、蓮のつぼみ
   for (let x = R(0, 8); x < mw; x += R(12, 22)) if (clearOfWorks(W, stops, x, 6)) { const y = R(80, 86), w = R(3, 5); mid += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .45)}" fill="#6f6a58"/><ellipse cx="${n1(x - w * .2)}" cy="${n1(y - w * .18)}" rx="${n1(w * .7)}" ry="${n1(w * .25)}" fill="#8a8672"/><ellipse cx="${n1(x - w * .3)}" cy="${n1(y - w * .3)}" rx="${n1(w * .4)}" ry="${n1(w * .16)}" fill="#7a9a3c" opacity=".85"/>` + ripple(x, y + w * .3, w * .8, '#e9f0d0', .22); }
@@ -1198,17 +1191,51 @@ function farBank(x0, x1, y, tones) {
   // 水ぎわの土と、映り込み
   return `<g id="${id}">${b}</g><path d="M${n1(x0)} ${n1(y + .5)}H${n1(x1)}V${n1(y + 2.2)}H${n1(x0)}Z" fill="#3f4a2c" opacity=".6"/><g transform="translate(0 ${n1((y + 2.2) * 2)}) scale(1 -.75)" opacity=".28"><use href="#${id}"/></g>`;
 }
-// 水中を泳ぐ鯉（上から見た形。a = 向き（0° が上）、模様つき）
+// 水中を泳ぐ鯉（真上から見た紅白。a = 向き（0° が上））。
+// 紡錘形の胴に鱗の模様、背びれ、大きく透ける胸びれと腹びれ、長い尾びれ（すべて別のグループで CSS が振る）。
+// 紅の斑はふちが不ぞろいな面をいくつか重ねて、鱗の模様を透かす。輪郭線は引かない
 function koi(x, y, len, a, colors) {
-  const id = `ko${gid++}`, w = len * .28, [c1, c2] = colors;
-  let s = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})"><defs><clipPath id="${id}"><path d="M0 ${n1(-len * .5)}C${n1(w)} ${n1(-len * .3)} ${n1(w)} ${n1(len * .2)} 0 ${n1(len * .45)}C${n1(-w)} ${n1(len * .2)} ${n1(-w)} ${n1(-len * .3)} 0 ${n1(-len * .5)}Z"/></clipPath></defs>`;
-  s += `<path d="M0 ${n1(len * .4)}Q${n1(-w * .9)} ${n1(len * .6)} ${n1(-w * .6)} ${n1(len * .82)}Q0 ${n1(len * .62)} ${n1(w * .6)} ${n1(len * .82)}Q${n1(w * .9)} ${n1(len * .6)} 0 ${n1(len * .4)}Z" fill="${c1}" opacity=".9"/>`;
-  for (const d of [-1, 1]) s += `<path d="M${n1(d * w * .7)} ${n1(-len * .05)}Q${n1(d * w * 1.6)} ${n1(len * .05)} ${n1(d * w * 1.3)} ${n1(len * .25)}Q${n1(d * w * .8)} ${n1(len * .15)} ${n1(d * w * .7)} ${n1(-len * .05)}Z" fill="${c1}" opacity=".85"/>`;
-  s += `<path d="M0 ${n1(-len * .5)}C${n1(w)} ${n1(-len * .3)} ${n1(w)} ${n1(len * .2)} 0 ${n1(len * .45)}C${n1(-w)} ${n1(len * .2)} ${n1(-w)} ${n1(-len * .3)} 0 ${n1(-len * .5)}Z" fill="${c1}"/>`;
-  s += `<g clip-path="url(#${id})">`;
-  for (let k = 0; k < 2; k++) s += `<ellipse cx="${n1(R(-w * .6, w * .6))}" cy="${n1(R(-len * .35, len * .3))}" rx="${n1(w * R(.4, .8))}" ry="${n1(len * R(.1, .2))}" fill="${c2}"/>`;
-  s += `</g><path d="M0 ${n1(-len * .5)}C${n1(-w)} ${n1(-len * .3)} ${n1(-w)} ${n1(len * .2)} 0 ${n1(len * .45)}Z" fill="#fff" opacity=".12"/></g>`;
-  return s;
+  const id = `ko${gid++}`, w = len * .15, [c1, c2] = colors, cd = dark(c1, .14), cl = light(c1, .1);
+  const body = `M0 ${n1(-len * .5)}C${n1(w * .75)} ${n1(-len * .5)} ${n1(w * 1.05)} ${n1(-len * .24)} ${n1(w)} ${n1(-len * .08)}C${n1(w * .92)} ${n1(len * .18)} ${n1(w * .5)} ${n1(len * .36)} ${n1(w * .2)} ${n1(len * .44)}L${n1(-w * .2)} ${n1(len * .44)}C${n1(-w * .5)} ${n1(len * .36)} ${n1(-w * .92)} ${n1(len * .18)} ${n1(-w)} ${n1(-len * .08)}C${n1(-w * 1.05)} ${n1(-len * .24)} ${n1(-w * .75)} ${n1(-len * .5)} 0 ${n1(-len * .5)}Z`;
+  // ひれ：透ける生成りに、ひれすじと先の紅
+  const fin = (d, ox, oy, L, Wd, ang, cls) => {
+    const path = `M0 0Q${n1(Wd * .9)} ${n1(-L * .15)} ${n1(Wd)} ${n1(L * .55)}Q${n1(Wd * .55)} ${n1(L * 1.02)} 0 ${n1(L)}Q${n1(-Wd * .25)} ${n1(L * .55)} 0 0Z`;
+    let rays = '';
+    for (let k = 1; k <= 4; k++) rays += `<path d="M0 0Q${n1(Wd * .25 * k)} ${n1(L * .3)} ${n1(Wd * .22 * k)} ${n1(L * (.95 - k * .05))}" stroke="${cd}" stroke-width="${n1(w * .04)}" fill="none" opacity=".35"/>`;
+    return `<g class="${cls}" transform="translate(${n1(d * ox)} ${n1(oy)}) rotate(${n1(d * ang)}) scale(${d} 1)"><path d="${path}" fill="${cl}" opacity=".8"/><path d="${path}" fill="${cd}" opacity=".18"/><path d="M${n1(Wd * .55)} ${n1(L * .5)}Q${n1(Wd * .9)} ${n1(L * .55)} ${n1(Wd)} ${n1(L * .55)}Q${n1(Wd * .55)} ${n1(L * 1.02)} 0 ${n1(L)}Q${n1(Wd * .5)} ${n1(L * .78)} ${n1(Wd * .55)} ${n1(L * .5)}Z" fill="${c2}" opacity=".55"/>${rays}</g>`;
+  };
+  // 尾びれ：ふたつに分かれて長く流れる。ひれすじと先の紅
+  const tail = `M${n1(-w * .2)} ${n1(len * .42)}Q${n1(-w * 1.4)} ${n1(len * .58)} ${n1(-w * 1.15)} ${n1(len * .96)}Q${n1(-w * .35)} ${n1(len * .74)} 0 ${n1(len * .7)}Q${n1(w * .35)} ${n1(len * .74)} ${n1(w * 1.15)} ${n1(len * .96)}Q${n1(w * 1.4)} ${n1(len * .58)} ${n1(w * .2)} ${n1(len * .42)}Z`;
+  let tailRays = '';
+  for (const d of [-1, 1]) for (let k = 1; k <= 3; k++) tailRays += `<path d="M0 ${n1(len * .46)}Q${n1(d * w * .3 * k)} ${n1(len * .66)} ${n1(d * w * (.25 + .28 * k))} ${n1(len * (.98 - k * .04))}" stroke="${cd}" stroke-width="${n1(w * .04)}" fill="none" opacity=".4"/>`;
+  const tailTip = `M${n1(-w * 1.15)} ${n1(len * .96)}Q${n1(-w * 1.05)} ${n1(len * .8)} ${n1(-w * .7)} ${n1(len * .72)}Q${n1(-w * .8)} ${n1(len * .88)} ${n1(-w * 1.15)} ${n1(len * .96)}ZM${n1(w * 1.15)} ${n1(len * .96)}Q${n1(w * 1.05)} ${n1(len * .8)} ${n1(w * .7)} ${n1(len * .72)}Q${n1(w * .8)} ${n1(len * .88)} ${n1(w * 1.15)} ${n1(len * .96)}Z`;
+  let s = `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})"><defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>`;
+  // 水底に落ちる影
+  s += `<g class="shadow" opacity=".2" transform="translate(${n1(w * .5)} ${n1(len * .14)})"><path d="${body}" fill="#1a2a14"/><path d="${tail}" fill="#1a2a14"/></g>`;
+  // 尾びれ・腹びれ・胸びれ（胴の下に）
+  s += `<g class="tail"><path d="${tail}" fill="${cl}" opacity=".85"/><path d="${tailTip}" fill="${c2}" opacity=".6"/>${tailRays}</g>`;
+  s += fin(-1, w * .6, len * .18, len * .24, w * .8, 48, 'fin l pelvic') + fin(1, w * .6, len * .18, len * .24, w * .8, 48, 'fin r pelvic');
+  s += fin(-1, w * .9, -len * .2, len * .42, w * 1.5, 62, 'fin l') + fin(1, w * .9, -len * .2, len * .42, w * 1.5, 62, 'fin r');
+  // 胴：地の色、鱗、紅の斑（ふちの不ぞろいな面をいくつか）、背の暗さ、頭の明るさ
+  s += `<path d="${body}" fill="${c1}"/><g clip-path="url(#${id})">`;
+  const blobs = 2 + Math.floor(rnd() * 2);
+  for (let k = 0; k < blobs; k++) {
+    const cx = R(-w * .5, w * .5), cy = R(-len * .34, len * .3), rx = w * R(.55, .95), ry = len * R(.1, .19);
+    const pts = Array.from({ length: 12 }, (_, i) => { const t = i / 12 * Math.PI * 2, rr = 1 + (rnd() - .5) * .4; return [cx + Math.cos(t) * rx * rr, cy + Math.sin(t) * ry * rr]; });
+    let d = `M${n1((pts[11][0] + pts[0][0]) / 2)} ${n1((pts[11][1] + pts[0][1]) / 2)}`;
+    for (let i = 0; i < 12; i++) { const q = pts[i], nx = pts[(i + 1) % 12]; d += `Q${n1(q[0])} ${n1(q[1])} ${n1((q[0] + nx[0]) / 2)} ${n1((q[1] + nx[1]) / 2)}`; }
+    s += `<path d="${d}Z" fill="${c2}"/>`;
+  }
+  for (let yy = -len * .3; yy < len * .4; yy += w * .3) s += `<path d="M${n1(-w)} ${n1(yy)}q${n1(w * .25)} ${n1(-w * .12)} ${n1(w * .5)} 0t${n1(w * .5)} 0t${n1(w * .5)} 0t${n1(w * .5)} 0" stroke="${cd}" stroke-width="${n1(w * .035)}" fill="none" opacity=".4"/>`;
+  s += `<path d="M0 ${n1(-len * .5)}C${n1(w * .75)} ${n1(-len * .5)} ${n1(w * 1.05)} ${n1(-len * .24)} ${n1(w)} ${n1(-len * .08)}L${n1(w * .35)} ${n1(-len * .08)}Q${n1(w * .3)} ${n1(-len * .35)} 0 ${n1(-len * .5)}Z" fill="#000" opacity=".07"/>`;
+  s += `<ellipse cx="0" cy="${n1(-len * .38)}" rx="${n1(w * .8)}" ry="${n1(len * .1)}" fill="#fff" opacity=".18"/>`;
+  s += `</g>`;
+  // 背びれ（背の中心線に沿う低いひれ）と、えらの線、目、ひげ
+  s += `<path d="M0 ${n1(-len * .16)}Q${n1(w * .12)} ${n1(len * .02)} ${n1(w * .1)} ${n1(len * .3)}L${n1(-w * .1)} ${n1(len * .3)}Q${n1(-w * .12)} ${n1(len * .02)} 0 ${n1(-len * .16)}Z" fill="${cd}" opacity=".28"/>`;
+  s += `<path d="M${n1(-w * .95)} ${n1(-len * .22)}Q${n1(-w * .6)} ${n1(-len * .26)} ${n1(-w * .45)} ${n1(-len * .38)}M${n1(w * .95)} ${n1(-len * .22)}Q${n1(w * .6)} ${n1(-len * .26)} ${n1(w * .45)} ${n1(-len * .38)}" stroke="${cd}" stroke-width="${n1(w * .05)}" fill="none" opacity=".5"/>`;
+  s += `<circle cx="${n1(-w * .62)}" cy="${n1(-len * .4)}" r="${n1(w * .09)}" fill="#2a2018"/><circle cx="${n1(w * .62)}" cy="${n1(-len * .4)}" r="${n1(w * .09)}" fill="#2a2018"/>`;
+  s += `<path d="M${n1(-w * .35)} ${n1(-len * .49)}q${n1(-w * .3)} ${n1(-len * .02)} ${n1(-w * .45)} ${n1(len * .04)}M${n1(w * .35)} ${n1(-len * .49)}q${n1(w * .3)} ${n1(-len * .02)} ${n1(w * .45)} ${n1(len * .04)}" stroke="${cd}" stroke-width="${n1(w * .04)}" fill="none" opacity=".6"/>`;
+  return s + '</g>';
 }
 // 蓮の葉にすわるカエル（横向き）
 function frog(x, y, s, c = '#5f9a3a', flip = false) {
@@ -1267,12 +1294,6 @@ function turtleLog(x, y, len, tones) {
   let s = `<path d="M${n1(x - len / 2)} ${n1(y - 1.4)}Q${n1(x)} ${n1(y - 2.2)} ${n1(x + len / 2)} ${n1(y - 1.2)}L${n1(x + len / 2)} ${n1(y + .6)}Q${n1(x)} ${n1(y + 1.2)} ${n1(x - len / 2)} ${n1(y + .6)}Z" fill="${c}"/><path d="M${n1(x - len / 2)} ${n1(y + .2)}Q${n1(x)} ${n1(y + .5)} ${n1(x + len / 2)} ${n1(y)}L${n1(x + len / 2)} ${n1(y + .6)}Q${n1(x)} ${n1(y + 1.2)} ${n1(x - len / 2)} ${n1(y + .6)}Z" fill="${dark(c, .25)}"/>`;
   s += `<ellipse cx="${n1(x + len / 2)}" cy="${n1(y - .3)}" rx=".5" ry="1.1" fill="#c9a97e"/>`;
   s += ripple(x, y + 1.4, len * .5, '#e9f0d0', .25);
-  for (let k = 0; k < 2; k++) {
-    const tx = x - len * .25 + k * len * .35, ts = R(1.4, 1.9), sh = pick(['#4f6a2a', '#5f7d2e']);
-    s += `<path d="M${n1(tx - ts * .9)} ${n1(y - 1.5)}L${n1(tx - ts * 1.3)} ${n1(y - 1.7)}M${n1(tx + ts * .9)} ${n1(y - 1.5)}L${n1(tx + ts * 1.3)} ${n1(y - 1.7)}" stroke="#7a8a4a" stroke-width="${n1(ts * .18)}" stroke-linecap="round"/>`;
-    s += `<path d="M${n1(tx - ts)} ${n1(y - 1.5)}Q${n1(tx)} ${n1(y - 1.5 - ts * 1.1)} ${n1(tx + ts)} ${n1(y - 1.5)}Z" fill="${sh}"/><path d="M${n1(tx - ts * .55)} ${n1(y - 1.5)}Q${n1(tx)} ${n1(y - 1.5 - ts * .95)} ${n1(tx + ts * .55)} ${n1(y - 1.5)}" stroke="${light(sh, .2)}" stroke-width="${n1(ts * .12)}" fill="none"/>`;
-    s += `<ellipse cx="${n1(tx + ts * 1.2)}" cy="${n1(y - 1.7)}" rx="${n1(ts * .32)}" ry="${n1(ts * .24)}" fill="#7a8a4a"/><circle cx="${n1(tx + ts * 1.3)}" cy="${n1(y - 1.8)}" r="${n1(ts * .06)}" fill="#111"/>`;
-  }
   return s;
 }
 // アメンボ：水面の小さな点と、足もとの丸いくぼみ
@@ -1467,7 +1488,6 @@ export function sceneCove(W, stops) {
   far += streakCloud(-10, fw + 10, hz - 13, 1.4, '#e7b6ae', '#ffcf8f');
   far += setSun(sx, hz - 6, 4.8);
   // 遠くを渡る鳥
-  for (let k = 0; k < 5; k++) { const bx = sx + R(-30, 30), by = R(22, 44), bw = R(.7, 1.3); far += `<path d="M${n1(bx - bw)} ${n1(by - bw * .3)}Q${n1(bx - bw * .45)} ${n1(by - bw * .55)} ${n1(bx)} ${n1(by)}Q${n1(bx + bw * .45)} ${n1(by - bw * .55)} ${n1(bx + bw)} ${n1(by - bw * .3)}" stroke="#6f5a6e" stroke-width=".16" fill="none" opacity=".7"/>`; }
   far += mountains(-10, fw + 10, hz, 40, 55, '#b3c6cc', '#eef3f2', { wmin: 30, wmax: 70 });
   far += haze(-10, fw + 10, 38, hz, '#f6dcc6', .05, .6);
   far += mountains(-10, fw + 10, hz + .5, 53, 59, '#8eaeb5', null, { wmin: 22, wmax: 48 });
@@ -1521,7 +1541,6 @@ export function sceneCove(W, stops) {
     const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 2, 64), [cx - 15.5, 58, cx + 15.5, 92], artZone(W, nx, 2, 64), [nx - 15.5, 58, nx + 15.5, 92]];
     const gx = cx + W * FACTORS.mid * .5;
     mid += guard(Z, () => tidePool(gx + R(-10, 10), R(84, 86.5), R(5, 8)), { min: 1 });
-    mid += guard(Z, () => gull(gx + R(-12, 12), R(83.5, 86), R(1.8, 2.2), rnd() < .5), { min: 1 });
     if (s % 3 === 0) mid += guard(Z, (k) => duneFence(gx - R(9, 12) * k, gx + R(9, 12) * k, R(98, 101), R(4, 5)), { min: .55 });
     if (s % 3 === 1) mid += guard(Z, (k) => rowboat(gx + R(-3, 3), R(94, 97), R(16, 20) * k, pick(['#d9a06a', '#c98a7a', '#8fb0b8'])), { min: .6 });
     if (s % 3 === 2) mid += guard(Z, () => campfire(gx + R(-4, 4), R(95, 98), R(1.8, 2.2)), { min: 1 });
@@ -1541,7 +1560,7 @@ export function sceneCove(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'linear-gradient(#aebbd6 0%, #e3b8b3 28%, #f3c69c 46%, #f8dcb0 58%, #f6e2c4 62%, #bfd9d3 66%, #86b3b3 100%)',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170],
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79,
     curtain: ['#1c3a3a', '#2a5550', '#3f7f73', '#5aa77a', '#7cc0a0'],
   };
 }
@@ -1560,7 +1579,8 @@ export function sceneNight(W, stops) {
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
   for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); far += townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); }
   const ferris = { x: at(W, FACTORS.far)(Math.max(1, Math.floor(stops / 2)), W * .82), y: hz - 8.5, r: 6.5 }; // 作品の右に見える位置 // 観覧車は museum.js が回るものとして置く
-  { const lx = at(W, FACTORS.far)(stops - 1, W * .85); far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
+  const lighthouse = { x: at(W, FACTORS.far)(stops - 1, W * .85), y: hz - 9.6 };
+  { const lx = lighthouse.x; far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
   const [sg, sd] = lgrad([[0, '#2d3263'], [1, '#141733']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
   far += glitter(mx, hz + .5, 100, '#fdf1d6', { spread: .25, n: 110, a: .7 });
@@ -1592,7 +1612,6 @@ export function sceneNight(W, stops) {
     const h = R(10, 13);
     mid += `<ellipse cx="${n1(x)}" cy="${n1(96)}" rx="${n1(1.2)}" ry="${n1(7)}" fill="#ffc873" opacity=".12"/>` + streetLamp(x, 88, h);
     { const px = x + R(-2, 2), py = R(96, 100), pw = R(6, 9); mid += puddle(px, py, pw, '#ffc873'); puddles.push([px, py, pw]); } // 街灯の下の、濡れた石畳の水たまり
-    mid += moths(x, 88 - h, 5);
   }
   // 石畳の上：ところどころ濡れて光る石、落ちたヤシの葉、散った花びら
   for (let i = 0; i < mw * .5; i++) { const x = R(0, mw), y = R(88, 104); mid += `<rect x="${n1(x)}" y="${n1(y)}" width="${n1(R(1.5, 3.5))}" height="${n1(R(.6, 1.4))}" rx=".3" fill="${pick(['#3b3749', '#2f2c3b', '#46405a'])}" opacity=".55"/>`; }
@@ -1610,7 +1629,6 @@ export function sceneNight(W, stops) {
     const cx = at(W, FACTORS.mid)(s, W / 2), nx = at(W, FACTORS.mid)(s + 1, W / 2), Z = [artZone(W, cx, 15, 62), [cx - 13, 56, cx + 13, 94], artZone(W, nx, 15, 62), [nx - 13, 56, nx + 13, 94]];
     const gx = cx + W * FACTORS.mid * .5;
     if (s % 2 === 0) mid += guard(Z, (k) => { const bx = gx + R(-3, 3); return bench(bx, 97, 13 * k); }, { min: .7 });
-    else mid += guard(Z, (k) => bicycle(gx + R(-4, 4), 88.6, 2.6 * k, pick(['#b9b4c2', '#c99a78', '#8fa8b0'])), { min: .7 });
   }
   // 手前：暗いヤシの葉の影
   for (let s = 0; s < stops - 1; s++) {
@@ -1628,7 +1646,7 @@ export function sceneNight(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'radial-gradient(120% 38% at 50% 66%, rgba(150, 104, 158, .5), rgba(90, 70, 140, .18) 55%, transparent 80%), linear-gradient(#04051a 0%, #0a0d2e 28%, #151a45 50%, #252a5c 64%, #3a3a6c 74%, #2b3162 100%)', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110], puddles, ferris,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110], puddles, ferris, lighthouse,
     curtain: ['#0b100a', '#141d0f', '#1f2b15', '#2f3a1a', '#3f4a22'],
   };
 }
@@ -1663,18 +1681,6 @@ function cat(x, y, s, flip = false, c = '#0e0c12') {
   return k + '</g>';
 }
 // 手すりに立てかけた自転車（横向き）
-function bicycle(x, y, s, c = '#c9c4d0') {
-  track(x - s * 2.2, y - s * 2.3); track(x + s * 2.2, y + .3);
-  const r = s * .9, wheel = (wx) => `<circle cx="${n1(wx)}" cy="${n1(y - r)}" r="${n1(r)}" stroke="#1b1924" stroke-width="${n1(s * .16)}" fill="none"/><circle cx="${n1(wx)}" cy="${n1(y - r)}" r="${n1(r * .8)}" stroke="${c}" stroke-width="${n1(s * .05)}" fill="none" opacity=".6"/>` + [0, 45, 90, 135].map((a) => `<path d="M${n1(wx - Math.cos(a * D) * r * .8)} ${n1(y - r - Math.sin(a * D) * r * .8)}L${n1(wx + Math.cos(a * D) * r * .8)} ${n1(y - r + Math.sin(a * D) * r * .8)}" stroke="${c}" stroke-width="${n1(s * .04)}" opacity=".6"/>`).join('');
-  let b = wheel(x - s * 1.2) + wheel(x + s * 1.2);
-  const fx = x - s * 1.2, bx = x + s * 1.2, cy = y - r;
-  b += `<path d="M${n1(bx)} ${n1(cy)}L${n1(x + s * .15)} ${n1(cy)}L${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(x + s * .6)} ${n1(cy - s * 1.35)}L${n1(bx)} ${n1(cy)}M${n1(x + s * .15)} ${n1(cy)}L${n1(x + s * .6)} ${n1(cy - s * 1.35)}M${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(fx)} ${n1(cy)}" stroke="${c}" stroke-width="${n1(s * .14)}" fill="none" stroke-linejoin="round"/>`;
-  b += `<path d="M${n1(x - s * .55)} ${n1(cy - s * 1.35)}L${n1(x - s * .75)} ${n1(cy - s * 1.75)}M${n1(x - s * 1.05)} ${n1(cy - s * 1.72)}h${n1(s * .6)}" stroke="${c}" stroke-width="${n1(s * .14)}" stroke-linecap="round"/>`;
-  b += `<path d="M${n1(x + s * .6)} ${n1(cy - s * 1.35)}L${n1(x + s * .7)} ${n1(cy - s * 1.75)}M${n1(x + s * .45)} ${n1(cy - s * 1.78)}h${n1(s * .5)}" stroke="${c}" stroke-width="${n1(s * .14)}" stroke-linecap="round"/>`;
-  b += `<circle cx="${n1(x + s * .15)}" cy="${n1(cy)}" r="${n1(s * .22)}" fill="#1b1924"/><path d="M${n1(x + s * .15)} ${n1(cy)}l${n1(s * .3)} ${n1(s * .35)}" stroke="${c}" stroke-width="${n1(s * .1)}"/>`;
-  b += `<rect x="${n1(x - s * 1.7)}" y="${n1(cy - s * 1.6)}" width="${n1(s * .9)}" height="${n1(s * .6)}" rx=".2" fill="#a88a6a"/>`; // 前かご
-  return b;
-}
 // 街灯のまわりを飛ぶ蛾（小さな薄い点）
 function moths(x, y, n) {
   let s = '';
@@ -1690,7 +1696,7 @@ function birdSVG(c, delay) {
 }
 export function swimmerSVG(kind, seed = 0) {
   reseed(700 + seed);
-  if (kind === 'koi') return `<svg viewBox="-3 -5 6 12" xmlns="http://www.w3.org/2000/svg">${koi(0, 0, 8, 0, pick([['#f2eee2', '#e07a48'], ['#e07a48', '#f2eee2'], ['#f2eee2', '#3a3a3a'], ['#e8934a', '#f2eee2']]))}</svg>`;
+  if (kind === 'koi') return `<svg viewBox="-5 -5.5 10 14.5" xmlns="http://www.w3.org/2000/svg">${koi(0, 0, 8, 0, [['#efe4d2', '#d9452c'], ['#efe4d2', '#d9452c'], ['#efe4d2', '#e08a3c'], ['#d9452c', '#efe4d2'], ['#efe4d2', '#3f3a36'], ['#f4ecdc', '#d9452c']][seed % 6])}</svg>`;
   // 飛んでいるカモメ（上から見た形ではなく、横から見た翼の形。影絵）
   if (kind === 'gull') return birdSVG(pick(['#7a7488', '#6f5a6e']), R(0, .4));
   // 夜の海の小舟（影絵。灯りをひとつ）
@@ -1703,12 +1709,14 @@ export function swimmerSVG(kind, seed = 0) {
 }
 
 // 観覧車（回るもの）：脚は止まり、輪だけが回る。r を半径として、viewBox は -r-1.5 〜 r+1.5、下は脚のぶん
-export function ferrisSVG(r) {
-  const c = '#1d1f3c'; let s = '';
+// 観覧車：脚（止まる）と輪（回る）を別の絵にする。輪は要素ごと回すので、中身を描き直さない
+export function ferrisSVG(r, part = 'wheel') {
+  const c = '#1d1f3c', R2 = r + 1.5;
+  if (part === 'legs') return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2 + 1.5)}" xmlns="http://www.w3.org/2000/svg">${rglow(0, 0, r * 1.5, '#ff9ad0', .16)}<path d="M${n1(-r * .55)} ${n1(r + 1)}L0 0L${n1(r * .55)} ${n1(r + 1)}" stroke="${c}" stroke-width=".5" fill="none"/><circle r=".7" fill="#ffe7a8"/></svg>`;
+  let s = '';
   for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2, gx = Math.cos(a) * r, gy = Math.sin(a) * r; s += `<path d="M0 0L${n1(gx)} ${n1(gy)}" stroke="#3d3f6e" stroke-width=".18"/><circle cx="${n1(gx)}" cy="${n1(gy)}" r=".55" fill="${['#ffb45a', '#e88ab8', '#ffe7a8', '#f0c890'][k % 4]}"/>`; }
   for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r * .82)}" cy="${n1(Math.sin(a) * r * .82)}" r=".2" fill="#ffe7a8" opacity=".8"/>`; }
-  const R2 = r + 1.5;
-  return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2 + 1.5)}" xmlns="http://www.w3.org/2000/svg">${rglow(0, 0, r * 1.5, '#ff9ad0', .16)}<path d="M${n1(-r * .55)} ${n1(r + 1)}L0 0L${n1(r * .55)} ${n1(r + 1)}" stroke="${c}" stroke-width=".5" fill="none"/><g class="wheel"><circle r="${n1(r)}" stroke="#3d3f6e" stroke-width=".35" fill="none"/><circle r="${n1(r * .82)}" stroke="#3d3f6e" stroke-width=".2" fill="none"/>${s}</g><circle r=".7" fill="#ffe7a8"/></svg>`;
+  return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2)}" xmlns="http://www.w3.org/2000/svg"><circle r="${n1(r)}" stroke="#3d3f6e" stroke-width=".35" fill="none"/><circle r="${n1(r * .82)}" stroke="#3d3f6e" stroke-width=".2" fill="none"/>${s}</svg>`;
 }
 // 薪ストーブの火（揺れる炎と、舞い上がる火の粉）
 export function fireSVG() {
@@ -1724,8 +1732,13 @@ export function windowSnowSVG(w, h) {
   for (let k = 0; k < 22; k++) s += `<circle class="wsnow" style="--d:${n1(-R(0, 9))}s;--t:${n1(R(6, 10))}s;--dx:${n1(R(-1.5, 1.5))}px" cx="${n1(R(0, w))}" cy="0" r="${n1(R(.18, .4))}" fill="#eef2fb" opacity="${n1(R(.5, .9) * 100) / 100}"/>`;
   return s + '</svg>';
 }
-// 立ち止まったときの小さな動き：鳥（影絵）、トンボ、流れ星、火の粉のはじけ
+// 灯台の光の帯（回る）。viewBox の中心が灯台の灯り
+export function beamSVG() {
+  return `<svg viewBox="-40 -40 80 80" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bm" x1="0" x2="1"><stop offset="0" stop-color="#ffe7a8" stop-opacity=".8"/><stop offset=".6" stop-color="#ffe7a8" stop-opacity=".25"/><stop offset="1" stop-color="#ffe7a8" stop-opacity="0"/></linearGradient></defs><g><path d="M0 -.8L40 -9L40 9L0 .8Z" fill="url(#bm)"/></g></svg>`;
+}
+// 立ち止まったときの小さな動き：鳥（影絵）、トンボ、流れ星、火の粉のはじけ、跳ねる鯉
 export function flyerSVG(kind) {
+  if (kind === 'koijump') { reseed(3); return `<svg viewBox="-3 -5 6 12" xmlns="http://www.w3.org/2000/svg">${koi(0, 0, 8, 0, ['#e07a48', '#f2eee2'])}</svg>`; }
   if (kind === 'bird') return birdSVG('#2f3a26', 0);
   if (kind === 'dragonfly') { reseed(5); return `<svg viewBox="-3 -3 6 6" xmlns="http://www.w3.org/2000/svg">${dragonfly(0, 0, 1.4, 0)}</svg>`; }
   if (kind === 'star') return `<svg viewBox="-12 -1 14 2" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="st" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><path d="M-12 -.3H0V.3H-12Z" fill="url(#st)"/><circle r=".6" fill="#fff"/></svg>`;
@@ -2003,7 +2016,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   mid += `<path d="M${n1(workX(1) + W * .22)} 58v-6" stroke="#1d1510" stroke-width=".3"/><path d="M${n1(workX(1) + W * .22 - 1.2)} 58h2.4l-.4 3h-1.6Z" fill="#ffd98a"/>` + rglow(workX(1) + W * .22, 59, 9, '#ffc56b', .4);
   // 中景（内）：板壁と窓（窓の外は奥の空）、床、ラグ、ストーブ、棚
   // 作品と作品のあいだの壁：1 つ目に本棚とストーブ、2 つ目以降は窓（右ほど空が明けていく）
-  let stove = null;
+  let stove = null, mug = null;
   const mids = []; for (let k = 2; k < stops - 1; k++) mids.push((workX(k) + workX(k + 1)) / 2);
   // 作品と作品のすき間の幅（作品の枠の外側どうし）。狭い画面では窓や棚を小さくし、入らなければ置かない（絵に重ねない）
   const zoneHalf = artZone(W, 0, 0, 0)[2], gap = W * FACTORS.mid - zoneHalf * 2;
@@ -2044,7 +2057,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
     // 手前の鉢植えがすき間の真ん中に来るので、床の小物は左右に寄せる
     const off = Math.max(12, W * .11);
-    if (k === 1) { mid += guitar(gx - off, 90, 24) + stoolMug(gx + off, 90.5, 2.2); }
+    if (k === 1) { mid += guitar(gx - off, 90, 24) + stoolMug(gx + off, 90.5, 2.2); mug = [gx + off, 90.5 - 2.2 * 1.75 - 2.2 * .42 * 1.1]; }
     else if (k === 2) { mid += vinylStack(gx - off, 90, 2.6); }
     else { mid += skis(gx - off, 90, 30); }
     // 壁の小物は、作品にかからないときだけ（広い画面）
@@ -2058,7 +2071,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
     // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
     if (gap >= 11) stove = [m, 80];
-    if (gap >= 11) mid += rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V52h1.4V71Z" fill="#1d1916"/>`;
+    if (gap >= 11) mid += rglow(m, 74, 16, '#ff9a4a', .45) + `<path d="M${n1(m - 4)} 80v-9h8v9Z" fill="#1d1916"/><rect x="${n1(m - 2.6)}" y="73.5" width="5.2" height="3.4" fill="#ff8a3a"/><path d="M${n1(m + 2)} 71V53h1.4V71Z" fill="#1d1916"/><path d="M${n1(m + 1.6)} 60.5h2.2v.6h-2.2Z" fill="#3a3430"/><ellipse cx="${n1(m + 2.7)}" cy="52.4" rx="2.2" ry="1.3" fill="#2a1c12"/><ellipse cx="${n1(m + 2.7)}" cy="52.4" rx="1.5" ry=".85" fill="#4a3a2c"/><ellipse cx="${n1(m + 2.7)}" cy="52.5" rx=".8" ry=".45" fill="#141110"/>`; // 煙突は壁の丸い受け口に差し込む
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
   const sk = [[wallX + 8, 26, '#d4d0b5', '#382a1d'], [wallX + 14, 27, '#e3dcc0', '#7f6032']];
@@ -2068,13 +2081,13 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     const x = at(W, FACTORS.move)(s + .5, W / 2), Z = moveZones(W, s, 0, 84);
     // 鉢植えは、鉢が画面の下に隠れて葉だけが床に落ちて見えないよう、鉢が見える高さに置く
     // 4 つ目のすき間（ビートメイカーが立つところ）は、手前に鉢を置かない
-    if (s === 3 || s === 4 || s === 5 || s === birdGap) continue; // レコードプレーヤー・ソファ・木箱の前には鉢を置かない
+    if (s === 3 || s === 4 || s === 5 || s === birdGap || (s === 2 && stove)) continue; // レコードプレーヤー・ソファ・木箱・薪ストーブの前には鉢を置かない
     // 外の手前の木は、雪景色の絵の木と同じ色
     move += s === 0 ? guard(Z, (k) => pine(x, 112, 60 * k, '#061a0c', '#6c78a6')) : guard(Z, (k) => pot(x, 98.5, 10 * k, '#8e6e4f'));
   }
   return {
     sky: '#0d1027', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] }, stove, wins,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] }, stove, wins, mug,
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
 }

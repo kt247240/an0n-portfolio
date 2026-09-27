@@ -5,7 +5,7 @@ import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
-import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG } from './nature.js';
+import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
 import { introSVG } from './intros.js';
@@ -361,7 +361,7 @@ const rooms = ROOMS.map((room, ri) => {
       <div class="plane props" aria-hidden="true"></div>
       <div class="flash" aria-hidden="true"></div>
       <div class="neon" aria-hidden="true"></div><div class="grain-under" aria-hidden="true"></div>
-      <div class="lightplay" aria-hidden="true"><i class="l1"></i><i class="l2"></i></div><div class="hush" aria-hidden="true"></div><div class="nextglow" aria-hidden="true"></div>
+      <div class="lightplay" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></div><div class="hush" aria-hidden="true"></div><div class="nextglow" aria-hidden="true"></div>
       ${gradeColors(introSVG(room.scene), GRADES[room.scene])}
       <div class="plane art"></div>
       <div class="plane move"></div>
@@ -504,7 +504,12 @@ function buildRoomScene(r) {
       if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
       const wv = el.querySelector('video');
       if (wv) { wv.dataset.vsrc = wv.getAttribute('src'); wv.removeAttribute('src'); wv.addEventListener('playing', () => wv.classList.add('ready')); wv.addEventListener('emptied', () => wv.classList.remove('ready')); }
-      el.querySelector('.canvas').addEventListener('click', (e) => openViewer(w, e.clientX, e.clientY));
+      const cv = el.querySelector('.canvas');
+      cv.addEventListener('click', (e) => { if (cv._held) { cv._held = false; e.preventDefault(); return; } openViewer(w, e.clientX, e.clientY); });
+      // 長押し：まわりが暗く沈み、作品だけが照らされる（離すと戻る。長押ししたときはビューアを開かない）
+      cv.addEventListener('pointerdown', () => { clearTimeout(cv._hold); cv._hold = setTimeout(() => { cv._held = true; r.el.classList.add('spot'); }, 420); });
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) cv.addEventListener(ev, () => { clearTimeout(cv._hold); r.el.classList.remove('spot'); });
+      cv.addEventListener('contextmenu', (e) => { if (cv._held) e.preventDefault(); });
     } else if (it.door) {
       // 小屋の扉：蝶番を左に、近づくとゆっくり内側へひらく。ひらくほど中の灯りが雪に漏れる
       el.className = 'cabin-door';
@@ -548,22 +553,32 @@ function propHTML(kind, scene) {
 // スクロールに合わせて動く生きもの：水辺の鯉（歩くと先へ泳ぐ）、夕凪のカモメ（夕日のほうへ渡る）、森の白い蝶（ひらひらと先へ）
 // [種類, 数, 高さの範囲（vh）, 大きさ（vh）, 歩く速さ（vh／立ち止まる場所 1 つぶん）, 向き（1＝右へ）, 置く層（奥＝swim、中景＝props。蝶は木の前を飛ぶので中景）]
 const SWIMMERS = {
-  water: [['koi', 4, [44, 94], [5, 7], [34, 60], 1, 'drift'], ['dragonfly', 2, [38, 60], [1.6, 2.1], [12, 20], 1, 'props']],
+  water: [['koi', 5, [44, 94], [10, 13], [8, 16], 1, 'drift'], ['dragonfly', 2, [38, 60], [1.6, 2.1], [12, 20], 1, 'props']],
   dusk: [['gull', 4, [12, 38], [3, 4.4], [40, 70], -1, 'drift']],
   dapple: [['butterfly', 3, [64, 92], [2, 2.8], [30, 50], 1, 'props']],
   night: [['boat', 2, [68.5, 71.5], [3, 4.2], [6, 10], -1, 'drift']],
 };
 const NO_TURN = new Set(['gull', 'boat']); // 横向きの影絵は回さず、進む向きに反転するだけ
+const SWIM_URL = new Map();
+function swimURL(kind, i, scene) {
+  const k = `${kind}-${i}-${scene}-${forestNight ? 1 : 0}`;
+  if (!SWIM_URL.has(k)) SWIM_URL.set(k, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(swimmerSVG(kind, i), gradeOf(scene)))}`);
+  return SWIM_URL.get(k);
+}
 function buildSwimmers(r) {
   const cfgs = SWIMMERS[r.room.id]; if (!cfgs) return;
   r.swimmers = [];
-  for (const [kind, n, ys, ws, sp, dir, plane] of cfgs) {
+  for (const [kind, n0, ys, ws, sp, dir, plane] of cfgs) {
+    const n = COARSE && kind === 'koi' ? 3 : n0;
     const L = $(`.${plane}`, r.el), f = plane === 'drift' ? FACTORS.far : FACTORS.mid, fw = W + (r.stops - 1) * W * f + 40;
     for (let i = 0; i < n; i++) {
       const w = ws[0] + Math.random() * (ws[1] - ws[0]);
-      const el = document.createElement('div'); el.className = `swimmer ${kind}`; el.style.width = `${w}vh`; el.innerHTML = gradeColors(swimmerSVG(kind, i), gradeOf(r.room.scene));
+      const el = document.createElement('div'); el.className = `swimmer ${kind}`; el.style.width = `${w}vh`;
+      // 絵は一度だけ画像にして使い回す（中身の SVG を毎回描かない）
+      el.innerHTML = `<img alt="" draggable="false" src="${swimURL(kind, i, r.room.scene)}">`;
       L.append(el);
-      const x0 = Math.random() * fw, y0 = ys[0] + Math.random() * (ys[1] - ys[0]);
+      // 部屋の端から端まで均等に散らす（最初の作品から、どこでも鯉が見えるように）
+      const x0 = (i + .2 + Math.random() * .6) / n * fw, y0 = ys[0] + Math.random() * (ys[1] - ys[0]);
       r.swimmers.push({ el, L, kind, i, n, x0, y0, x: x0, y: y0, a: dir > 0 ? 90 : -90, w, sp: sp[0] + Math.random() * (sp[1] - sp[0]), ph: Math.random() * 10, dir, fw, f, gather: kind === 'koi' || kind === 'butterfly', gy: kind === 'koi' ? [76, 92] : [86, 94], lastRipple: 0 });
     }
   }
@@ -575,41 +590,54 @@ function updateSwimmers(r, now, focus) {
   const k = 1 - Math.exp(-dt / 1.4), stop = Math.round(r.c);
   r.swimmers.forEach((s) => {
     let dx, dy; const i = s.i;
-    if (s.gather && focus > .6) {
+    const home = r.c * W * s.f + W / 2;
+    // 集まるのは、すでに近くにいる鯉・蝶だけ（画面の外から一気に泳いでこないように）
+    if (s.gather && focus > .6 && Math.abs(s.x - home) < W * .75) {
       // 作品の足もと：奥の層での作品の位置 = 歩いた分のずれ + 画面の真ん中
       const tx = r.c * W * s.f + W / 2 + (i - (s.n - 1) / 2) * 7 + Math.sin(t * .5 + s.ph) * 2, ty = s.gy[0] + (s.gy[1] - s.gy[0]) * ((i * .37 + .2) % 1) + Math.sin(t * .8 + s.ph) * 1;
       dx = tx - s.x; dy = ty - s.y;
     } else {
       // トンボはその場でホバリング（小さくふらつく）。ほかは先へ進む
       const hov = s.kind === 'dragonfly' ? Math.sin(t * 2.3 + s.ph) * 2.5 : 0;
-      const wx = (((s.x0 + s.dir * (r.c * s.sp + t * (s.kind === 'boat' ? .25 : 1.2)) + hov) % s.fw) + s.fw) % s.fw, wy = s.y0 + Math.sin(t * .7 + s.ph) * (s.kind === 'boat' ? .25 : 1.4) + (s.kind === 'dragonfly' ? Math.sin(t * 3.1 + s.ph) * 1.2 : 0);
+      // 鯉は、ひと蹴りして滑る泳ぎ方（速さが波打つ）。ゆるく蛇行する
+      const koiT = s.kind === 'koi' ? t * 1.2 + Math.sin(t * .9 + s.ph) * .9 : t * (s.kind === 'boat' ? .25 : 1.2);
+      const wx = (((s.x0 + s.dir * (r.c * s.sp + koiT) + hov) % s.fw) + s.fw) % s.fw, wy = s.y0 + Math.sin(t * .7 + s.ph) * (s.kind === 'boat' ? .25 : s.kind === 'koi' ? 3 : 1.4) + (s.kind === 'dragonfly' ? Math.sin(t * 3.1 + s.ph) * 1.2 : 0);
       dx = wx - s.x; dy = wy - s.y;
       if (Math.abs(dx) > s.fw / 2) { s.x = wx; dx = 0; } // 端で折り返すときは飛ぶ
     }
-    const mx = dx * k, my = dy * k; s.x += mx; s.y += my;
+    let mx = dx * k, my = dy * k;
+    // 泳ぐ速さに上限（ゆっくり寄ってくる）
+    if (s.kind === 'koi' || s.kind === 'butterfly') { const cap = (s.kind === 'koi' ? 7 : 12) * dt, m = Math.hypot(mx, my); if (m > cap) { mx *= cap / m; my *= cap / m; } }
+    if (s.flee) { const f = s.flee; mx += f.vx * dt * f.t; my += f.vy * dt * f.t * .4; f.t -= dt; if (f.t <= 0) s.flee = null; }
+    s.x += mx; s.y += my;
     if (Math.hypot(mx, my) > .01) { const ta = Math.atan2(my, mx) * 180 / Math.PI + 90; let da = ((ta - s.a + 540) % 360) - 180; s.a += da * Math.min(1, dt * 4); }
-    const wob = Math.sin(t * 1.1 + s.ph) * 6;
+    // 鯉は体を左右に小さく振って泳ぐ（速く泳ぐほど速く）。要素ごとの回転だけなので軽い
+    if (s.kind === 'koi') { const v = Math.hypot(mx, my) / Math.max(dt, .001); s.wagT = (s.wagT || 0) + dt * (3 + Math.min(6, v * .35)); }
+    const wob = s.kind === 'koi' ? Math.sin(s.wagT || 0) * 4 : Math.sin(t * 1.1 + s.ph) * 6;
     // 鳥は作品と同じ横向きの影絵なので回さず、進む向きに反転して少し傾けるだけ
     const turn = NO_TURN.has(s.kind) ? `scaleX(${s.dir}) rotate(${(wob * (s.kind === 'boat' ? .15 : .5)).toFixed(1)}deg)` : `rotate(${(s.a + wob).toFixed(1)}deg)`;
     put(s.el, 'transform', `translate3d(${(s.x * U).toFixed(1)}px, ${(s.y * U).toFixed(1)}px, 0) ${turn}`);
     // 鯉が通ったあとに波紋（動いているときだけ、1 匹あたり 1.3 秒に 1 つ。同時に多く残さない）
-    if (s.kind === 'koi' && !REDUCED && now - s.lastRipple > 1300 && Math.hypot(mx, my) > .02 && s.L.querySelectorAll('.ripple').length < 8) {
+    if (s.kind === 'koi' && !REDUCED && !COARSE && now - s.lastRipple > 2200 && Math.hypot(mx, my) > .02 && (r.rippleN || 0) < 4) {
       s.lastRipple = now;
       const rp = document.createElement('i'); rp.className = 'ripple'; rp.style.left = `${(s.x + s.w / 2) * U}px`; rp.style.top = `${(s.y + s.w * .6) * U}px`;
-      rp.addEventListener('animationend', () => rp.remove(), { once: true }); s.L.append(rp);
+      r.rippleN = (r.rippleN || 0) + 1; rp.addEventListener('animationend', () => { rp.remove(); r.rippleN--; }, { once: true }); s.L.append(rp);
     }
   });
 }
 // 部屋の中の小さな動き：夜の庭の観覧車と水たまりの光、小屋の火と窓の外の雪
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
-  if (D.ferris) { const { x, y, r: rr } = D.ferris, R2 = rr + 1.5; S.insertAdjacentHTML('beforeend', `<div class="living ferris" style="left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh">${gradeColors(ferrisSVG(rr), gradeOf(r.room.scene))}</div>`); }
+  if (D.ferris) { const { x, y, r: rr } = D.ferris, R2 = rr + 1.5, pos = `left:${((x - R2) * U).toFixed(1)}px;top:${((y - R2) * U).toFixed(1)}px;width:${R2 * 2}vh`; S.insertAdjacentHTML('beforeend', `<div class="living ferris" style="${pos}">${ferrisSVG(rr, 'legs')}</div><div class="living ferris-wheel" style="${pos}">${ferrisSVG(rr)}</div>`); }
   if (D.puddles) P.insertAdjacentHTML('beforeend', D.puddles.map(([x, y, w], i) => `<i class="living puddle-shine" style="left:${((x - w * .9) * U).toFixed(1)}px;top:${((y - w * .13) * U).toFixed(1)}px;width:${(w * 1.8).toFixed(2)}vh;height:${(w * .26).toFixed(2)}vh;animation-delay:${-(i * .7)}s"></i>`).join(''));
+  if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
+  if (D.foam) { const mw = W + (r.stops - 1) * W * FACTORS.mid + 40; P.insertAdjacentHTML('beforeend', `<i class="living foam" style="left:-5vh;top:${(D.foam - 1.2) * U}px;width:${mw + 10}vh"></i><i class="living foam f2" style="left:-5vh;top:${(D.foam + .2) * U}px;width:${mw + 10}vh"></i>`); }
+  if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
   if (D.stove) { const [x, y] = D.stove; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - 2.4) * U).toFixed(1)}px;top:${((y - 3.2 - 7.8) * U).toFixed(1)}px;width:4.8vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
 }
 // 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける
-const IDLE = { dapple: ['bird', 'props', [-.36, .62], [.45, .05], 2.6], water: ['dragonfly', 'props', [-.45, .5], [.45, .38], 2.2], dusk: ['bird', 'props', [-.34, .84], [.5, .1], 2.8], night: ['star', 'drift', [.1, .06], [-.4, .3], 1.4], afterhours: ['spark', 'props', [.3, .78], [.34, .55], 1.8] };
+const IDLE = { dapple: ['bird', 'props', [-.36, .62], [.45, .05], 2.6], water: ['koijump', 'drift', [-.22, .74], [.22, .74], 1.6], dusk: ['bird', 'props', [-.34, .84], [.5, .1], 2.8], night: ['star', 'drift', [.1, .06], [-.4, .3], 1.4], afterhours: ['spark', 'props', [.3, .78], [.34, .55], 1.8] };
 function fireIdle(r, stop) {
   const cfg = IDLE[r.room.id]; if (!cfg || REDUCED) return;
   const [kind, plane, from, to, dur] = cfg, L = $(`.${plane}`, r.el), f = plane === 'drift' ? FACTORS.far : FACTORS.mid, cx = stop * W * f + W / 2;
@@ -650,6 +678,29 @@ document.addEventListener('click', (e) => {
   b.classList.remove('hop'); void b.getBoundingClientRect(); b.classList.add('hop');
 }, true);
 
+// 部屋の背景をタップ／クリックしたときの、小さな反応（作品やボタンの上では何もしない）
+// 森＝葉が落ちる、水辺＝波紋と鯉が散る、夕凪＝砂が舞いカモメが飛び立つ、夜の庭＝ホタルが散る、小屋＝ほこりが舞う
+document.addEventListener('click', (e) => {
+  if (vOpen || e.target.closest('.work, button, a, [data-egg], #viewer, #vault, header, nav')) return;
+  const r = currentRoom; if (!r || !e.target.closest('.room')) return;
+  const x = e.clientX / vw * 100, y = e.clientY / vh * 100, sc = r.room.scene;
+  const add = (n, mk) => { for (let i = 0; i < n; i++) parts.push({ ...mk(), age: 0, ph: R(0, 10), z: 1, theme: sc }); };
+  if (sc === 'forest') add(6, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(4, 7), s: R(.8, 1.3), x: x + R(-6, 6), y: y - R(20, 40), col: ['#a5c23e', '#769721', '#c9d77a'][Math.floor(R(0, 3))] }));
+  else if (sc === 'jungle') { add(3, () => ({ k: 'ring', vx: 0, vy: 0, life: R(.9, 1.4), s: R(.6, 1.2), x: x + R(-1, 1), y: y + R(-.5, .5) })); scatter(r, x, y); }
+  else if (sc === 'cove') { add(10, () => ({ k: 'sand', vx: R(6, 22), vy: R(-4, -1), life: R(.8, 1.6), s: R(.14, .3), x: x + R(-3, 3), y: y + R(-1, 1) })); scatter(r, x, y); }
+  else if (sc === 'night') add(8, () => ({ k: 'firefly', vx: R(-4, 4), vy: R(-4, 2), life: R(2, 4), s: R(.25, .45), x: x + R(-2, 2), y: y + R(-2, 2) }));
+  else if (sc === 'attic') add(10, () => ({ k: 'mote', vx: R(-1.5, 1.5), vy: R(-1.2, .3), life: R(3, 6), s: R(.12, .28), x: x + R(-3, 3), y: y + R(-2, 2) }));
+});
+// 鯉とカモメが、触れたところから逃げる（画面の位置を層の位置に直して、近いものだけ）
+function scatter(r, x, y) {
+  if (!r.swimmers) return;
+  for (const s of r.swimmers) {
+    if (s.kind !== 'koi' && s.kind !== 'gull') continue;
+    const sx = s.x - r.c * W * s.f, sy = s.y, dx = sx - x, dy = sy - y, d = Math.hypot(dx, dy);
+    if (d > 26) continue;
+    s.flee = { vx: dx / (d || 1) * 60, vy: dy / (d || 1) * 20, t: 1.2 };
+  }
+}
 // 背景の書き出し（tools/prerender.mjs）用：組み立てた SVG を外から読めるように
 if (location.search.includes('prerender')) window.__pre = { W, U, vw, vh, store: SVG_STORE, rooms, get entrance() { return entrance.layerHTML; }, setForestNight, svgDoc };
 /* ---------- 入口 ---------- */
@@ -911,7 +962,7 @@ function updateRoom(r, now) {
   r.el.classList.toggle('focus', focus > .6);
   updateSwimmers(r, now, focus);
   // 立ち止まって 2.5 秒たったら、その場所で 1 回だけ小さな動き
-  if (focus > .6) { const k = Math.round(r.c); if (r.idleAt !== k) { r.idleAt = k; r.idleSince = now; r.idleFired = false; } else if (!r.idleFired && now - r.idleSince > 2500) { r.idleFired = true; fireIdle(r, k); } } else r.idleAt = -1;
+  if (focus > .6 && currentRoom === r) { const k = Math.round(r.c); if (r.idleAt !== k) { r.idleAt = k; r.idleSince = now; r.idleFired = false; } else if (!r.idleFired && now - r.idleSince > 2500) { r.idleFired = true; fireIdle(r, k); } } else r.idleAt = -1;
   const fs = 1 + Math.max(r.curS * .45, leave * .6) + focus * .05;
   put(q(r, '.frame'), 'transform', `translate3d(${(-mx * 2.4 * U).toFixed(2)}px, ${(-my * 1.6 * U).toFixed(2)}px, 0) scale(${(fs + kick * .006).toFixed(4)})`);
   // 部屋の出入りで、葉のカーテンが閉じて開く
@@ -975,8 +1026,8 @@ if (location.search.includes('memdebug')) { window.__rooms = rooms; window.__ent
 let entLife = null;
 function buildEntranceLife() {
   const L = $('.life', entrance); if (!L || entLife) return;
-  L.innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="swimmer gull ent-bird" style="width:${(1.3 + Math.random() * .7).toFixed(2)}vh">${swimmerSVG('gull', i)}</div>`).join('')
-    + [0, 1, 2].map((i) => `<div class="swimmer butterfly" style="width:1.6vh">${swimmerSVG('butterfly', i)}</div>`).join('');
+  L.innerHTML = Array.from({ length: 5 }, (_, i) => `<div class="swimmer gull ent-bird" style="width:${(1.3 + Math.random() * .7).toFixed(2)}vh"><img alt="" src="${swimURL('gull', i, 'forest')}"></div>`).join('')
+    + [0, 1, 2].map((i) => `<div class="swimmer butterfly" style="width:1.6vh"><img alt="" src="${swimURL('butterfly', i, 'forest')}"></div>`).join('');
   const birds = [...L.querySelectorAll('.ent-bird')].map((el, i) => ({ el, x0: Math.random() * W, y0: 22 + Math.random() * 14, sp: 1.6 + Math.random() * .8, ph: Math.random() * 6 }));
   const flies = [...L.querySelectorAll('.butterfly')].map((el, i) => ({ el, x0: i < 2 ? W * (.12 + Math.random() * .18) : W * (.68 + Math.random() * .2), y0: 86 + Math.random() * 8, ph: Math.random() * 6 }));
   entLife = { L, birds, flies };
@@ -1055,7 +1106,7 @@ const THEMES = {
   // （部屋の中を漂うキラキラ（四つ星の光）は出さない：作品の前で浮いて見えるので。さわったときの小さな反応だけに残す）
   jungle: [[4, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.4), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#47733c'][Math.floor(R(0, 3))] })],
     [3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
-  cove: [],
+  cove: [[6, () => ({ k: 'sand', vx: R(18, 30), vy: R(-1, 1), life: R(1.5, 2.5), s: R(.12, .28), x: R(-10, 60), y: R(78, 100) })]],
   // 小屋の外は雪、中はランプに照らされたほこり
   snow: [[9, () => ({ k: 'snow', vx: R(-1.2, 1.2), vy: R(3, 6), life: R(8, 14), s: R(.18, .45), x: R(-5, 105), y: -3 })]],
   attic: [[3, () => ({ k: 'mote', vx: R(-.4, .4), vy: R(-.4, .2), life: R(5, 9), s: R(.12, .28), x: R(30, 70), y: R(15, 80) })]],
@@ -1072,11 +1123,16 @@ function leafGaps() {
   if (100 - x > 4) gaps.push([x, 100]);
   return gaps;
 }
+// 天候は通り雨のように、ときどきだけ（40 秒ごとに 9 秒ほど。強まって弱まる）。雪の吹雪も同じ波で強弱をつける
+const WEATHER = new Set(['sand']);
+function gust(now) { const t = (now / 1000) % 40; return t < 9 ? Math.sin(t / 9 * Math.PI) : 0; }
 function spawn(theme, rate, dt, list, zRange = [1, 1]) {
   if (REDUCED) return;
-  const gaps = leafGaps();
+  const gaps = leafGaps(), g = gust(performance.now());
   THEMES[theme].forEach(([r, make]) => {
-    let n = r * rate * dt;
+    const probe = make();
+    let n = r * rate * dt * (WEATHER.has(probe.k) ? g : probe.k === 'snow' ? .6 + g * 1.2 : 1);
+    if (n <= 0) return;
     while (n > 0) {
       if (Math.random() < n) {
         const q = { ...make(), age: 0, ph: R(0, 10), z: R(...zRange), theme };
@@ -1103,6 +1159,9 @@ function drawP(c, q, sx, sy2, s, t) {
     case 'planet': c.fillStyle = q.col; c.beginPath(); c.arc(sx, sy2, s, 0, 7); c.fill(); c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = s * .25; c.beginPath(); c.ellipse(sx, sy2, s * 1.7, s * .45, -.3, 0, 7); c.stroke(); break;
     case 'puff': { const gr = c.createRadialGradient(sx, sy2, 0, sx, sy2, s); gr.addColorStop(0, 'rgba(245,242,236,.55)'); gr.addColorStop(1, 'rgba(245,242,236,0)'); c.fillStyle = gr; c.beginPath(); c.arc(sx, sy2, s, 0, 7); c.fill(); break; }
     case 'paint': c.fillStyle = q.c; c.beginPath(); c.arc(sx, sy2, s, 0, 7); c.fill(); c.fillRect(sx - s * .18, sy2, s * .36, s * 2.4 * Math.min(1, q.age / q.life * 2)); break;
+    case 'rain': c.strokeStyle = 'rgba(235,242,236,.45)'; c.lineWidth = Math.max(1, s * .28); c.beginPath(); c.moveTo(sx, sy2); c.lineTo(sx + q.vx * s * .08, sy2 - s * 5); c.stroke(); break;
+    case 'ring': c.globalAlpha = a * .5; c.strokeStyle = 'rgba(233,240,208,.8)'; c.lineWidth = 1; c.beginPath(); c.ellipse(sx, sy2, s * (1 + q.age * 6), s * .32 * (1 + q.age * 6), 0, 0, 7); c.stroke(); break;
+    case 'sand': c.globalAlpha = a * .5; c.fillStyle = '#e6d6b8'; c.beginPath(); c.ellipse(sx, sy2, s * 3, s * .5, 0, 0, 7); c.fill(); break;
     case 'snow': c.fillStyle = 'rgba(245,248,255,.9)'; c.beginPath(); c.arc(sx, sy2, s, 0, 7); c.fill(); break;
     case 'mote': c.fillStyle = '#fffbe0'; c.shadowColor = '#fffbe0'; c.shadowBlur = s * 4; c.beginPath(); c.arc(sx, sy2, s, 0, 7); c.fill(); c.shadowBlur = 0; break;
     case 'leaf': c.save(); c.translate(sx, sy2); c.rotate(t * 1.3 + q.ph); c.fillStyle = q.col; c.beginPath(); c.ellipse(0, 0, s * 1.3, s * .55, 0, 0, 7); c.fill(); c.restore(); break;
@@ -1147,6 +1206,8 @@ function stepP(list, dt) {
     q.y += q.vy * dt;
     if (q.k === 'puff') q.s += dt * 2.2;
     if (q.k === 'drop') q.vy += 40 * dt;
+    // 水面に落ちた雨粒は、そこに波紋を残す
+    if (q.ring && q.y > R(40, 96)) { q.ring = false; q.k = 'ring'; q.vx = 0; q.vy = 0; q.age = 0; q.life = .9; q.s = .6; }
   }
 }
 

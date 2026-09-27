@@ -733,7 +733,7 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .farewell .fw-stars { position: absolute; inset: 0 0 20% 0; width: 100%; height: 80%; }
 .farewell .fw-moon { position: absolute; right: 12%; top: 12%; width: min(46vw, 320px); aspect-ratio: 1; transform: translate(50%, -50%); }
 .farewell .fw-moon svg { width: 100%; height: 100%; display: block; }
-.farewell > svg:last-child { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(120px, 26vh, 260px); display: block; }
+.farewell > .fw-land, .farewell > .fw-anim { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(120px, 26vh, 260px); display: block; }
 #artist > *:not(.farewell) { position: relative; z-index: 1; }
 /* 夜空：明るい星（光芒つきでまたたく）と月。焼いた絵ではなく画面に直接置くので、どの画面でもくっきり */
 .skydom { position: absolute; inset: 0; pointer-events: none; }
@@ -855,16 +855,22 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* スクロールに合わせて動く生きもの（鯉・カモメ・蝶）。奥の層と同じ速さで流れる面の上を、歩くと先へ進む */
 .plane.drift { width: 100%; overflow: visible; }
 .swimmer { position: absolute; left: 0; top: 0; will-change: transform; }
-.swimmer svg { display: block; width: 100%; height: auto; }
-.swimmer.koi { opacity: .5; }
-.swimmer.butterfly svg { animation: flap .32s ease-in-out infinite alternate; }
+.swimmer svg, .swimmer img { display: block; width: 100%; height: auto; }
+.swimmer.koi { opacity: 1; }
+/* 鯉：中のひれは動かさない（SVG の中でアニメすると 1 コマごとに描き直しになって重い）。泳ぎの揺れは要素ごとの回転だけ（合成だけで済む） */
+.swimmer.koi svg { overflow: visible; }
+.swimmer.butterfly img { animation: flap .32s ease-in-out infinite alternate; }
+/* カモメ・小鳥の羽ばたき（画像ごと縦につぶして戻す：中身は描き直さない） */
+.swimmer.gull img { transform-origin: 50% 60%; animation: flapimg .42s ease-in-out infinite alternate; }
+#entrance .ent-bird img { animation-duration: .5s; }
+@keyframes flapimg { from { transform: scaleY(1); } to { transform: scaleY(.3); } }
 @keyframes flap { from { transform: scaleX(1); } to { transform: scaleX(.3); } }
-@media (prefers-reduced-motion: reduce) { .swimmer.butterfly svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .swimmer.butterfly img, .swimmer.gull img { animation: none; } }
 
 /* 部屋の中の小さな動き */
 .living, .flyer { position: absolute; left: 0; top: 0; pointer-events: none; }
 .living svg, .flyer svg { display: block; width: 100%; height: auto; }
-.ferris .wheel { transform-box: fill-box; transform-origin: center; animation: spin 70s linear infinite; }
+.ferris-wheel { will-change: transform; animation: spin 70s linear infinite; }
 .puddle-shine { border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 220, 150, .5), rgba(255, 200, 115, .18) 55%, transparent); mix-blend-mode: screen; animation: pshine 3.2s ease-in-out infinite alternate; }
 @keyframes pshine { from { opacity: .35; transform: scaleX(.92); } to { opacity: 1; transform: scaleX(1.06); } }
 .stove-fire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame .55s steps(3, end) infinite alternate; }
@@ -881,18 +887,16 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.dragonfly { width: 2.6vh; animation-timing-function: linear; }
 .flyer.star { width: 9vh; animation-timing-function: ease-out; }
 .flyer.spark { width: 2vh; }
-.flyer.bird .wing, .swimmer.gull .wing { transform-box: fill-box; transform-origin: 50% 100%; animation: flapy .26s ease-in-out infinite alternate; }
-.swimmer.gull .wing { animation-duration: .42s; }
+.flyer.bird .wing { transform-box: fill-box; transform-origin: 50% 100%; animation: flapy .26s ease-in-out infinite alternate; }
 @keyframes flapy { from { transform: scaleY(1); } to { transform: scaleY(-.55); } }
 @keyframes fly { 0% { transform: translate3d(var(--x0), var(--y0), 0); opacity: 0; } 12% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translate3d(var(--x1), var(--y1), 0); opacity: 0; } }
 .swimmer, .flyer, .ripple { will-change: transform; }
 /* 画面にない部屋では、動くものを止めておく */
 .room:not(.live) .living, .room:not(.live) .swimmer, .room:not(.live) .flyer { display: none; }
-@media (prefers-reduced-motion: reduce) { .ferris .wheel, .puddle-shine, .stove-fire .flame, .stove-fire .ember, .win-snow .wsnow, .flyer .wing, .swimmer .wing { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .puddle-shine, .stove-fire .flame, .stove-fire .ember, .win-snow .wsnow, .flyer .wing, .swimmer .wing { animation: none !important; } }
 
 /* 入口で動くもの（中景と同じ拡大・視差） */
 #entrance .plane.life { width: 100%; }
-#entrance .ent-bird .wing { animation-duration: .5s; }
 #entrance .ent-bird { opacity: .75; }
 #entrance.gone .plane.life { display: none; }
 
@@ -911,3 +915,37 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .specimen .box::before, .specimen .box::after { content: ""; position: absolute; width: 22px; height: 22px; pointer-events: none; background: linear-gradient(135deg, #d4b884, #8a6a3a); clip-path: polygon(0 0, 100% 0, 100% 30%, 30% 30%, 30% 100%, 0 100%); }
 .specimen .box::before { left: 5px; top: 5px; } .specimen .box::after { right: 5px; top: 5px; transform: scaleX(-1); }
 @media (prefers-reduced-motion: reduce) { .farewell .fw-puff, .farewell .fw-fly, .farewell .fw-star { animation: none; } }
+
+/* ---------- 時間と光の変化（--p は部屋の進み 0〜1） ---------- */
+/* 森：歩くほど朝の光が高く強くなる */
+.scene-forest .l1 { opacity: calc(.55 + var(--p, 0) * .5); }
+/* 水辺：雲の影がゆっくり水面を横切る */
+/* 夕凪：歩くほど日が沈み、空が藍に沈む（上から） */
+.scene-cove .l3 { background: linear-gradient(rgba(40, 40, 90, .55) 0%, rgba(60, 50, 100, .32) 40%, rgba(80, 60, 90, .12) 62%, transparent 80%); opacity: calc(var(--p, 0) * .8); }
+/* 夜の庭：電飾の灯りがまたたく気配（画面全体の暖色がごく弱く脈打つ） */
+/* 小屋：窓の外のオーロラがゆらぐ（左上） */
+.scene-attic .l3 { background: linear-gradient(100deg, transparent 0%, rgba(120, 220, 170, .14) 12%, transparent 22%, transparent 30%, rgba(140, 200, 220, .1) 38%, transparent 46%); -webkit-mask-image: linear-gradient(#000 0%, #000 25%, transparent 55%); mask-image: linear-gradient(#000 0%, #000 25%, transparent 55%); animation: shafts 12s ease-in-out infinite alternate; }
+/* 灯台の光が回る */
+.lighthouse { will-change: transform; animation: spin 9s linear infinite; }
+/* 夕凪の波打ちぎわ：泡の線が寄せて引く */
+.foam { height: .45vh; border-radius: 50%; background: repeating-linear-gradient(90deg, rgba(255, 250, 242, 0) 0 1.2vh, rgba(255, 250, 242, .75) 2vh 4.2vh, rgba(255, 250, 242, 0) 5vh 7vh); box-shadow: 0 0 .6vh rgba(255, 250, 242, .35); -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); animation: surf 5.2s ease-in-out infinite alternate; }
+.foam.f2 { opacity: .55; animation-duration: 6.8s; animation-delay: -2s; }
+@keyframes surf { from { transform: translateY(-1.1vh); opacity: .35; } to { transform: translateY(1.2vh); opacity: .9; } }
+/* 観覧車の灯りが順にまたたく */
+/* マグの湯気 */
+.steam { width: 2vh; height: 4vh; }
+.steam i { position: absolute; left: 50%; bottom: 0; width: .5vh; height: 1.6vh; border-radius: 50%; background: rgba(255, 250, 242, .55); animation: steam 2.8s ease-out infinite; }
+.steam i:nth-child(2) { animation-delay: -.9s; left: 30%; } .steam i:nth-child(3) { animation-delay: -1.8s; left: 70%; }
+@keyframes steam { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 25% { opacity: .7; } 100% { transform: translate(-50%, -3.2vh) scale(1.6); opacity: 0; } }
+/* 跳ねる鯉：弧を描いて水面へ */
+.flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
+.flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
+@keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
+@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .foam, .steam i, .flyer.koijump svg { animation: none !important; } }
+
+/* 長押し：作品だけが照らされる */
+.room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }
+.room.spot .vig { opacity: 1 !important; background: radial-gradient(60% 60% at 50% 46%, transparent 30%, rgba(0, 0, 0, .78) 100%) !important; transition: opacity .5s, background .5s; }
+.room .hush, .room .vig { transition: opacity .6s; }
+.room.spot .work.near .canvas { box-shadow: 0 0 0 0 transparent, 0 3vh 8vh rgba(0, 0, 0, .5), 0 0 14vh rgba(var(--glow), .6); }
+.work .canvas { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
