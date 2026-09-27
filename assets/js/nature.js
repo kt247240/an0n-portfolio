@@ -234,9 +234,11 @@ export function fern(x, y, len, a, c, { cls = 'sway', n = 16 } = {}) {
 export function monstera(x, y, s, a, c, { cls = 'sway slow' } = {}) {
   track(x, y, s * 1.05);
   const vein = dark(c, .25), cut = [.28, .5, .72].map((t) => `M${n1(s * t)} ${n1(-s * .03)}L${n1(s * (t + .09))} ${n1(-s * .36)}M${n1(s * t)} ${n1(s * .03)}L${n1(s * (t + .08))} ${n1(s * .3)}`).join('');
-  const body = `<path d="M0 0C${n1(s * .15)} ${n1(-s * .55)} ${n1(s * .85)} ${n1(-s * .6)} ${n1(s)} ${n1(-s * .05)}C${n1(s * .85)} ${n1(s * .5)} ${n1(s * .15)} ${n1(s * .45)} 0 0Z" fill="${c}"/>
+  // 切れ込みの線は葉の形の中だけに描く（葉先に近い切れ込みが縁から飛び出さないように、葉の形で切り取る）
+  const leaf = `M0 0C${n1(s * .15)} ${n1(-s * .55)} ${n1(s * .85)} ${n1(-s * .6)} ${n1(s)} ${n1(-s * .05)}C${n1(s * .85)} ${n1(s * .5)} ${n1(s * .15)} ${n1(s * .45)} 0 0Z`, clip = `mc${gid++}`;
+  const body = `<defs><clipPath id="${clip}"><path d="${leaf}"/></clipPath></defs><path d="${leaf}" fill="${c}"/>
     <path d="M0 0C${n1(s * .15)} ${n1(-s * .55)} ${n1(s * .85)} ${n1(-s * .6)} ${n1(s)} ${n1(-s * .05)}Z" fill="${light(c, .07)}"/>
-    <path d="M0 0L${n1(s * .96)} ${n1(-s * .04)}" stroke="${vein}" stroke-width="${n1(s * .025)}"/><path d="${cut}" stroke="${vein}" stroke-width="${n1(s * .05)}" stroke-linecap="round"/>`;
+    <g clip-path="url(#${clip})"><path d="M0 0L${n1(s * .96)} ${n1(-s * .04)}" stroke="${vein}" stroke-width="${n1(s * .025)}"/><path d="${cut}" stroke="${vein}" stroke-width="${n1(s * .05)}" stroke-linecap="round"/></g>`;
   return anim(cls, x, y, g(x, y, a, body));
 }
 // ヤシの葉（夜の街の作品の、太い帯状の葉）
