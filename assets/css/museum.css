@@ -889,6 +889,14 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 @keyframes refl { from { transform: translateX(-56%) scaleX(.8); opacity: .25; } to { transform: translateX(-44%) scaleX(1.1); opacity: .55; } }
 .puddle-shine { border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 220, 150, .5), rgba(255, 200, 115, .18) 55%, transparent); mix-blend-mode: screen; animation: pshine 3.2s ease-in-out infinite alternate; }
 @keyframes pshine { from { opacity: .35; transform: scaleX(.92); } to { opacity: 1; transform: scaleX(1.06); } }
+/* 薪ストーブの火の光（壁と床）。2 枚の周期をずらして、揺れがくり返しに見えないように */
+.firelight { pointer-events: none; mix-blend-mode: screen; }
+.firelight i { position: absolute; inset: 0; border-radius: 50%; will-change: opacity, transform; }
+.firelight.wall i { background: radial-gradient(closest-side, rgba(255, 150, 70, .08), rgba(255, 150, 70, .08) 20%, rgba(255, 140, 64, .3) 34%, rgba(255, 130, 60, .13) 58%, rgba(255, 120, 50, 0)); animation: fireflick 2.3s linear infinite; }
+.firelight.wall i + i { background: radial-gradient(closest-side, rgba(255, 190, 110, 0) 18%, rgba(255, 190, 110, .16) 32%, rgba(255, 160, 80, 0) 64%); animation-duration: 3.7s; animation-direction: reverse; }
+.firelight.floor i { background: radial-gradient(closest-side, rgba(255, 160, 80, .5), rgba(255, 130, 60, .18) 50%, rgba(255, 120, 50, 0)); transform-origin: 50% 0; animation: fireflick 1.9s linear infinite; }
+.firelight.floor i + i { animation-duration: 3.1s; animation-delay: -1.2s; opacity: .6; }
+@keyframes fireflick { 0% { opacity: .78; transform: scale(1); } 11% { opacity: .96; transform: scale(1.02); } 19% { opacity: .7; } 33% { opacity: 1; transform: scale(1.03); } 46% { opacity: .82; transform: scale(.99); } 58% { opacity: .94; } 66% { opacity: .68; transform: scale(1); } 79% { opacity: .97; transform: scale(1.025); } 90% { opacity: .76; } 100% { opacity: .78; transform: scale(1); } }
 .stove-fire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame .55s steps(3, end) infinite alternate; }
 @keyframes flame { 0% { transform: scale(1, 1); } 40% { transform: scale(.92, 1.12) skewX(3deg); } 100% { transform: scale(1.06, .9) skewX(-4deg); } }
 .stove-fire .ember { animation: ember 2.6s linear var(--d) infinite; opacity: 0; }
@@ -909,7 +917,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .swimmer, .flyer, .ripple { will-change: transform; }
 /* 画面にない部屋では、動くものを止めておく */
 .room:not(.live) .living, .room:not(.live) .swimmer, .room:not(.live) .flyer { display: none; }
-@media (prefers-reduced-motion: reduce) { .puddle-shine, .stove-fire .flame, .stove-fire .ember, .win-snow .wsnow, .flyer .wing, .swimmer .wing { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .firelight i, .puddle-shine, .stove-fire .flame, .stove-fire .ember, .win-snow .wsnow, .flyer .wing, .swimmer .wing { animation: none !important; } }
 
 /* 入口で動くもの（中景と同じ拡大・視差） */
 #entrance .plane.life { width: 100%; }
@@ -1093,4 +1101,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
-.room.moonlit .sunpath { display: none; } /* 夜は夕日がないので、光の道も出さない */
+.sunpath.moon i { background: radial-gradient(closest-side, rgba(250, 246, 226, .8), rgba(214, 222, 246, .3) 55%, rgba(200, 210, 240, 0)); } /* 夜は月の光の道（白く冷たい光） */

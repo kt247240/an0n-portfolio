@@ -694,7 +694,7 @@ function buildLiving(r) {
   if (D.sunpath) {
     const [x, hz] = D.sunpath, n = COARSE ? 9 : 14;
     const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 12 + t * 80; return `<i style="top:${(t * t * 100).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(.25 + t * .7).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
-    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
+    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath${D.moonpath ? ' moon' : ''}" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
   }
   // 夕凪の浜：海の面のゆらぎ。空を映す明るいゆらぎと、うねりの暗い帯が、ゆっくり寄っては離れて明滅する（奥ほど細く短く、ゆっくり）
   if (D.sunpath) {
@@ -717,6 +717,9 @@ function buildLiving(r) {
     P.insertAdjacentHTML('beforeend', `<i class="living wetshine" style="left:-5vh;top:${((D.foam + .8) * U).toFixed(1)}px;width:${mw + 10}vh;height:3.2vh"></i>` + sheet('', 0) + sheet(' s2', -19));
   }
   if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
+  // 薪ストーブの火の光：焚き口から壁へ広がる光と、床に落ちる光だまりが、炎に合わせて不規則に揺らめく（周期の違う 2 枚を重ねて、同じ揺れのくり返しに見えないように）
+  if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, gy = y - sh + sh * .51, ww = 44 * k * (W < 80 ? .8 : 1), wh = 34 * k, fw2 = 30 * k * (W < 80 ? .8 : 1);
+    P.insertAdjacentHTML('beforeend', `<div class="living firelight wall" style="left:${((x - ww / 2) * U).toFixed(1)}px;top:${((gy - wh / 2) * U).toFixed(1)}px;width:${ww.toFixed(1)}vh;height:${wh.toFixed(1)}vh"><i></i><i></i></div><div class="living firelight floor" style="left:${((x - fw2 / 2) * U).toFixed(1)}px;top:${((y - .6) * U).toFixed(1)}px;width:${fw2.toFixed(1)}vh;height:${(9 * k * .55).toFixed(1)}vh"><i></i><i></i></div>`); }
   if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, fw = 4.8 * k * .9; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - fw / 2) * U).toFixed(1)}px;top:${((y - sh + sh * .3 + sh * .42 - fw * 13 / 8 + .3) * U).toFixed(1)}px;width:${fw.toFixed(2)}vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
   // 水辺：蓮の葉と水草のまわりに、ゆっくり広がって消える波紋（2 重の輪を時間をずらして）。数は画面の広さに合わせて控えめに
   // 桟橋の板（y 87〜92.6）にかかる波紋は出さない（いちばん広がったときの輪の大きさで判定）

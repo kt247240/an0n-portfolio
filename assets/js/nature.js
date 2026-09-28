@@ -453,6 +453,30 @@ function sunsetCloud(x, y, w, h, sunX, tones) {
     + `<path d="${shape(1, 0)}" fill="url(#${id})"/>`
     + `<path d="${shape(.62, -h * .3)}" fill="${rim}" opacity=".32" transform="translate(${n1(side * w * .12)} 0)"/>`;
 }
+// 筆でなでたような横長の雲（作品 Sunset Session の空の描き方）：両端がすっと消える細長い帯を、少しずつずらして重ねる。
+// 輪郭の線もぼかしも使わず、帯の芯・まわり・下の縁（夕日の照り返し）を透明度の違う面で重ねて柔らかく見せる
+function brushCloud(x, y, w, h, g, sunX, tones) {
+  const [body, core, under, rim] = tones, id = `bc${gid++}`, ids = [body, core, under, rim].map((c, i) => [`${id}${i}`, c]);
+  let s = `<defs>${ids.map(([k, c]) => `<linearGradient id="${k}"><stop offset="0" stop-color="${c}" stop-opacity="0"/><stop offset=".22" stop-color="${c}" stop-opacity=".85"/><stop offset=".7" stop-color="${c}" stop-opacity=".9"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient>`).join('')}</defs>`;
+  // 1 本の帯：上下の縁がゆるく波打ち、両端は細くなる
+  const streak = (cx, cy, L, t, fill, op) => {
+    const N = 14, ph = g() * 6, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const u = i / N, xx = cx - L / 2 + L * u, taper = Math.pow(Math.sin(Math.PI * u), .55), wave = Math.sin(u * 5 + ph) * t * .18; top.push([xx, cy - t / 2 * taper + wave]); bot.push([xx, cy + t / 2 * taper * .8 + wave * .6]); }
+    return `<path d="M${top.map((q) => `${n1(q[0])} ${n2(q[1])}`).join('L')}L${bot.reverse().map((q) => `${n1(q[0])} ${n2(q[1])}`).join('L')}Z" fill="url(#${fill})" opacity="${n2(op)}"/>`;
+  };
+  const toSun = Math.max(0, 1 - Math.abs(x - sunX) / 90); // 太陽に近い雲ほど芯が明るい
+  const n = 3 + Math.floor(g() * 3);
+  for (let i = 0; i < n; i++) {
+    const cx = x + (g() - .5) * w * .4, cy = y + (i - (n - 1) / 2) * h * .38 + (g() - .5) * h * .2, L = w * (.55 + g() * .6), t = h * (.35 + g() * .3);
+    s += streak(cx, cy, L * 1.12, t * 1.9, ids[0][0], .28);                         // まわりのかすみ
+    s += streak(cx + (g() - .5) * 2, cy, L, t, ids[0][0], .75);                      // 帯
+    s += streak(cx + (g() - .5) * 3, cy - t * .12, L * .62, t * .42, ids[1][0], .45 + toSun * .35); // 芯の明るいところ
+    s += streak(cx + (g() - .5) * 3, cy + t * .34, L * .7, t * .3, ids[2][0], .5);   // 下の影
+    s += streak(cx + (g() - .5) * 3, cy + t * .5, L * .5, t * .16, ids[3][0], .25 + toSun * .45); // 下の縁の夕日の照り返し
+  }
+  track(x - w, y - h); track(x + w, y + h);
+  return s;
+}
 // 細くたなびく雲（地平線近く）：下の縁が夕日に照らされる
 function streakCloud(x0, x1, y, h, c, lit) {
   const id = `st${gid++}`;
@@ -1763,7 +1787,9 @@ export function sceneCove(W, stops, { night = false } = {}) {
   // 夕焼けの雲：高いところは淡い藤色、低いところほど夕日に染まる。太陽側の縁が金色に光る（重いぼかしは使わない）
   const sx = at(W, FACTORS.far)(1, W * .62);
   far += streakCloud(-10, fw + 10, 9, 1.1, '#d9c3dc', '#f3d6d8') + streakCloud(-10, fw + 10, 20, 1, '#e0bfcf', '#fbd9c6');
-  for (let x = R(-12, 4); x < fw + 20; x += R(16, 30)) { const y = R(12, 46), k = (y - 12) / 34, big = R(.8, 1.5); far += sunsetCloud(x, y, R(20, 34) * big, R(3, 5) * big, sx, [mixC('#f6e0e2', '#ffe9cc', k), mixC('#dcbccb', '#f2c2ae', k), mixC('#b39bb9', '#cf9ea2', k), '#fff0cf']); }
+  // 雲は作品の空のように、筆でなでた横長の帯で（前のもこもこの雲は、乱数の呼び出しだけ残して描かない）
+  const gC = hrng(fw + 1.9);
+  for (let x = R(-12, 4); x < fw + 20; x += R(16, 30)) { const y = R(12, 46), k = (y - 12) / 34, big = R(.8, 1.5); const cw = R(20, 34) * big, ch = R(3, 5) * big; sunsetCloud(x, y, cw, ch, sx, ['#fff', '#fff', '#fff', '#fff']); far += brushCloud(x, y, cw * 1.5, ch * 1.1, gC, sx, [mixC('#d6bdd6', '#efbcb6', k), mixC('#f4dde2', '#ffe2c4', k), mixC('#b7a0c0', '#d49fa8', k), mixC('#ffd9c4', '#ffd09a', k)]); }
   far += streakCloud(-10, fw + 10, hz - 13, 1.4, '#e7b6ae', '#ffcf8f');
   // 夜（入口のランプで夜にしたとき）は夕日を描かない（乱数の呼び出しだけ合わせる）
   { const sun = setSun(sx, hz - 6, 4.8); if (!night) far += sun; }
@@ -1869,9 +1895,19 @@ export function sceneCove(W, stops, { night = false } = {}) {
   frame += guard(Z, (k) => frond(W + 3, -3, 40 * k, -150, '#3b4a3f', '#4d5d4c', { droop: 1.2 })) + guard(Z, (k) => frond(W + 2, 6, 28 * k, -118, '#34423a', '#46574a', { droop: 1.1 }));
   for (const side of [-1, 1]) for (let i = 0; i < 4; i++) { const x = side < 0 ? R(-3, W * .14) : W - R(-3, W * .14); ground += guard(Z, (k) => tuft(x, 106, R(12, 18) * k, ['#5f5b3c', '#77704a', '#8f8558'], 9)); }
   move += tileGround(W, stops, ground);
+  // 夜：夕日の代わりに満月と、またたく星（どちらも画面に直接置くので、夜の色に変換されずに光る）。月の光の道は museum.js
+  let skyDom = null, moonAt = null;
+  if (night) {
+    const gN = hrng(fw + 5.3), mr = W < 80 ? 3.1 : 3.9, mx = at(W, FACTORS.far)(.35, W * .5), my = W < 80 ? 22 : 20;
+    moonAt = [mx, hz];
+    const bright = [];
+    for (let i = 0; i < fw * .09; i++) { const x = gN() * fw, y = 3 + Math.pow(gN(), 1.4) * 34; if (Math.hypot(x - mx, y - my) < 11) continue; bright.push([n1(x), n1(y), n2(.9 + gN() * 1.2), ['#fffaf0', '#e3ebff', '#ffe9c8'][Math.floor(gN() * 3)], n2(gN() * 5)]); }
+    skyDom = { moon: { x: mx, y: my, r: mr, kind: 'full', halo: true }, bright };
+  }
   return {
+    skyDom,
     sky: 'linear-gradient(#aebbd6 0%, #e3b8b3 28%, #f3c69c 46%, #f8dcb0 58%, #f6e2c4 62%, #bfd9d3 66%, #86b3b3 100%)',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79, harbor, plane: true, houses, sunpath: [sx, hz],
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79, harbor, plane: true, houses, sunpath: night ? moonAt : [sx, hz], moonpath: night,
     curtain: ['#1c3a3a', '#2a5550', '#3f7f73', '#5aa77a', '#7cc0a0'],
   };
 }
@@ -2058,6 +2094,47 @@ export function ferrisSVG(r, part = 'wheel') {
   for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r)}" cy="${n1(Math.sin(a) * r)}" r=".26" fill="${lamp[k % 4]}"/>`; }
   for (let k = 0; k < FERRIS_N; k++) for (let t = .38; t < .86; t += .14) { const a = k / FERRIS_N * Math.PI * 2; s += `<circle cx="${n1(Math.cos(a) * r * t)}" cy="${n1(Math.sin(a) * r * t)}" r=".14" fill="#ffe7a8" opacity=".75"/>`; }
   return `<svg viewBox="${n1(-R2)} ${n1(-R2)} ${n1(R2 * 2)} ${n1(R2 * 2)}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+}
+// 薪ストーブ（鋳物）：脚つきの箱、縁の張り出した天板、焚き口の扉（蝶番と取っ手）、灰受け、煙突は壁の丸い受け口へ。
+// 焚き口のガラスの奥は、おき火で下ほど明るく、薪が 2 本交差する。炎と火の粉、壁と床に広がる火の光は museum.js
+function woodStove(m, k, sw, sh) {
+  const top = 80 - sh, L = m - sw / 2, gx = m - sw * .32, gy = top + sh * .3, gw = sw * .64, gh = sh * .42, id = `ws${gid++}`;
+  const P = (d, f, o) => `<path d="${d}" fill="${f}"${o != null ? ` opacity="${o}"` : ''}/>`;
+  let s = rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45);
+  s += `<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2014"/><stop offset=".45" stop-color="#a8431f"/><stop offset=".8" stop-color="#f08a3a"/><stop offset="1" stop-color="#ffc56a"/></linearGradient>`
+    + `<linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#171311"/><stop offset=".5" stop-color="#231d19"/><stop offset="1" stop-color="#1a1512"/></linearGradient></defs>`;
+  // 脚（少し外に反る）
+  for (const sx of [-1, 1]) s += P(`M${n1(m + sx * (sw / 2 - 1.1 * k))} 78.6L${n1(m + sx * (sw / 2 - .4 * k))} 78.6L${n1(m + sx * (sw / 2 - .05 * k))} 80.3L${n1(m + sx * (sw / 2 - .7 * k))} 80.3Z`, '#1a1512');
+  // 胴（角を少し丸く）と、左右の縁の暗い面
+  s += `<rect x="${n1(L)}" y="${n1(top + .9 * k)}" width="${n1(sw)}" height="${n1(sh - 1.5 * k)}" rx="${n1(.35 * k)}" fill="url(#${id}b)"/>`;
+  s += P(`M${n1(L)} ${n1(top + 1 * k)}h${n1(.55 * k)}V${n1(78.8)}h${n1(-.55 * k)}Z`, '#120f0d') + P(`M${n1(L + sw - .55 * k)} ${n1(top + 1 * k)}h${n1(.55 * k)}V${n1(78.8)}h${n1(-.55 * k)}Z`, '#120f0d');
+  // 天板：縁が張り出し、上の面は火の熱でほんのり赤い
+  s += `<rect x="${n1(L - .45 * k)}" y="${n1(top + .15 * k)}" width="${n1(sw + .9 * k)}" height="${n1(.8 * k)}" rx="${n1(.2 * k)}" fill="#2b2420"/>` + P(`M${n1(L - .3 * k)} ${n1(top + .15 * k)}h${n1(sw + .6 * k)}v${n1(.22 * k)}h${n1(-sw - .6 * k)}Z`, '#5a4034', .8);
+  // 胴の飾りの帯
+  s += P(`M${n1(L + .8 * k)} ${n1(top + 1.6 * k)}h${n1(sw - 1.6 * k)}v${n1(.28 * k)}h${n1(-sw + 1.6 * k)}Z`, '#2c2521');
+  // 焚き口の扉（ガラスより一回り大きい板）と蝶番・取っ手
+  s += `<rect x="${n1(gx - .7 * k)}" y="${n1(gy - .7 * k)}" width="${n1(gw + 1.4 * k)}" height="${n1(gh + 1.4 * k)}" rx="${n1(.4 * k)}" fill="#2a2320"/>`;
+  for (const t of [.22, .78]) s += `<rect x="${n1(gx - 1.05 * k)}" y="${n1(gy + gh * t - .35 * k)}" width="${n1(.5 * k)}" height="${n1(.7 * k)}" rx="${n1(.12 * k)}" fill="#3a302a"/>`;
+  s += `<rect x="${n1(gx + gw + .25 * k)}" y="${n1(gy + gh * .28)}" width="${n1(.34 * k)}" height="${n1(gh * .44)}" rx="${n1(.17 * k)}" fill="#4a3b31"/>`;
+  // ガラスの奥：おき火で下ほど明るい。交差する 2 本の薪と、薪の下の縁のおき火
+  s += `<rect x="${n1(gx)}" y="${n1(gy)}" width="${n1(gw)}" height="${n1(gh)}" rx="${n1(.3 * k)}" fill="url(#${id}g)"/>`;
+  const ly = gy + gh * .8;
+  s += `<g transform="rotate(-9 ${n1(m)} ${n1(ly)})"><rect x="${n1(gx + gw * .1)}" y="${n1(ly - .45 * k)}" width="${n1(gw * .72)}" height="${n1(.9 * k)}" rx="${n1(.45 * k)}" fill="#2c1a12"/><rect x="${n1(gx + gw * .14)}" y="${n1(ly + .2 * k)}" width="${n1(gw * .64)}" height="${n1(.25 * k)}" rx="${n1(.12 * k)}" fill="#ff8a3a" opacity=".85"/></g>`;
+  s += `<g transform="rotate(11 ${n1(m)} ${n1(ly)})"><rect x="${n1(gx + gw * .2)}" y="${n1(ly - .35 * k)}" width="${n1(gw * .7)}" height="${n1(.8 * k)}" rx="${n1(.4 * k)}" fill="#3a2116"/><rect x="${n1(gx + gw * .24)}" y="${n1(ly + .22 * k)}" width="${n1(gw * .6)}" height="${n1(.2 * k)}" rx="${n1(.1 * k)}" fill="#ffb356" opacity=".8"/></g>`;
+  s += `<ellipse cx="${n1(m)}" cy="${n1(gy + gh - .25 * k)}" rx="${n1(gw * .42)}" ry="${n1(.35 * k)}" fill="#ffd27a" opacity=".75"/>`;
+  // ガラスの上の縁は煤で暗く
+  s += P(`M${n1(gx)} ${n1(gy + .3 * k)}Q${n1(gx)} ${n1(gy)} ${n1(gx + .3 * k)} ${n1(gy)}H${n1(gx + gw - .3 * k)}Q${n1(gx + gw)} ${n1(gy)} ${n1(gx + gw)} ${n1(gy + .3 * k)}V${n1(gy + gh * .22)}H${n1(gx)}Z`, '#2a120b', .45);
+  // 灰受けの引き出し
+  s += `<rect x="${n1(gx - .2 * k)}" y="${n1(gy + gh + 1.2 * k)}" width="${n1(gw + .4 * k)}" height="${n1(1.1 * k)}" rx="${n1(.2 * k)}" fill="#2a2320"/><rect x="${n1(m - .6 * k)}" y="${n1(gy + gh + 1.55 * k)}" width="${n1(1.2 * k)}" height="${n1(.35 * k)}" rx="${n1(.17 * k)}" fill="#4a3b31"/>`;
+  // 扉のまわりに当たる火の照り返し
+  s += P(`M${n1(gx - .7 * k)} ${n1(gy + gh + .7 * k)}h${n1(gw + 1.4 * k)}v${n1(.22 * k)}h${n1(-gw - 1.4 * k)}Z`, '#ff9a4a', .35);
+  // 煙突：天板から上へ。途中に継ぎ目の帯、上は曲がって壁の丸い受け口へ入る
+  const px = m + 2 * k, pw = 1.4 * k, py = 55;
+  s += P(`M${n1(px)} ${n1(top + .2 * k)}V${n1(py)}h${n1(pw)}V${n1(top + .2 * k)}Z`, '#1d1916') + P(`M${n1(px + pw * .62)} ${n1(top + .2 * k)}V${n1(py)}h${n1(pw * .38)}V${n1(top + .2 * k)}Z`, '#15110f');
+  for (const yy of [top - 2.2 * k, py + 2.4 * k]) s += `<rect x="${n1(px - .15 * k)}" y="${n1(yy)}" width="${n1(pw + .3 * k)}" height="${n1(.45 * k)}" rx="${n1(.1 * k)}" fill="#2a2522"/>`;
+  s += `<circle cx="${n1(px + pw / 2)}" cy="${n1(py - .3 * k)}" r="${n1(1.55 * k)}" fill="#2a2320"/><circle cx="${n1(px + pw / 2)}" cy="${n1(py - .3 * k)}" r="${n1(1.2 * k)}" fill="#1c1714"/>`;
+  s += P(`M${n1(px)} ${n1(py + .5 * k)}V${n1(py - .3 * k)}A${n1(pw / 2)} ${n1(pw / 2)} 0 0 1 ${n1(px + pw)} ${n1(py - .3 * k)}V${n1(py + .5 * k)}Z`, '#1d1916');
+  return s;
 }
 // 薪ストーブの火（揺れる炎と、舞い上がる火の粉）
 export function fireSVG() {
@@ -2517,7 +2594,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
     // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
     // 薪ストーブ（鋳物の箱に脚、焚き口のガラス、上に煙突）。家具に合わせて大きめに
-    if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k, top = 80 - sh; mid += rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45) + `<path d="M${n1(m - sw / 2)} ${n1(79)}v${n1(-sh + 1)}h${n1(sw)}v${n1(sh - 1)}Z" fill="#1d1916"/><path d="M${n1(m - sw / 2 - .6)} ${n1(top)}h${n1(sw + 1.2)}v1h${n1(-sw - 1.2)}Z" fill="#2a2522"/><path d="M${n1(m - sw / 2 + .6)} 79v1.2M${n1(m + sw / 2 - .6)} 79v1.2" stroke="#1d1916" stroke-width=".8"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="#ff8a3a"/><rect x="${n1(m - sw * .32)}" y="${n1(top + sh * .3)}" width="${n1(sw * .64)}" height="${n1(sh * .42)}" rx=".4" fill="none" stroke="#3a3430" stroke-width=".6"/><path d="M${n1(m + 2 * k)} ${n1(top)}V52h${n1(1.4 * k)}V${n1(top)}Z" fill="#1d1916"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(2.2 * k)}" ry="${n1(1.3 * k)}" fill="#2a1c12"/><ellipse cx="${n1(m + 2.7 * k)}" cy="52.4" rx="${n1(1.5 * k)}" ry="${n1(.85 * k)}" fill="#4a3a2c"/>`; stove = [m, 80, k]; }
+    if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k; mid += woodStove(m, k, sw, sh); stove = [m, 80, k]; }
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
   const sk = [[wallX + 8, 26, '#d4d0b5', '#b8604a'], [wallX + 14, 27, '#3f5d59', '#e2b36f']];
