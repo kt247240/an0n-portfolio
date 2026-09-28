@@ -1276,6 +1276,22 @@ function farBankBackdrop(x0, x1, y, tones) {
   return s;
 }
 // 対岸の手前：岸から立つ太い幹と水に下りる根、水ぎわの苔むした岩、細長い水草の葉、濡れた土の帯
+// 対岸の植物（いろいろな種類を順ぐりに）：竹、パピルス、木生シダ、クワズイモ、ヘリコニア。くすんだ色で、影絵に近く
+function bankPlants(x0, x1, y, tones) {
+  const d = hrng(x0 * 2.7 + x1 * .3 + y * 5), deep = tones[0], mid = tones[1], lt = tones[2], lite = tones[3];
+  const leaf = (x, yy, L, a, w, c) => `<path d="M0 0Q${n1(L * .5)} ${n1(-w)} ${n1(L)} 0Q${n1(L * .5)} ${n1(w)} 0 0Z" transform="translate(${n1(x)} ${n1(yy)}) rotate(${n1(a)})" fill="${c}"/>`;
+  const kinds = {
+    bamboo(x) { let o = ''; const n = 4 + Math.floor(d() * 3); for (let k = 0; k < n; k++) { const bx = x + (k - n / 2) * .9 + (d() - .5) * .5, h = 12 + d() * 7, lean = (d() - .5) * 1.6, c = k % 2 ? mid : lt; o += `<path d="M${n1(bx - .22)} ${n1(y + .5)}L${n1(bx + lean - .16)} ${n1(y - h)}L${n1(bx + lean + .16)} ${n1(y - h)}L${n1(bx + .22)} ${n1(y + .5)}Z" fill="${c}"/>`; for (let j = 1; j < 6; j++) { const t = j / 6, jy = y - h * t, jx = bx + lean * t; o += `<path d="M${n1(jx - .3)} ${n1(jy)}H${n1(jx + .3)}" stroke="${deep}" stroke-width=".14"/>`; if (j > 2) for (const dir of [-1, 1]) if (d() < .6) o += leaf(jx, jy, 1.6 + d() * .9, dir < 0 ? 180 + 25 + d() * 25 : -25 - d() * 25 + 360, .28, d() < .5 ? lt : lite); } } return o; },
+    papyrus(x) { let o = ''; for (let k = 0; k < 5; k++) { const bx = x + (k - 2) * .8 + (d() - .5) * .6, h = 5 + d() * 4, tx = bx + (d() - .5) * 2, ty = y - h; o += `<path d="M${n1(bx)} ${n1(y + .5)}Q${n1((bx + tx) / 2)} ${n1(y - h * .5)} ${n1(tx)} ${n1(ty)}" stroke="${mid}" stroke-width=".16" fill="none"/>`; for (let j = 0; j < 11; j++) { const a = -165 + j * 15, L = 1.3 + d() * .6; o += `<path d="M${n1(tx)} ${n1(ty)}l${n1(Math.cos(a * Math.PI / 180) * L)} ${n1(Math.sin(a * Math.PI / 180) * L * .7)}" stroke="${j % 2 ? lt : lite}" stroke-width=".12" stroke-linecap="round"/>`; } } return o; },
+    treeFern(x) { const h = 6 + d() * 4, tx = x + (d() - .5), ty = y - h; let o = `<path d="M${n1(x - .35)} ${n1(y + .5)}L${n1(tx - .25)} ${n1(ty)}L${n1(tx + .25)} ${n1(ty)}L${n1(x + .35)} ${n1(y + .5)}Z" fill="${deep}"/>`; for (let k = 0; k < 9; k++) { const a = -175 + k * 21 + (d() - .5) * 8, L = 3 + d() * 1.5, ex = tx + Math.cos(a * Math.PI / 180) * L, ey = ty + Math.sin(a * Math.PI / 180) * L * .55 + L * .3; o += `<path d="M${n1(tx)} ${n1(ty)}Q${n1((tx + ex) / 2)} ${n1(Math.min(ty, ey) - .8)} ${n1(ex)} ${n1(ey)}Q${n1((tx + ex) / 2)} ${n1(Math.min(ty, ey) - .1)} ${n1(tx)} ${n1(ty + .3)}Z" fill="${k % 2 ? lt : mid}"/>`; for (let j = 1; j < 5; j++) { const t = j / 5, px = tx + (ex - tx) * t, py = ty + (ey - ty) * t - Math.sin(t * Math.PI) * .6; o += `<path d="M${n1(px)} ${n1(py)}l${n1(-.2)} ${n1(.45)}M${n1(px)} ${n1(py)}l${n1(.2)} ${n1(.45)}" stroke="${deep}" stroke-width=".08" opacity=".6"/>`; } } return o; },
+    elephantEar(x) { let o = ''; for (let k = 0; k < 4; k++) { const bx = x + (k - 1.5) * 1.3, h = 2.6 + d() * 2.2, lx = bx + (d() - .5) * 1.4, ly = y - h, s2 = 1.5 + d() * .8, c = k % 2 ? lt : mid; o += `<path d="M${n1(bx)} ${n1(y + .5)}Q${n1(bx)} ${n1(y - h * .6)} ${n1(lx)} ${n1(ly)}" stroke="${mid}" stroke-width=".13" fill="none"/><path d="M${n1(lx)} ${n1(ly)}C${n1(lx - s2 * 1.1)} ${n1(ly - s2 * .2)} ${n1(lx - s2 * .7)} ${n1(ly + s2 * 1.1)} ${n1(lx)} ${n1(ly + s2 * 1.5)}C${n1(lx + s2 * .7)} ${n1(ly + s2 * 1.1)} ${n1(lx + s2 * 1.1)} ${n1(ly - s2 * .2)} ${n1(lx)} ${n1(ly)}Z" fill="${c}"/><path d="M${n1(lx)} ${n1(ly)}V${n1(ly + s2 * 1.4)}" stroke="${deep}" stroke-width=".08" opacity=".5"/>`; } return o; },
+    heliconia(x) { let o = ''; for (let k = 0; k < 3; k++) { const bx = x + (k - 1) * 1.6, h = 5 + d() * 3, ty = y - h; o += `<path d="M${n1(bx)} ${n1(y + .5)}L${n1(bx)} ${n1(ty)}" stroke="${mid}" stroke-width=".18"/>` + leaf(bx, ty + 1.6, 3 + d(), -40 - d() * 30, .55, lt) + leaf(bx, ty + 2.6, 2.8 + d(), 200 + d() * 30, .5, mid); for (let j = 0; j < 4; j++) { const jy = ty + .2 + j * .75, dir = j % 2 ? 1 : -1; o += `<path d="M${n1(bx)} ${n1(jy)}l${n1(dir * .75)} ${n1(.2)}l${n1(-dir * .5)} ${n1(.45)}Z" fill="${j % 2 ? '#b8683e' : '#c98a3e'}" opacity=".85"/>`; } } return o; },
+  };
+  const order = ['bamboo', 'treeFern', 'papyrus', 'elephantEar', 'heliconia'];
+  let s = '', i = Math.floor(d() * order.length);
+  for (let x = x0 + 4 + d() * 8; x < x1; x += 11 + d() * 12) s += kinds[order[i++ % order.length]](x);
+  return s;
+}
 function farBankFront(x0, x1, y, tones) {
   const d = hrng(x0 * 1.3 + x1 * .4 + y * 2);
   let s = `<path d="M${n1(x0)} ${n1(y + .2)}H${n1(x1)}V${n1(y + 1.1)}H${n1(x0)}Z" fill="#2a3420" opacity=".55"/>`;
@@ -1284,6 +1300,7 @@ function farBankFront(x0, x1, y, tones) {
     s += `<path d="M${n1(x - w)} ${n1(y + .5)}Q${n1(x - w * .6)} ${n1(y - h * .5)} ${n1(x - w * .4)} ${n1(y - h)}L${n1(x + w * .4)} ${n1(y - h)}Q${n1(x + w * .7)} ${n1(y - h * .5)} ${n1(x + w)} ${n1(y + .5)}Z" fill="${c}"/><path d="M${n1(x - w * .5)} ${n1(y)}Q${n1(x - w * .35)} ${n1(y - h * .5)} ${n1(x - w * .25)} ${n1(y - h)}" stroke="#5a5a3c" stroke-width=".18" fill="none" opacity=".7"/>`;
     for (const dir of [-1, 1, -1]) { const rx = x + dir * (w + d() * 2.5); s += `<path d="M${n1(x + dir * w * .5)} ${n1(y - 1.2)}Q${n1(rx)} ${n1(y - .8)} ${n1(rx + dir * .8)} ${n1(y + 1.4)}" stroke="${c}" stroke-width="${n1(.28 + d() * .2)}" fill="none" stroke-linecap="round"/>`; }
   }
+  s += bankPlants(x0, x1, y, tones);
   for (let x = x0 + d() * 8; x < x1; x += 9 + d() * 14) { // 水ぎわの岩（半分水に沈み、上に苔）
     const w = 1.6 + d() * 2.2, h = w * (.45 + d() * .2), cy = y + .9;
     s += `<path d="M${n1(x - w)} ${n1(cy)}Q${n1(x - w * .8)} ${n1(cy - h)} ${n1(x)} ${n1(cy - h)}Q${n1(x + w * .8)} ${n1(cy - h)} ${n1(x + w)} ${n1(cy)}Z" fill="#5a5f4a"/><path d="M${n1(x - w * .7)} ${n1(cy - h * .7)}Q${n1(x)} ${n1(cy - h * 1.15)} ${n1(x + w * .5)} ${n1(cy - h * .8)}Q${n1(x)} ${n1(cy - h * .55)} ${n1(x - w * .7)} ${n1(cy - h * .7)}Z" fill="${tones[3]}" opacity=".75"/><path d="M${n1(x + w * .2)} ${n1(cy - h * .2)}Q${n1(x + w * .7)} ${n1(cy - h * .4)} ${n1(x + w * .9)} ${n1(cy)}" stroke="#3a3e30" stroke-width=".25" fill="none" opacity=".6"/>`;

@@ -381,6 +381,7 @@ body:not(.beat-on) .player-btn::after { content: "PRESS PLAY"; position: absolut
 /* 水辺の光る水（奥の水面と、睡蓮・桟橋のあいだ）。濃さは歩いた分だけ JS で上げる
    光の網目は canvas に描く（手前は大きく、奥ほど小さく詰まり、霞む）＝壁ではなく水面に見える */
 .water-glow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; --caust: 0; }
+.water-glow { -webkit-mask-image: linear-gradient(transparent 0, transparent 27vh, #000 32vh); mask-image: linear-gradient(transparent 0, transparent 27vh, #000 32vh); } /* 光るのは水面だけ（対岸の岸と植物にはかけない） */
 .water-glow .tint { position: absolute; inset: 0; background:
   radial-gradient(40% 22% at 24% 46%, rgba(120, 170, 112, .3), transparent 70%),
   radial-gradient(44% 26% at 76% 70%, rgba(110, 164, 106, .28), transparent 70%),
