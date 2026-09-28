@@ -128,7 +128,7 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
         if (!tracks.has(src)) { const a = new Audio(src); a.preload = 'auto'; a.addEventListener('pause', () => mbState(src, false)); a.addEventListener('ended', () => mbState(src, false)); a.addEventListener('play', () => mbState(src, true)); tracks.set(src, a); }
         const a = tracks.get(src);
         if (a.paused) { if (isBeatOn()) toggleBeat(); tracks.forEach((o) => { if (o !== a && !o.paused) o.pause(); }); a.play().catch(() => mbState(src, false)); } else a.pause();
-        el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+        // （押したときに弾んで伸びる動きはつけない。光と灯りだけで反応を見せる）
         break;
       }
       case 'tv': {
