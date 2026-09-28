@@ -1606,10 +1606,10 @@ function headland(tipX, base, len, hgt, dir, g, sunX, c) {
   }
   // 先の岩の崖（光の面と影の面）と、波が当たる白っぽい岩の裾
   const cliffW = len * .07;
-  s += `<path d="M${P([xAt(0), base + .3])}L${P([xAt(0), base - hgt * .08])}L${P([xAt(.015), base - hgt * .15])}L${P([xAt(.04), base - hgt * .28])}L${P([xAt(.07), base - hgt * .2])}L${P([xAt(0) + dir * cliffW * 1.4, base + .3])}Z" fill="${sunOnTip ? c.rockLit : c.rock}"/>`;
-  s += `<path d="M${P([xAt(.04), base - hgt * .28])}L${P([xAt(.07), base - hgt * .2])}L${P([xAt(0) + dir * cliffW * 1.4, base + .3])}L${P([xAt(.035), base + .3])}Z" fill="${c.rock}"/>`;
+  // 岩は低く、裾は木々に隠れるように（尖った三角に見えないように）
+  s += `<path d="M${P([xAt(0), base + .3])}L${P([xAt(0), base - hgt * .06])}L${P([xAt(.02), base - hgt * .13])}L${P([xAt(.05), base - hgt * .12])}L${P([xAt(0) + dir * cliffW * 1.3, base + .3])}Z" fill="${sunOnTip ? c.rockLit : c.rock}" opacity=".85"/>`;
   // 尾根のヤシ（頂の手前、先の側に寄せて）
-  for (let i = 0; i < 4; i++) { const u = .12 + i * .07 + g() * .04, xx = xAt(u); s += farPalm(xx, topAt(xx) + .4, hgt * (.24 + g() * .12), dir * -(.2 + g() * .5), c.palm, g); }
+  for (let i = 0, np = hgt > 6 ? 4 : hgt > 4 ? 2 : 0; i < np; i++) { const u = .12 + i * .07 + g() * .04, xx = xAt(u); s += farPalm(xx, topAt(xx) + .4, hgt * (.24 + g() * .12), dir * -(.2 + g() * .5), c.palm, g); }
   return s;
 }
 // 防波堤と、先の小さな灯台（灯りは museum.js がゆっくり明滅させる）
@@ -1750,13 +1750,19 @@ export function sceneCove(W, stops) {
   // 水平線の帆船と、遠くの桟橋（先に灯りがともる）
   // 手前の緑の岬：作品と作品のあいだ（立ち止まると画面の真ん中）に岬の先が来るように。どれも先を夕日の側（左）へ向け、
   // 次の岬に重ならない長さに。最初の岬の先に防波堤と小さな灯台
-  let harbor = null;
-  for (let s = 1.5, k = 0; s < stops - 1; s += 2, k++) {
-    const dir = 1, tip = at(W, FACTORS.far)(s, W * .5), bwl = W < 80 ? 4 : 7, len = Math.min(W < 80 ? 26 : 56, W * FACTORS.far * 2.1), hgt = W < 80 ? 6.5 : 10;
-    const tipX = k === 0 ? tip + dir * bwl : tip + dir * 2;
-    far += headland(tipX, hz + .1, len, hgt, dir, gM, sx, { body: '#86a092', lit: '#a9b095', low: '#6f8d88', shade: '#5f7c7d', rock: '#8a8290', rockLit: '#b9a39e', refl: '#5f8583', trees: ['#6f8c84', '#8aa18f', '#a7b096'], palm: '#5a7169' });
-    if (k === 0) { const bw = breakwater(tipX, tip, hz + .1, gM, { top: '#c9b8b0', face: '#948a96', gap: '#7d7482', tower: '#efe4da', towerShade: '#d2c7cf', red: '#bd6a5c', lamp: '#6b6170' }); far += bw.svg; harbor = bw.light; }
+  let harbor = null, lightSvg = '';
+  // 岬の後ろに、霞んだ緑の丘の連なり（海岸線が続いて見えるように。ところどころ切れて海と島が見える）
+  for (let x = -8 + gM() * 6; x < fw + 10; x += (12 + gM() * 20) * big) { if (gM() < .22) continue; far += hazeIsland(x, hz + .15, (16 + gM() * 22) * big, (3.2 + gM() * 3.4) * big, gM, sx, { lit: '#b3b9a6', shade: '#9aaba5', tree: '#93a49b' }); }
+  // 立ち止まる場所ごとに岬を 1 つ。大きさはまちまちで、右の岬ほど手前に重なる（左の岬の奥の裾を隠す）
+  for (let s = -.5, k = 0; s < stops; s += 1, k++) {
+    const dir = 1, tip = at(W, FACTORS.far)(s, W * .5), bwl = W < 80 ? 4 : 7, isHarbor = s === 1.5, size = isHarbor ? 1 : [.55, .8, .45, .95, .6][k % 5] * (.85 + gM() * .3);
+    const len = Math.min(W < 80 ? 26 : 56, W * FACTORS.far * 2.1) * (.6 + size * .4), hgt = (W < 80 ? 6.5 : 10) * size;
+    const tipX = isHarbor ? tip + dir * bwl : tip + dir * (gM() * 4 - 1) * big;
+    far += headland(tipX, hz + .1, len, hgt, dir, gM, sx, { body: '#86a092', lit: '#a9b095', low: '#6f8d88', shade: '#5f7c7d', rock: '#7f8a86', rockLit: '#a9a497', refl: '#5f8583', trees: ['#6f8c84', '#8aa18f', '#a7b096'], palm: '#5a7169' });
+    if (isHarbor) { const bw = breakwater(tipX, tip, hz + .1, gM, { top: '#c9b8b0', face: '#948a96', gap: '#7d7482', tower: '#efe4da', towerShade: '#d2c7cf', red: '#bd6a5c', lamp: '#6b6170' }); lightSvg = bw.svg; harbor = bw.light; }
   }
+  // 灯台は最後に描く（後ろの岬に隠れないように）
+  far += lightSvg;
   for (let k = 0; k < 3; k++) far += sailboat(R(fw * .1, fw * .9), hz - .2, R(2, 3.2), pick(['#8a97a8', '#7a7488']));
   far += pierFar(fw * .78, hz + 3.5, Math.min(26, fw * .18), '#6f6a7a');
   far += waveLines(-5, fw + 5, hz + 1, 100, '#ffffff', Math.round(fw * 1.4));
