@@ -1935,7 +1935,9 @@ export function sceneCove(W, stops, { night = false } = {}) {
     const gx = cx + W * FACTORS.mid * .5;
     mid += guard(Z, () => tidePool(gx + R(-10, 10), R(84, 86.5), R(5, 8)), { min: 1 });
     if (s % 3 === 0) mid += guard(Z, (k) => duneFence(gx - R(9, 12) * k, gx + R(9, 12) * k, R(98, 101), R(4, 5)), { min: .55 });
-    if (s % 3 === 1) mid += guard(Z, (k) => rowboat(gx + R(-3, 3), R(94, 97), R(16, 20) * k, pick(['#d9a06a', '#c98a7a', '#8fb0b8'])), { min: .6 });
+    // 小舟は、台の足もと（砂に埋まった根もと）にもかからないように、台の範囲を下まで広げてよける
+    const Zb = [Z[0], [cx - 16.5, 58, cx + 16.5, 99], Z[2], [nx - 16.5, 58, nx + 16.5, 99]];
+    if (s % 3 === 1) mid += guard(Zb, (k) => rowboat(gx + R(-3, 3), R(94, 97), R(16, 20) * k, pick(['#d9a06a', '#c98a7a', '#8fb0b8'])), { min: .6 });
     if (s % 3 === 2) mid += guard(Z, () => campfire(gx + R(-4, 4), R(95, 98), R(1.8, 2.2)), { min: 1 });
   }
   // 手前：浜辺の草と流木（作品と作品のあいだ）

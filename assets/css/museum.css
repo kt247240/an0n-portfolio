@@ -611,7 +611,7 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 .frame-post .work .canvas { border: 1.4vh solid #e2d3bc; box-shadow: 0 2.4vh 4vh rgba(60, 40, 30, .28); }
 .frame-post .work .deco.under { top: calc(100% - 1px); width: 124%; height: 16vh; }
 .frame-post .work .deco.top.post { bottom: 100%; width: 124%; height: 8vh; }
-.frame-post .work .ground-shadow { top: calc(100% + 14vh); width: 110%; }
+.frame-post .work .ground-shadow { top: calc(100% + 12.6vh); width: 104%; height: 3vh; opacity: .5; } /* 台の根もとは砂に埋まっているので、影は薄く、砂の盛り上がりのすぐ下に */
 .ib-drift { animation: ibdrift 18s linear infinite both; }
 @keyframes ibdrift { from { transform: translate(40px, 72px) rotate(-10deg); } 50% { transform: translate(105px, 70px) rotate(8deg); } to { transform: translate(175px, 74px) rotate(-6deg); } }
 
