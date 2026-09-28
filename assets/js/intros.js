@@ -22,11 +22,10 @@ function forest() {
   const leaves = [0, 1, 2].map((i) => `<g class="ib-fall" style="--x:${f1(R(70, 130))}px;--d:${i * 2.4}s"><g class="ib-spin"><path d="M0 0C1.6 -.6 1.6 -3.4 0 -4.2C-1.6 -3.4 -1.6 -.6 0 0Z" fill="${['#a5c23e', '#769721', '#c9d77a'][i]}"/></g></g>`).join('');
   return birds + leaves;
 }
-// 水辺：水面に波紋がひろがり、落ち葉が一枚、ゆっくり流れていく
+// 水辺：落ち葉が一枚、ゆっくり流れていく（真ん中の大きな波紋はやめた。水面の波紋は葉や石のまわりの小さなものだけ）
 function jungle() {
-  const rip = [0, 1, 2, 3].map((i) => `<ellipse class="ib-ripple" style="--d:${i * .9}s" cx="100" cy="66" rx="16" ry="4" fill="none" stroke="#eef3d8" stroke-width=".5"/>`).join('');
   const leaf = `<g class="ib-drift"><path d="M0 0C2 -1 5 -1 7 0C5 1 2 1 0 0Z" fill="#8a9a3a"/><path d="M0 0L7 0" stroke="#5f6a28" stroke-width=".2"/><ellipse cx="3.5" cy=".6" rx="4" ry=".6" fill="#000" opacity=".12"/></g>`;
-  return rip + leaf;
+  return leaf;
 }
 // 夕凪：水平線の上を、カモメが一羽ゆっくり渡っていく
 function cove() {
