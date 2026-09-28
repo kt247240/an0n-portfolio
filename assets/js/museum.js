@@ -1185,8 +1185,13 @@ function updateEntrance() {
   // 夜の森：暗さと灯りの中心を、ランプのかさの位置に合わせる
   // （ランプの位置はフレームの最初に測ったもの。入口全体ではなく、暗がりと灯りの 2 枚にだけ渡す）
   if (entrance.classList.contains('night') && GEO.lamp) {
-    const b = GEO.lamp, lx = `${(b.left + b.width / 2).toFixed(1)}px`, ly = `${(b.top + b.height * .16).toFixed(1)}px`;
-    entrance.querySelectorAll('.nightfall, .lamplight').forEach((el) => { put(el, '--lx', lx); put(el, '--ly', ly); });
+    // 暗がりと灯りの層は、入口の奥へ進むにつれて拡大される。画面上のランプの位置を、その層の中の位置に直して渡す
+    // （そのまま渡すと、拡大のぶんだけ光の中心がランプから上へずれていく）
+    const b = GEO.lamp, cx = b.left + b.width / 2, cy = b.top + b.height * .16;
+    entrance.querySelectorAll('.nightfall, .lamplight').forEach((el) => {
+      const r = el.getBoundingClientRect(), kx = r.width / (el.offsetWidth || 1) || 1, ky = r.height / (el.offsetHeight || 1) || 1;
+      put(el, '--lx', `${((cx - r.left) / kx).toFixed(1)}px`); put(el, '--ly', `${((cy - r.top) / ky).toFixed(1)}px`);
+    });
   }
   // 案内人が奥へ消えたら、最初の部屋と同じ葉のカーテンが左右から閉じる。
   // 閉じきったところで最初の部屋（入口の真下に重ねてある）へ入れ替わるので、つなぎ目は見えない
