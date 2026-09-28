@@ -51,50 +51,43 @@
 #mc-warp { position: fixed; inset: 0; z-index: 96; pointer-events: none; opacity: 0; background: radial-gradient(circle at 50% 62%, #fff8e6 0%, #ffd9a0 28%, #c79bff 62%, #22103a 100%); transition: opacity .5s ease; }
 #mc-warp.on { opacity: 1; pointer-events: auto; }
 
-/* ---- クラブ ---- */
+/* ---- 夕焼けの屋外会場 ---- */
 body.in-club #rooms, body.in-club #site-head, body.in-club #room-nav, body.in-club #beat, body.in-club #mc-inv { visibility: hidden; }
-#club { position: fixed; inset: 0; z-index: 88; overflow: hidden; background: #07040d; touch-action: none; }
+#club { position: fixed; inset: 0; z-index: 88; overflow: hidden; background: #2c1a2e; touch-action: none; }
 #club > * { position: absolute; }
-.club-bg { inset: 0; background: radial-gradient(120% 70% at 50% 28%, #2b1342, #0e0719 58%, #05030a); }
-.club-wall { left: 0; right: 0; top: 17vh; display: flex; justify-content: center; align-items: flex-end; gap: 3vh; }
-.scr { display: block; background: #000; border: .4vh solid #1c1230; box-shadow: 0 0 4vh rgba(180, 120, 255, .35); overflow: hidden; }
-.scr img, .scr video { display: block; width: 100%; height: 100%; object-fit: contain; }
-.scr.main { height: 34vh; aspect-ratio: .8; }
-.scr.side { height: 24vh; aspect-ratio: .8; opacity: .72; }
-@media (max-aspect-ratio: 4 / 5) { .scr.side { display: none; } }
-#club.kick .scr.main { animation: scr-kick .35s ease-out; }
-@keyframes scr-kick { 0% { box-shadow: 0 0 7vh rgba(255, 90, 210, .7); } 100% { box-shadow: 0 0 4vh rgba(180, 120, 255, .35); } }
-.club-ball { left: 50%; top: 0; transform: translateX(-50%); width: 7vh; height: 12vh; }
-.club-ball::before { content: ""; position: absolute; left: 50%; top: 0; width: 1px; height: 5vh; background: #3a3048; }
-.ball { position: absolute; left: 0; top: 5vh; width: 7vh; height: 7vh; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #cfc6e2 28%, #6c6380 68%, #2a2438); box-shadow: 0 0 3vh rgba(255, 255, 255, .35); }
-.refl { position: absolute; left: 50%; top: 8.5vh; animation: club-spin 9s linear infinite; }
-.refl i { position: absolute; width: .5vh; height: .5vh; border-radius: 50%; background: #fff; box-shadow: 0 0 .8vh #fff; transform: rotate(var(--a)) translateX(var(--d)); animation: club-tw var(--t) ease-in-out infinite alternate; }
-@keyframes club-spin { to { transform: rotate(360deg); } }
-@keyframes club-tw { from { opacity: .15; } to { opacity: .95; } }
-.club-beams { inset: 0; }
-.beam { position: absolute; top: -4vh; width: 16vh; height: 112vh; margin-left: -8vh; transform-origin: 50% 0; background: linear-gradient(var(--c), transparent 82%); opacity: .2; clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); animation: beam 5.2s ease-in-out infinite alternate; }
-@keyframes beam { from { transform: rotate(calc(var(--a) * 26deg)); } to { transform: rotate(calc(var(--a) * -26deg)); } }
-#club.kick .beam { opacity: .3; }
-.club-booth { left: 50%; bottom: 17vh; width: min(58vh, 92vw); aspect-ratio: 200 / 120; transform: translateX(-50%); }
-.club-booth svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.club-booth::before { content: ""; position: absolute; left: 22%; right: 22%; top: -6%; bottom: 28%; background: radial-gradient(closest-side, rgba(255, 90, 210, .55), rgba(140, 90, 255, .25) 55%, transparent); } /* DJ の後ろの光：影の輪郭が浮かぶように */
-#club.kick .club-booth::before { animation: club-kick .35s ease-out reverse; }
-.club-booth .dj { fill: #05030a; transform-origin: 50% 100%; animation: bop .68s ease-in-out infinite; }
-.led { position: absolute; width: 1.1%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: #39d8ff; box-shadow: 0 0 1vh #39d8ff; animation: led .68s steps(2) infinite; }
-.led.b { background: #ff4fd8; box-shadow: 0 0 1vh #ff4fd8; animation-delay: -.34s; } .led.c { background: #ffb347; box-shadow: 0 0 1vh #ffb347; }
-@keyframes led { 50% { opacity: .25; } }
-.club-lasers { left: 50%; bottom: 30vh; width: 0; height: 0; }
-.laser { position: absolute; left: 0; top: 0; width: 95vh; height: .22vh; transform-origin: 0 50%; background: linear-gradient(90deg, rgba(57, 216, 255, .85), rgba(57, 216, 255, 0)); opacity: .55; animation: laser 3.1s ease-in-out infinite alternate; }
-.laser:nth-child(even) { background: linear-gradient(90deg, rgba(255, 79, 216, .85), rgba(255, 79, 216, 0)); }
-@keyframes laser { from { transform: rotate(calc(var(--r) - 90deg - 14deg)); } to { transform: rotate(calc(var(--r) - 90deg + 14deg)); } }
-.club-haze { inset: 0; background: radial-gradient(80% 40% at 50% 72%, rgba(160, 90, 220, .2), transparent); pointer-events: none; }
-.club-crowd { left: 0; right: 0; bottom: 0; height: 28vh; }
-.cr { position: absolute; bottom: -3vh; width: 12vh; margin-left: -6vh; transform-origin: 50% 100%; animation: crowd .68s ease-in-out infinite; }
-.cr svg { display: block; width: 100%; fill: #04020a; }
-@keyframes crowd { 0%, 100% { transform: scale(var(--s)) translateY(0); } 50% { transform: scale(var(--s)) translateY(1.3vh); } }
-@keyframes bop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1.5%); } }
-.club-floor { left: 0; right: 0; bottom: 0; height: 18vh; background: linear-gradient(transparent, rgba(120, 60, 180, .18)); pointer-events: none; }
-#club::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 50% at 50% 40%, rgba(255, 80, 200, .2), transparent); opacity: 0; pointer-events: none; }
+.ov-sky { inset: 0; background: linear-gradient(#2c1a2e 0%, #5a2a3a 26%, #a8443f 50%, #e0704c 66%, #f29a68 76%, #f6b884 84%, #6a2e2c 100%); }
+.ov-clouds { left: -10%; width: 120%; top: 0; height: 62vh; animation: ov-drift 40s ease-in-out infinite alternate; }
+@keyframes ov-drift { to { transform: translateX(6%); } }
+.ov-city { left: 0; width: 100%; bottom: 24vh; height: 46vh; }
+.ov-glow { left: 50%; bottom: 20vh; width: 140vh; height: 70vh; transform: translateX(-50%); background: radial-gradient(closest-side, rgba(255, 170, 110, .5), rgba(255, 120, 80, .18) 55%, transparent); }
+#club.kick .ov-glow { animation: ov-kick .4s ease-out; }
+@keyframes ov-kick { 0% { opacity: 1.4; filter: brightness(1.3); } 100% { opacity: 1; filter: none; } }
+.ov-stage { left: 50%; bottom: 20vh; width: min(130vh, 150vw); aspect-ratio: 300 / 160; transform: translateX(-50%); }
+.ov-stage > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ov-stage .dj { fill: #0b0608; transform-origin: 50% 80%; animation: bop .68s ease-in-out infinite; }
+.pnl { position: absolute; background: linear-gradient(#fff4e2, #ffd6aa 60%, #ffb27a); box-shadow: 0 0 2.4vh rgba(255, 196, 140, .8); opacity: .82; animation: pnl 2.72s ease-in-out infinite; }
+@keyframes pnl { 0%, 100% { opacity: .82; } 50% { opacity: .55; } }
+#club.kick .pnl { opacity: 1; }
+.par { position: absolute; width: 1.6%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: #fff1d6; box-shadow: 0 0 1.4vh 0.4vh rgba(255, 190, 120, .9); animation: par 1.36s steps(2) infinite; }
+@keyframes par { 50% { opacity: .45; } }
+.ov-beams { position: absolute; inset: 0; }
+.bm { position: absolute; width: 12%; height: 170%; margin-left: -6%; transform-origin: 50% 100%; translate: 0 -100%; background: linear-gradient(to top, rgba(255, 226, 190, .55), rgba(255, 190, 140, .12) 60%, transparent); clip-path: polygon(0 0, 100% 0, 54% 100%, 46% 100%); opacity: .45; animation: bm 6s ease-in-out infinite alternate; }
+@keyframes bm { from { transform: rotate(calc(var(--a) * 22deg)); } to { transform: rotate(calc(var(--a) * -10deg)); } }
+#club.kick .bm { opacity: .7; }
+.ov-screen { position: absolute; aspect-ratio: .8; background: #000; border: .3vh solid #2a1418; box-shadow: 0 0 3vh rgba(255, 170, 110, .45); overflow: hidden; }
+.ov-screen video { display: block; width: 100%; height: 100%; object-fit: contain; }
+.spill { position: absolute; left: 36%; right: 36%; top: 70%; height: 16%; background: radial-gradient(closest-side, rgba(255, 210, 160, .55), transparent); }
+.ov-smoke { left: 50%; bottom: 14vh; width: 150vh; height: 40vh; transform: translateX(-50%); background: radial-gradient(50% 45% at 40% 60%, rgba(255, 200, 170, .22), transparent 70%), radial-gradient(40% 40% at 65% 55%, rgba(255, 170, 130, .2), transparent 70%); animation: smoke 14s ease-in-out infinite alternate; pointer-events: none; }
+.ov-smoke.b { bottom: 8vh; animation-duration: 19s; animation-direction: alternate-reverse; opacity: .8; }
+@keyframes smoke { from { transform: translateX(-54%) scale(1); } to { transform: translateX(-46%) scale(1.08); } }
+.ov-crowd { left: 0; right: 0; }
+.ov-crowd svg { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; animation: crowd .68s ease-in-out infinite; }
+.ov-crowd.back { bottom: 14vh; height: 11vh; } .ov-crowd.back svg { fill: #4a2024; opacity: .85; }
+.ov-crowd.mid { bottom: 3vh; height: 17vh; } .ov-crowd.mid svg { fill: #25100f; }
+.ov-crowd.front { bottom: -5vh; height: 24vh; } .ov-crowd.front svg { fill: #0d0506; }
+@keyframes crowd { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1.1vh); } }
+@keyframes bop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(1.2%); } }
+#club::after { content: ""; position: absolute; inset: 0; background: radial-gradient(60% 45% at 50% 55%, rgba(255, 190, 130, .16), transparent); opacity: 0; pointer-events: none; }
 #club.kick::after { animation: club-kick .35s ease-out; }
 @keyframes club-kick { 0% { opacity: 1; } 100% { opacity: 0; } }
 .club-exit { top: calc(16px + env(safe-area-inset-top)); right: 16px; width: 52px; height: 52px; padding: 5px; border-radius: 50%; background: rgba(18, 10, 28, .6); border: 1px solid rgba(255, 226, 168, .55); cursor: pointer; z-index: 3; }

@@ -115,32 +115,65 @@ async function onCircle(e) {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- クラブ ----------
+// 夕焼けの屋外会場：燃えるような空と流れる雲、古い建物とヤシと白い教会の影、トラスの櫓とライト、光るパネル、DJ ブース、煙、何列もの観客
+// 人物はいまは影絵。本人が描いた人物の絵ができたら、DJ と観客をその絵に差し替える
+function crowdRow(n, r, H, seed, k, tone) {
+  let o = '';
+  for (let i = k; i < n; i += 3) {
+    const t = (i + .5) / n, x = t * 400 + Math.sin(i * 12.9 + seed) * 400 / n * .35, rr = r * (.85 + ((Math.sin(i * 7.7 + seed) + 1) / 2) * .3), by = H + r * .2;
+    const hy = by - rr * 2.7, up = ((i * 5 + seed) % 7) === 0, phone = ((i * 3 + seed) % 11) === 0;
+    o += `<path d="M${x - rr * 2.3} ${by + 2}Q${x - rr * 2.2} ${by - rr * 1.3} ${x - rr * .8} ${by - rr * 1.6}L${x + rr * .8} ${by - rr * 1.6}Q${x + rr * 2.2} ${by - rr * 1.3} ${x + rr * 2.3} ${by + 2}Z"/><ellipse cx="${x}" cy="${hy}" rx="${rr}" ry="${rr * 1.12}"/>`;
+    o += `<path d="M${x - rr * .8} ${hy - rr * .7}Q${x} ${hy - rr * 1.25} ${x + rr * .7} ${hy - rr * .8}" stroke="${tone}" stroke-width="${rr * .22}" fill="none" opacity=".55"/>`;
+    if (up || phone) { // 上げた腕（肩から頭の少し上まで、細く）。スマホを掲げる人は、手もとに小さな光
+      const sx = x + rr * 1.1, sy = by - rr * 1.5, hx = x + rr * 1.75, hyy = hy - rr * 1.7, w = rr * .22;
+      o += `<path d="M${sx - w} ${sy}Q${sx + rr * .2} ${(sy + hyy) / 2} ${hx - w} ${hyy}L${hx + w} ${hyy}Q${sx + rr * .55} ${(sy + hyy) / 2} ${sx + w * 1.4} ${sy}Z"/><circle cx="${hx}" cy="${hyy}" r="${w * 1.3}"/>`;
+      if (phone) o += `<rect x="${hx - rr * .22}" y="${hyy - rr * .95}" width="${rr * .44}" height="${rr * .7}" rx="${rr * .08}" fill="#ffd9b0" opacity=".75"/>`;
+    }
+  }
+  return o;
+}
 function clubHTML() {
-  const pick = (id) => WORKS.find((w) => w.id === id);
-  const main = pick('sunset-session'), l = pick('loud-garden'), r = pick('cosmic-smoke');
-  const crowd = Array.from({ length: 15 }, (_, i) => {
-    const up = i % 4 === 1, x = i / 14 * 104 - 2, s = .8 + ((i * 37) % 10) / 30, d = -((i * 0.23) % 0.68).toFixed(2);
-    return `<i class="cr${up ? ' up' : ''}" style="left:${x.toFixed(1)}%;--s:${s.toFixed(2)};animation-delay:${d}s"><svg viewBox="0 0 40 60" aria-hidden="true"><path d="M20 4a8 9 0 1 1 0 18a8 9 0 1 1 0-18Z"/><path d="M4 60Q4 30 20 26Q36 30 36 60Z"/>${up ? '<path d="M8 36L2 8L6 7L13 32Z"/>' : ''}</svg></i>`;
-  }).join('');
-  const beams = ['#ff4fd8', '#39d8ff', '#ffb347', '#8b5bff', '#39d8ff', '#ff4fd8'].map((c, i) => `<i class="beam" style="left:${10 + i * 16}%;--c:${c};animation-delay:${(-i * .9).toFixed(1)}s;--a:${i % 2 ? 1 : -1}"></i>`).join('');
-  const lasers = Array.from({ length: 6 }, (_, i) => `<i class="laser" style="--r:${-40 + i * 16}deg;animation-delay:${(-i * .4).toFixed(1)}s"></i>`).join('');
-  const sparks = Array.from({ length: 14 }, (_, i) => `<i style="--a:${i * 26}deg;--d:${(8 + (i % 5) * 7)}vh;--t:${(1.5 + (i % 4) * .6).toFixed(1)}s"></i>`).join('');
-  return `<div class="club-bg"></div>
-    <div class="club-wall">
-      <span class="scr side"><img src="${l.poster}" alt=""></span>
-      <span class="scr main"><video src="${main.src}" poster="${main.poster}" muted loop playsinline autoplay></video></span>
-      <span class="scr side"><img src="${r.poster}" alt=""></span>
+  const main = WORKS.find((w) => w.id === 'sunset-session');
+  const rows = [
+    ['back', 34, 3.4, 40, 3, '#ff9a5a'], ['mid', 22, 5.4, 52, 8, '#ff8a4a'], ['front', 12, 9, 70, 5, '#ff7a3a'],
+  ].map(([cls, n, r, H, seed, tone]) => `<div class="ov-crowd ${cls}">${[0, 1, 2].map((k) => `<svg viewBox="0 0 400 ${H}" preserveAspectRatio="xMidYMax slice" aria-hidden="true" style="animation-delay:${(-k * .23).toFixed(2)}s">${crowdRow(n, r, H, seed, k, tone)}</svg>`).join('')}</div>`).join('');
+  // 櫓：柱と梁は 2 本の線と、あいだのジグザグ
+  const post = (x, y0, y1) => { let z = `M${x} ${y0}V${y1}M${x + 4} ${y0}V${y1}M${x} ${y0}`; for (let y = y0; y < y1; y += 4) z += `L${x + 4} ${y + 2}L${x} ${y + 4}`; return z; };
+  const beam = (x0, x1, y) => { let z = `M${x0} ${y}H${x1}M${x0} ${y + 5}H${x1}M${x0} ${y}`; for (let x = x0; x < x1; x += 5) z += `L${x + 2.5} ${y + 5}L${x + 5} ${y}`; return z; };
+  const truss = post(46, 22, 150) + post(108, 22, 150) + beam(40, 118, 22) + post(188, 22, 150) + post(250, 22, 150) + beam(182, 260, 22);
+  const pct = (x, y) => `left:${(x / 300 * 100).toFixed(2)}%;top:${(y / 160 * 100).toFixed(2)}%`;
+  const pars = [...[52, 60, 68, 76, 84, 92, 100], ...[194, 202, 210, 218, 226, 234, 242]].map((x, i) => `<i class="par" style="${pct(x, 29)};animation-delay:${(-i * .19).toFixed(2)}s"></i>`).join('');
+  const panels = [62, 74, 86, 204, 216, 228].map((x, i) => `<i class="pnl" style="${pct(x, 34)};width:${(9 / 300 * 100).toFixed(2)}%;height:${(56 / 160 * 100).toFixed(2)}%;animation-delay:${(-i * .3).toFixed(1)}s"></i>`).join('');
+  const beams = [[56, -1], [80, 1], [98, -1], [202, 1], [222, -1], [244, 1]].map(([x, a], i) => `<i class="bm" style="${pct(x, 29)};--a:${a};animation-delay:${(-i * .8).toFixed(1)}s"></i>`).join('');
+  return `<div class="ov-sky"></div>
+    <svg class="ov-clouds" viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <path d="M-20 34Q60 22 140 30T300 26T430 32L430 38Q330 34 250 38T90 40T-20 42Z" fill="#7a3444" opacity=".55"/>
+      <path d="M-20 52Q80 40 170 48T340 44T430 50L430 56Q320 52 230 56T60 58T-20 60Z" fill="#c95a55" opacity=".55"/>
+      <path d="M20 16Q100 8 190 14T360 12L360 16Q260 16 170 19T20 20Z" fill="#9a4050" opacity=".45"/>
+      <path d="M-10 70Q90 60 190 68T420 64L420 69Q300 68 200 72T-10 75Z" fill="#f09a72" opacity=".5"/>
+      <path d="M60 84Q150 78 250 83T420 80L420 84Q320 85 240 87T60 88Z" fill="#f6b88a" opacity=".45"/></svg>
+    <svg class="ov-city" viewBox="0 0 400 120" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <path d="M0 120V70H20V62H60V74H90V66H120V78H150V70H180V120Z" fill="#4a2228" opacity=".7"/><path d="M220 120V74H250V66H280V76H320V68H360V78H400V120Z" fill="#4a2228" opacity=".7"/>
+      <path d="M-10 120V40L20 22L52 40V48H74V120Z" fill="#2a1216"/><path d="M20 22V6" stroke="#2a1216" stroke-width=".8"/><path d="M20 6L28 9L20 12Z" fill="#2a1216"/>
+      ${[0, 1, 2, 3].map((r) => [0, 1, 2, 3, 4].map((c) => `<path d="M${-2 + c * 11} ${58 + r * 14}v-5a2.4 2.4 0 0 1 4.8 0v5Z" fill="#b8583a" opacity="${(.25 + ((r + c) % 3) * .15).toFixed(2)}"/>`).join('')).join('')}
+      <path d="M318 120V84H346V120Z" fill="#d7b0a0" opacity=".85"/><path d="M324 84V66L332 58L340 66V84Z" fill="#e3c0ae" opacity=".9"/><path d="M332 58V52M330 54H334" stroke="#e3c0ae" stroke-width=".8"/><path d="M329 72a3 3 0 0 1 6 0v5h-6Z" fill="#7a3a34"/>
+      ${[[300, 30, -4], [364, 22, 5], [386, 34, -3]].map(([x, h, l]) => `<path d="M${x} 120Q${x + l * .5} ${120 - h * .5} ${x + l} ${120 - h}" stroke="#1e0d10" stroke-width="1.6" fill="none"/>${[-70, -30, 10, 50, 150, 190, 230].map((a) => `<path d="M${x + l} ${120 - h}q${(Math.cos(a * Math.PI / 180) * 7).toFixed(1)} ${(Math.sin(a * Math.PI / 180) * 4 - 1).toFixed(1)} ${(Math.cos(a * Math.PI / 180) * 12).toFixed(1)} ${(Math.sin(a * Math.PI / 180) * 6 + 3).toFixed(1)}" stroke="#1e0d10" stroke-width="1.3" fill="none" stroke-linecap="round"/>`).join('')}`).join('')}</svg>
+    <div class="ov-glow"></div>
+    <div class="ov-stage">
+      <div class="ov-beams">${beams}</div>
+      <svg class="rig" viewBox="0 0 300 160" aria-hidden="true">
+        <path d="${truss}" stroke="#3a2226" stroke-width=".7" fill="none"/>
+        <rect x="20" y="96" width="16" height="54" fill="#0b0608"/><rect x="264" y="96" width="16" height="54" fill="#0b0608"/><rect x="22" y="100" width="12" height="12" rx="6" fill="#1a0f12"/><rect x="266" y="100" width="12" height="12" rx="6" fill="#1a0f12"/>
+        <path d="M14 128H286V150H14Z" fill="#140a0c"/><path d="M14 128H286V130H14Z" fill="#3a1e1c"/></svg>
+      ${panels}${pars}
+      <span class="ov-screen" style="${pct(132, 32)};width:${(36 / 300 * 100).toFixed(2)}%"><video src="${main.src}" poster="${main.poster}" muted loop playsinline autoplay></video></span>
+      <svg class="dj" viewBox="0 0 300 160" aria-hidden="true"><path d="M150 84a8 8.6 0 1 1 0 17.2a8 8.6 0 1 1 0-17.2Z"/><path d="M141 88Q150 78 159 88L158 91Q150 86 142 91Z"/><path d="M132 128Q132 104 150 101Q168 104 168 128Z"/><path d="M136 112Q126 116 128 122L133 122Q132 118 140 116Z"/></svg>
+      <svg class="booth" viewBox="0 0 300 160" aria-hidden="true"><path d="M122 114H178L180 128H120Z" fill="#0b0608"/><path d="M122 114H178V116H122Z" fill="#ffcf9a" opacity=".55"/></svg>
+      <i class="spill"></i>
+      <svg class="fence" viewBox="0 0 300 160" aria-hidden="true"><path d="M0 146H300M0 152H300${Array.from({ length: 61 }, (_, i) => `M${i * 5} 146V156`).join('')}" stroke="#8a6a60" stroke-width=".5" opacity=".8"/></svg>
     </div>
-    <div class="club-ball"><i class="ball"></i><span class="refl">${sparks}</span></div>
-    <div class="club-beams">${beams}</div>
-    <div class="club-lasers">${lasers}</div>
-    <div class="club-booth">
-      <svg class="dj" viewBox="0 0 200 120" aria-hidden="true"><path d="M100 18a13 14 0 1 1 0 28a13 14 0 1 1 0-28Z"/><path d="M86 22Q100 6 114 22L112 28Q100 20 88 28Z"/><path d="M70 120Q70 58 100 52Q130 58 130 120Z"/><path d="M76 74Q60 82 64 92L72 92Q70 84 84 80Z"/></svg>
-      <svg class="desk" viewBox="0 0 200 120" aria-hidden="true"><path d="M20 78H180L186 120H14Z" fill="#0d0814"/><path d="M20 78H180V82H20Z" fill="#2a1a3a"/><circle cx="58" cy="80" r="11" fill="#1a1024"/><circle cx="142" cy="80" r="11" fill="#1a1024"/></svg>
-      <i class="led" style="left:29%;top:66.7%"></i><i class="led b" style="left:71%;top:66.7%"></i><i class="led c" style="left:46%;top:81%"></i><i class="led" style="left:50%;top:81%"></i><i class="led b" style="left:54%;top:81%"></i></div>
-    <div class="club-haze"></div>
-    <div class="club-crowd">${crowd}</div>
-    <div class="club-floor"></div>
+    <div class="ov-smoke a"></div><div class="ov-smoke b"></div>
+    ${rows}
     <button class="club-exit" aria-label="浜へもどる">${circleSVG()}</button>`;
 }
 function pulse() { const el = $('#club'); if (!el) return; el.classList.remove('kick'); void el.offsetWidth; el.classList.add('kick'); }
@@ -154,7 +187,7 @@ function enterClub() {
   // 美術館の音が鳴っていたら止めて、クラブの曲に（出るときに戻す）
   siteBeatWasOn = document.body.classList.contains('beat-on');
   if (siteBeatWasOn) $('#beat')?.click();
-  if (!clubBeat) { clubBeat = createBeat({ onKick: pulse, ambience: false }); clubBeat.setScene('night'); }
+  if (!clubBeat) { clubBeat = createBeat({ onKick: pulse, ambience: false }); clubBeat.setScene('cove'); } // 夕焼けの会場なので、サビのパート（ホーンのメロディとクラップ）
   if (!clubBeat.playing) clubBeat.toggle();
   $('video', el)?.play().catch(() => {});
 }
