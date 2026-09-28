@@ -448,7 +448,7 @@ function setForestNight(on) {
 }
 function buildRoomScene(r) {
   const svgFrom = svgSeq;
-  const S = SCENES[r.room.scene](W, r.stops, { birdGap: BIRD_SPOTS[r.room.id] ? Math.floor(BIRD_SPOTS[r.room.id][0]) : -1 });
+  const S = SCENES[r.room.scene](W, r.stops, { birdGap: BIRD_SPOTS[r.room.id] ? Math.floor(BIRD_SPOTS[r.room.id][0]) : -1, night: forestNight && NIGHTABLE.includes(r.room.scene) });
   r.sceneData = S;
   const moonlit = forestNight && NIGHTABLE.includes(r.room.scene);
   r.el.classList.toggle('moonlit', moonlit);

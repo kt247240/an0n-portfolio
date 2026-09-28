@@ -1755,7 +1755,7 @@ function railing(x0, x1, y, c = '#1b1a24') {
   return s;
 }
 
-export function sceneCove(W, stops) {
+export function sceneCove(W, stops, { night = false } = {}) {
   reseed(31 + stops);
   const P = PAL.dusk, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move), hz = 62;
   let far = '', mid = '', move = '';
@@ -1765,7 +1765,8 @@ export function sceneCove(W, stops) {
   far += streakCloud(-10, fw + 10, 9, 1.1, '#d9c3dc', '#f3d6d8') + streakCloud(-10, fw + 10, 20, 1, '#e0bfcf', '#fbd9c6');
   for (let x = R(-12, 4); x < fw + 20; x += R(16, 30)) { const y = R(12, 46), k = (y - 12) / 34, big = R(.8, 1.5); far += sunsetCloud(x, y, R(20, 34) * big, R(3, 5) * big, sx, [mixC('#f6e0e2', '#ffe9cc', k), mixC('#dcbccb', '#f2c2ae', k), mixC('#b39bb9', '#cf9ea2', k), '#fff0cf']); }
   far += streakCloud(-10, fw + 10, hz - 13, 1.4, '#e7b6ae', '#ffcf8f');
-  far += setSun(sx, hz - 6, 4.8);
+  // 夜（入口のランプで夜にしたとき）は夕日を描かない（乱数の呼び出しだけ合わせる）
+  { const sun = setSun(sx, hz - 6, 4.8); if (!night) far += sun; }
   // 遠くを渡る鳥
   // 遠景は 3 段：奥の雪山、真ん中のかすむ島々、手前の緑の岬（作品の山の描き方で、光の面と影の面を塗り分ける）。
   // 前の山の乱数の呼び出しはそのまま残す（浜の小物の位置を変えないため）。絵は位置から決まる別の乱数で
@@ -1780,7 +1781,7 @@ export function sceneCove(W, stops) {
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
   // 海の面と夕日の光の道（前の粒と白い筋は、乱数の呼び出しだけ残して描かない）
   glitter(sx, hz + .5, 100, '#fff6d8', { spread: .35, n: 170, a: 1 });
-  { const gS = hrng(fw + 7.7); far += seaSheen(-5, fw + 5, hz, 84, gS) + sunColumn(sx, hz, 80); }
+  { const gS = hrng(fw + 7.7); far += seaSheen(-5, fw + 5, hz, 84, gS) + (night ? '' : sunColumn(sx, hz, 80)); }
   // 水平線の帆船と、遠くの桟橋（先に灯りがともる）
   // 手前の緑の岬：作品と作品のあいだ（立ち止まると画面の真ん中）に岬の先が来るように。どれも先を夕日の側（左）へ向け、
   // 次の岬に重ならない長さに。最初の岬の先に防波堤と小さな灯台

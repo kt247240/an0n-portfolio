@@ -687,7 +687,8 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 /* 夕凪：歩くほど夕日が沈み、海面のきらめきが揺れる */
 .scene-cove .lightplay i { mix-blend-mode: screen; }
 .scene-cove .l1 { background: radial-gradient(55% 34% at 50% 58%, rgba(255, 176, 96, .46), rgba(255, 150, 90, .12) 55%, transparent 75%); transform: translateY(calc(var(--p, 0) * 16vh)); opacity: calc(1 - var(--p, 0) * .55); }
-.scene-cove .l2 { top: 62.4%; bottom: 12%; background: repeating-linear-gradient(transparent 0 1.2vh, rgba(255, 226, 170, .3) 1.2vh 1.45vh); -webkit-mask-image: radial-gradient(22% 100% at 50% 0%, #000, transparent); mask-image: radial-gradient(22% 100% at 50% 0%, #000, transparent); animation: glints 3.4s ease-in-out infinite alternate; } /* 夕日が水面に映る横向きのきらめき（水平線から下だけ。縦の筋に見えないように横線で） */
+.scene-cove .l2 { display: none; } /* 水面の横線のきらめきは、背景の光の道（.sunpath）に置きかえた */
+.room.moonlit.scene-cove .l1 { display: none; } /* 夜は夕日のにじみを出さない */
 @keyframes glints { from { transform: translateY(.25vh); opacity: .4; } to { transform: translateY(0); opacity: 1; } }
 /* 夜の庭：斜めに落ちる月明かりと、ネオンの霞がゆっくり息をする */
 .scene-night .lightplay i { mix-blend-mode: screen; }
@@ -1092,4 +1093,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
-.room.moonlit .sunpath i { background: radial-gradient(closest-side, rgba(214, 222, 246, .7), rgba(180, 194, 236, .28) 55%, rgba(170, 185, 230, 0)); }
+.room.moonlit .sunpath { display: none; } /* 夜は夕日がないので、光の道も出さない */
