@@ -197,32 +197,20 @@ export function shrub(x, y, s, tones, { spread = 68, n = 7, cls = 'sway slow', l
 // 葉のかたまり（梢や遠くの茂み）：丸いふくらみの集まりに、左上の縁だけ明るい光、下に影、縁に葉
 let gid = 0;
 export function bushMass(cx, cy, r, tones, n = 26, { cls = '' } = {}) {
-  const sh = tones[0], body = tones[Math.min(1, tones.length - 1)], hi = tones[2] || light(body, .14), rimHi = tones[3] || hi;
-  const id = `cp${gid++}`, k = r > 9 ? 9 : 7, lobes = [[cx, cy, r * .56]];
+  // 樹冠・茂み：入口と同じ描き方（crownMass）。ふくらみの位置は前と同じ乱数で決め、前の葉のぶんの乱数も同じ回数だけ呼ぶ（ほかの配置を変えないため）
+  const k = r > 9 ? 9 : 7, lobes = [[cx, cy, r * .56]];
   for (let i = 0; i < k; i++) { const a = (i / k) * 360 + R(-14, 14), d = r * R(.4, .56); lobes.push([cx + Math.sin(a * D) * d, cy - Math.cos(a * D) * d * .8, r * R(.3, .42)]); }
-  const circ = (dx, dy) => lobes.map(([x, y, rr]) => `<circle cx="${n1(x + dx)}" cy="${n1(y + dy)}" r="${n1(rr)}"/>`).join('');
   track(cx, cy, r * 1.08);
-  let s = `<defs><clipPath id="${id}">${circ(0, 0)}</clipPath></defs><g fill="${dark(sh, .1)}">${circ(r * .04, r * .1)}</g>`;
-  s += `<g clip-path="url(#${id})"><rect x="${n1(cx - r * 1.2)}" y="${n1(cy - r * 1.2)}" width="${n1(r * 2.4)}" height="${n1(r * 2.4)}" fill="${hi}"/><g fill="${body}">${circ(r * .1, r * .14)}</g><ellipse cx="${n1(cx + r * .1)}" cy="${n1(cy + r * .72)}" rx="${n1(r * 1.05)}" ry="${n1(r * .52)}" fill="${sh}" opacity=".75"/></g>`;
-  // 中の葉（ふくらみの境目に少しだけ）
-  for (let i = 0; i < Math.round(n * .22); i++) {
-    const a = R(-120, 120), d = r * R(.1, .45), x = cx + Math.sin(a * D) * d, y = cy - Math.cos(a * D) * d * .8;
-    s += oval(x, y, r * R(.16, .22), r * R(.07, .09), a + R(-20, 20), Math.cos(a * D) > .3 ? hi : body);
-  }
-  // 縁の葉：ふくらみの輪郭を葉の形でくずす
-  for (let i = 0; i < Math.round(n * .78); i++) {
-    const a = R(-160, 160), e = R(.72, .88), x = cx + Math.sin(a * D) * r * e, y = cy - Math.cos(a * D) * r * .8 * e, up = Math.cos(a * D);
-    const c = up > .25 ? (a < 0 ? rimHi : hi) : up > -.45 ? body : sh;
-    s += oval(x, y, r * R(.24, .32), r * R(.1, .13), a + R(-16, 16), c);
-  }
-  return anim(cls, cx, cy + r, s);
+  for (let i = 0; i < Math.round(n * .22); i++) { R(-120, 120); R(.1, .45); R(.16, .22); R(.07, .09); R(-20, 20); }
+  for (let i = 0; i < Math.round(n * .78); i++) { R(-160, 160); R(.72, .88); R(.24, .32); R(.1, .13); R(-16, 16); }
+  return anim(cls, cx, cy + r, crownMass(cx, cy, r, tones, hrng(cx * 7.3 + cy * 3.1 + r), lobes));
 }
 // 入口の並木の樹冠（ていねいな版）：丸いふくらみを重ね、ふちは小さな葉のふくらみで細かく波打たせる（浮いた葉は置かない）。
 // 光は左上から：ふくらみごとに左上が明るく、下へなめらかに暗くなる。葉の形の明るい面は、ふくらみの中にだけ
-function crownMass(cx, cy, r, tones, g) {
+function crownMass(cx, cy, r, tones, g, given = null) {
   const [sh, body, hi, rimHi] = [tones[0], tones[1], tones[2] || light(tones[1], .14), tones[3] || tones[2] || light(tones[1], .2)], id = `cm${gid++}`;
-  const k = r > 9 ? 9 : 7, lobes = [[cx, cy, r * .56]];
-  for (let i = 0; i < k; i++) { const a = (i / k) * 360 + (g() - .5) * 28, d = r * (.4 + g() * .16); lobes.push([cx + Math.sin(a * D) * d, cy - Math.cos(a * D) * d * .8, r * (.3 + g() * .12)]); }
+  const k = r > 9 ? 9 : 7, lobes = given || [[cx, cy, r * .56]];
+  if (!given) for (let i = 0; i < k; i++) { const a = (i / k) * 360 + (g() - .5) * 28, d = r * (.4 + g() * .16); lobes.push([cx + Math.sin(a * D) * d, cy - Math.cos(a * D) * d * .8, r * (.3 + g() * .12)]); }
   // ふちの小さなふくらみ（葉のかたまり）：ふくらみの外周の上側に並べる
   const bumps = [];
   for (const [x, y, rr] of lobes) {
@@ -243,7 +231,7 @@ function crownMass(cx, cy, r, tones, g) {
   // 下へなめらかに暗く
   s += `<rect x="${n1(cx - r * 1.3)}" y="${n1(cy - r * .1)}" width="${n1(r * 2.6)}" height="${n1(r * 1.3)}" fill="url(#${sg})"/>`;
   // 光の当たるふくらみの中に、作品の葉（葉脈で明るい半分と暗い半分に塗り分けた葉）を、下向きにそろえて少しだけ
-  for (const [x, y, rr] of lobes) { if (y > cy + r * .15) continue; for (let i = 0; i < 4; i++) { const lx = x - rr * (.5 - g() * .8), ly = y - rr * (.3 - g() * .6); { const L = rr * (.2 + g() * .08); s += splitLeaf(lx, ly, L, L * .42, 100 + g() * 50, mixC(hi, rimHi, .5), body, .75); } } }
+  for (const [x, y, rr] of lobes) { if (y > cy + r * .15 || r < 3.5) continue; for (let i = 0; i < 4; i++) { const lx = x - rr * (.5 - g() * .8), ly = y - rr * (.3 - g() * .6); { const L = rr * (.2 + g() * .08); s += splitLeaf(lx, ly, L, L * .42, 100 + g() * 50, mixC(hi, rimHi, .5), body, .75); } } }
   s += '</g>';
   // ふちの葉：ふくらみのふちから外へ生える形で並べる（かたまりから離れた葉は置かない）。上は光の色、下は陰の色
   const warm = mixC(rimHi, '#f2e6a6', .25);
@@ -314,7 +302,19 @@ export function drape(x0, x1, y, depth, c, { cls = 'hang' } = {}) {
     d += `Q${n1(ax + (bx - ax) * .5)} ${n1(Math.max(ay, by) + depth * .1)} ${n1(bx)} ${n1(by)}`;
   }
   d += `L${n1(x1)} -5Z`;
-  return `<path d="${d}" fill="${c}" class="${cls}" style="transform-origin:${n1((x0 + x1) / 2)}px 0px;animation-delay:${n1(-R(0, 5))}s"/>`;
+  // 描き込み（位置から決まる別の乱数で。前の乱数の呼び出しは変えない）：
+  // 上ほど暗く先ほど明るい色、垂れの左のふちに光、長い垂れには苔の筋と、先に小さな葉
+  const g = hrng(x0 * 1.9 + y * 3.3 + depth), id = `dr${gid++}`, [gg, gd] = lgrad([[0, dark(c, .22)], [.5, c], [1, light(c, .06)]], [0, 0, 0, 1]);
+  let inner = `<rect x="${n1(x0 - 2)}" y="-5" width="${n1(x1 - x0 + 4)}" height="${n1(y + depth * 1.4 + 6)}" fill="${light(c, .16)}"/><path d="${d}" transform="translate(.55 .15)" fill="url(#${gg})"/>`;
+  let tips = '';
+  pts.forEach(([px, py], i) => {
+    const long = py - y > depth * .62;
+    if (long) {
+      inner += `<path d="M${n1(px - .2)} ${n1(y)}Q${n1(px + (g() - .5) * 1.2)} ${n1((y + py) / 2)} ${n1(px + .1)} ${n1(py - .6)}" stroke="${dark(c, .18)}" stroke-width="${n2(.18 + g() * .12)}" fill="none" opacity=".55" stroke-linecap="round"/>`;
+      if (g() < .7) tips += splitLeaf(px + (g() - .5) * .6, py - .4, .9 + g() * .7, .38, 70 + g() * 40, light(c, .1), dark(c, .08));
+    } else if (g() < .3) inner += `<ellipse cx="${n1(px)}" cy="${n1(py - .5)}" rx="${n2(.5 + g() * .5)}" ry=".25" fill="${dark(c, .12)}" opacity=".4"/>`;
+  });
+  return `<g class="${cls}" style="transform-origin:${n1((x0 + x1) / 2)}px 0px;animation-delay:${n1(-R(0, 5))}s"><defs>${gd}<clipPath id="${id}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="${c}"/><g clip-path="url(#${id})">${inner}</g>${tips}</g>`;
 }
 // つる
 export function vine(x, y0, len, stem, tones, { cls = 'hang' } = {}) {
@@ -675,7 +675,9 @@ function canopyFringe(x0, x1, tones) {
   let s = '';
   for (let x = x0; x < x1; x += 2.6 + d() * 3.4) {
     const y = 5 + d() * 7, n = 5 + Math.floor(d() * 4), base = Math.floor(d() * 3);
-    for (let k = 0; k < n; k++) { const a = 50 + d() * 80, l = 1.6 + d() * 1.6; s += leaf(x + (d() - .5) * 3, y + d() * 2.2, l, a, tones[Math.min(tones.length - 1, base + Math.floor(d() * 2.4))]); }
+    // 房の葉は、作品の葉の描き方（葉脈で明るい半分と暗い半分）。房ごとに下へ垂れる向きをそろえる
+    const lean = (d() - .5) * 30;
+    for (let k = 0; k < n; k++) { const a = 90 + lean + (k - n / 2) * 9 + (d() - .5) * 14, l = 1.6 + d() * 1.6, ci = Math.min(tones.length - 1, base + Math.floor(d() * 2.4)); s += splitLeaf(x + (d() - .5) * 3, y + d() * 2.2, l, l * .42, a, tones[Math.min(tones.length - 1, ci + 1)], tones[ci]); }
   }
   for (let x = x0; x < x1; x += 4 + d() * 7) s += `<ellipse cx="${n1(x)}" cy="${n1(1 + d() * 7)}" rx="${n1(.35 + d() * .6)}" ry="${n1(.25 + d() * .4)}" fill="#fff6c8" opacity="${n1(.35 + d() * .35)}"/>`;
   return s;
