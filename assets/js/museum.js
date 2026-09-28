@@ -554,16 +554,21 @@ function buildRoomScene(r) {
 // ヒップホップの小物は、森に自然に置けるものを各部屋 1 つまで（あとは苔むした岩など自然のもの）
 const STREET = {
   dapple: { intro: 'boombox', pool: ['rock'] },
-  water: { intro: null, pool: [] },
+  water: { intro: null, pool: [], extra: [[2.5, 'musicStandDeep', 'right']] }, // Deep In. のすぐ手前のデッキに、画面つきプレーヤー（インコの止まり木とぶつからないよう右へ）
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
   afterhours: { intro: 'musicStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
+};
+const MUSIC = {
+  musicStand: { art: 'assets/art/bhi-store.webp', track: 'assets/audio/bhi-store.mp3' },
+  musicStandDeep: { art: 'assets/works/deep-in.jpg', track: 'assets/audio/deep-in.mp3', bottom: 9.5, prop: 'musicBarrel' }, // 水辺は、作品と同じ樽の台に竹の枠のプレーヤー
 };
 function propHTML(kind, scene) {
   if (kind === 'rock') return { html: ROCK.svg(Math.floor(Math.random() * 2)), cls: 'rock', w: ROCK.w, bottom: 5 };
   if (kind === 'armchair' || kind === 'bookcrate') return { html: PROPS[kind].svg(), cls: '', w: PROPS[kind].w, bottom: kind === 'armchair' ? 7.4 : 7.8 };
   if (kind === 'recordStand') return { html: PROPS.recordStand.svg(), cls: '', w: PROPS.recordStand.w, bottom: 8 };
-  if (kind === 'musicStand') return { html: PROPS.musicStand.svg() + '<i class="mb-glow" aria-hidden="true"></i>', cls: 'music-stand', w: PROPS.musicStand.w, bottom: 8 }; // 小屋の画面つきプレーヤー（画面の光は、流れているあいだだけ） // 上にインコがとまるので高さを決めておく
+  // 画面つきプレーヤー（曲ごとに、画面の絵と曲を変える）。小屋は BHI STORE、水辺は Deep In.
+  if (MUSIC[kind]) return { html: PROPS[MUSIC[kind].prop || 'musicStand'].svg(MUSIC[kind].art) + '<i class="mb-glow" aria-hidden="true"></i>', cls: 'music-stand', w: PROPS.musicStand.w, bottom: MUSIC[kind].bottom ?? 8, track: MUSIC[kind].track }; // 画面の光は、流れているあいだだけ
   const P = PROPS[kind];
   return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : 7 + Math.random() * 3 };
 }
@@ -763,15 +768,16 @@ function buildProps(r) {
   const introX = (kind) => Math.max(W * .16, (PROPS[kind]?.w || 0) / 2 + 3);
   const spots = cfg.intro ? [cfg.introAt != null ? [cfg.introAt, W / 2, cfg.intro] : [0, introX(cfg.intro), cfg.intro]] : [];
   if (cfg.pool.length) for (let i = 1; i < r.items.length; i++) spots.push([i + .5, W / 2, cfg.pool[(i - 1) % cfg.pool.length]]);
-  (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + dx, kind])); // dx：金庫などとぶつからないよう横にずらす（vh）
+  (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + (dx === 'right' ? (W < 80 ? 0 : 7) : dx), kind])); // 'right'：広い画面では少し右へ、狭い画面では真ん中（台にかからないように） // dx：金庫などとぶつからないよう横にずらす（vh）
   L.innerHTML = spots.map(([s, x, kind]) => {
     const p = propHTML(kind, r.room.scene);
-    if (r.room.scene === 'attic') p.w *= kind === 'musicStand' ? (W < 80 ? 1.9 : 2.1) : W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように（画面つきプレーヤーは、スマホでも画面の絵が見えてタップしやすい大きさに）
+    if (MUSIC[kind]) p.w *= W < 80 ? 1.9 : 2.1; // 画面つきプレーヤーは、スマホでも画面の絵が見えてタップしやすい大きさに
+    else if (r.room.scene === 'attic') p.w *= W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように（画面つきプレーヤーは、スマホでも画面の絵が見えてタップしやすい大きさに）
     p.html = gradeColors(p.html, gradeOf(r.room.scene));
     const pos = p.bottom == null ? 'top:0' : `bottom:${p.bottom}vh`;
-    const eggKind = kind === 'recordStand' ? 'turntable' : kind === 'musicStand' ? 'musicbox' : kind;
+    const eggKind = kind === 'recordStand' ? 'turntable' : MUSIC[kind] ? 'musicbox' : kind;
     const egg = ['boombox', 'sneakers', 'turntable', 'musicbox'].includes(eggKind) ? ` data-egg="${eggKind}"` : '';
-    return `<div class="prop ${p.cls}${egg ? ' egg-prop' : ''}"${egg} style="left:${(s * W * FACTORS.mid + x) * U}px;${pos};width:${p.w}vh">${p.html}</div>`;
+    return `<div class="prop ${p.cls}${egg ? ' egg-prop' : ''}"${egg}${p.track ? ` data-track="${p.track}"` : ''} style="left:${(s * W * FACTORS.mid + x) * U}px;${pos};width:${p.w}vh">${p.html}</div>`;
   }).join('') + roomEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid) + birdHTML(r);
   buildSwimmers(r); buildLiving(r); // 小物を置いたあとに足す（innerHTML で消えないように）
 }

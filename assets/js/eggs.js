@@ -84,9 +84,9 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
   let lastActive = performance.now();
 
   // 小屋の画面つきプレーヤーの曲（最初にタップしたときに読み込む）
-  let musicbox = null;
-  const mbState = (on) => document.querySelectorAll('.music-stand').forEach((e) => e.classList.toggle('playing', on));
-  document.addEventListener('beat', (e) => { if (e.detail && musicbox && !musicbox.paused) musicbox.pause(); });
+  const tracks = new Map(); // 曲ごとに 1 つ
+  const mbState = (src, on) => document.querySelectorAll(`.music-stand[data-track="${src}"]`).forEach((e) => e.classList.toggle('playing', on));
+  document.addEventListener('beat', (e) => { if (e.detail) tracks.forEach((a) => { if (!a.paused) a.pause(); }); });
   // ---- クリックで反応する隠し小物 ----
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-egg]');
@@ -124,8 +124,10 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
         break;
       case 'musicbox': {
         // 小屋の画面つきプレーヤー：タップで BHI STORE の曲を 1 回流す／止める（ビートやラジオが鳴っていたら止めてから。最後まで流れたら止まり、もう一度タップで最初から）
-        if (!musicbox) { musicbox = new Audio('assets/audio/bhi-store.mp3'); musicbox.loop = false; musicbox.preload = 'auto'; musicbox.addEventListener('pause', () => mbState(false)); musicbox.addEventListener('ended', () => mbState(false)); musicbox.addEventListener('play', () => mbState(true)); }
-        if (musicbox.paused) { if (isBeatOn()) toggleBeat(); musicbox.play().catch(() => mbState(false)); } else musicbox.pause();
+        const src = el.dataset.track || 'assets/audio/bhi-store.mp3';
+        if (!tracks.has(src)) { const a = new Audio(src); a.preload = 'auto'; a.addEventListener('pause', () => mbState(src, false)); a.addEventListener('ended', () => mbState(src, false)); a.addEventListener('play', () => mbState(src, true)); tracks.set(src, a); }
+        const a = tracks.get(src);
+        if (a.paused) { if (isBeatOn()) toggleBeat(); tracks.forEach((o) => { if (o !== a && !o.paused) o.pause(); }); a.play().catch(() => mbState(src, false)); } else a.pause();
         el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
         break;
       }
