@@ -9,7 +9,7 @@ const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
 const R = (a, b) => a + rnd() * (b - a);
 const f1 = (v) => Math.round(v * 10) / 10;
 
-// 朝の森：小鳥の群れが弧を描いて横切る（落ち葉はやめた）
+// 朝の森：小鳥の群れが弧を描いて横切り、葉が一枚ひらひら落ちる（部屋の入口だけ。最初の作品へ歩き出すと消える）
 function forest() {
   s = 11;
   let birds = '';
@@ -19,7 +19,8 @@ function forest() {
     birds += `<g class="ib-fly" style="--y:${f1(y)}px;--d:${f1(d)}s;--dur:${f1(R(7, 9))}s"><g transform="scale(${Math.round(sc * 100) / 100})"><g class="ib-flap" style="--d:${f1(R(0, .4))}s">
       <path d="M-.3 0Q-2.8 -2.6 -5.6 -.8Q-2.8 -1 -.3 .6Z" fill="#4a5e46"/><path d="M.3 0Q2.8 -2.6 5.6 -.8Q2.8 -1 .3 .6Z" fill="#56694f"/></g><ellipse cx="0" cy=".2" rx=".9" ry=".4" fill="#3f5240"/><path d="M.7 .1l.9 -.1l-.7 .35Z" fill="#3f5240"/></g></g>`;
   }
-  return birds;
+  const leaves = [0, 1, 2].map((i) => `<g class="ib-fall" style="--x:${f1(R(70, 130))}px;--d:${i * 2.4}s"><g class="ib-spin"><path d="M0 0C1.6 -.6 1.6 -3.4 0 -4.2C-1.6 -3.4 -1.6 -.6 0 0Z" fill="${['#a5c23e', '#769721', '#c9d77a'][i]}"/></g></g>`).join('');
+  return birds + leaves;
 }
 // 水辺：落ち葉が一枚、ゆっくり流れていく（真ん中の大きな波紋はやめた。水面の波紋は葉や石のまわりの小さなものだけ）
 function jungle() {

@@ -832,7 +832,7 @@ document.addEventListener('click', (e) => {
 }, true);
 
 // 部屋の背景をタップ／クリックしたときの、小さな反応（作品やボタンの上では何もしない）
-// 森＝光の粒がふわっと舞う（葉が落ちる表現は使わない）、水辺＝波紋と鯉が散る、夕凪＝砂が舞いカモメが飛び立つ、夜の庭＝ホタルが散る、小屋＝ほこりが舞う
+// 森＝光の粒がふわっと舞う（絵がかかっている部屋なので、葉は落とさない）、水辺＝波紋と鯉が散る、夕凪＝砂が舞いカモメが飛び立つ、夜の庭＝ホタルが散る、小屋＝ほこりが舞う
 document.addEventListener('click', (e) => {
   if (vOpen || e.target.closest('.work, button, a, [data-egg], #viewer, #vault, header, nav')) return;
   const r = currentRoom; if (!r || !e.target.closest('.room')) return;
@@ -1274,10 +1274,12 @@ const parts = [];
 if (location.search.includes('memdebug')) window.__parts = parts; // 点検用
 const R = (a, b) => a + Math.random() * (b - a);
 const THEMES = {
-  // 落ち葉は出さない（葉が落ちてくる表現は、どの部屋でも使わない）
-  forest: [[5, () => ({ k: 'mote', vx: R(-.5, .5), vy: R(-.6, .2), life: R(5, 9), s: R(.15, .35), x: R(0, 100), y: R(10, 90) })]],
+  // 落ち葉は、絵がかかっていない場面（入口・部屋の入口）でだけ。作品が画面に入ったら出さない（spawn で止める）
+  forest: [[5, () => ({ k: 'mote', vx: R(-.5, .5), vy: R(-.6, .2), life: R(5, 9), s: R(.15, .35), x: R(0, 100), y: R(10, 90) })],
+    [2, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.3), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#c9d77a'][Math.floor(R(0, 3))] })]],
   // （部屋の中を漂うキラキラ（四つ星の光）は出さない：作品の前で浮いて見えるので。さわったときの小さな反応だけに残す）
-  jungle: [[3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
+  jungle: [[4, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.4), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#47733c'][Math.floor(R(0, 3))] })],
+    [3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
   cove: [[6, () => ({ k: 'sand', vx: R(18, 30), vy: R(-1, 1), life: R(1.5, 2.5), s: R(.12, .28), x: R(-10, 60), y: R(78, 100) })]],
   // 小屋の外は雪。中には漂う粒を出さない（ほこりの白い点は、壁の前で雪のように浮いて見えて不自然なので。背景をさわったときの反応だけ残す）
   snow: [[9, () => ({ k: 'snow', vx: R(-1.2, 1.2), vy: R(3, 6), life: R(8, 14), s: R(.18, .45), x: R(-5, 105), y: -3 })]],
@@ -1308,6 +1310,7 @@ function spawn(theme, rate, dt, list, zRange = [1, 1]) {
     while (n > 0) {
       if (Math.random() < n) {
         const q = { ...make(), age: 0, ph: R(0, 10), z: R(...zRange), theme };
+        if (q.k === 'leaf' && (GEO.workRects?.length || list !== parts)) { n -= 1; continue; } // 絵がかかっている場面（とビューア）では、葉を落とさない
         if (q.k === 'leaf' && gaps) {
           if (!gaps.length) { n -= 1; continue; }
           const total = gaps.reduce((a, [l, r]) => a + (r - l), 0); let pick = Math.random() * total, g = gaps[0];
@@ -1768,6 +1771,7 @@ function frame(now) {
     spawn(activeTheme, currentRoom || inEntrance || inArtist ? 1 : 0, dt, parts);
     stepP(parts, dt);
     // 落ちながら作品の枠の列に入りそうな葉は、枠の手前で薄れて消える（枠の後ろへ回らない）
+    if (GEO.workRects?.length) for (const q of parts) { if (q.k === 'leaf') q.life = Math.min(q.life, q.age + .6); } // 作品が画面に入ったら、落ちている葉はすぐ消す
     if (GEO.workRects?.length) for (const q of parts) { if (q.k !== 'leaf') continue; for (const b of GEO.workRects) { const l = b.left / vw * 100 - 3, r = b.right / vw * 100 + 3; if (q.x > l && q.x < r && q.y > b.top / vh * 100 - 12) { q.life = Math.min(q.life, q.age + .8); break; } } }
     // 粒子がひとつもないときは、画面いっぱいの canvas を消し直さない
     if (parts.length || fxDirty) {
