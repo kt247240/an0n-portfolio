@@ -557,12 +557,13 @@ const STREET = {
   water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
-  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
+  afterhours: { intro: 'musicStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
 function propHTML(kind, scene) {
   if (kind === 'rock') return { html: ROCK.svg(Math.floor(Math.random() * 2)), cls: 'rock', w: ROCK.w, bottom: 5 };
   if (kind === 'armchair' || kind === 'bookcrate') return { html: PROPS[kind].svg(), cls: '', w: PROPS[kind].w, bottom: kind === 'armchair' ? 7.4 : 7.8 };
-  if (kind === 'recordStand') return { html: PROPS.recordStand.svg(), cls: '', w: PROPS.recordStand.w, bottom: 8 }; // 上にインコがとまるので高さを決めておく
+  if (kind === 'recordStand') return { html: PROPS.recordStand.svg(), cls: '', w: PROPS.recordStand.w, bottom: 8 };
+  if (kind === 'musicStand') return { html: PROPS.musicStand.svg() + '<i class="mb-glow" aria-hidden="true"></i>', cls: 'music-stand', w: PROPS.musicStand.w, bottom: 8 }; // 小屋の画面つきプレーヤー（画面の光は、流れているあいだだけ） // 上にインコがとまるので高さを決めておく
   const P = PROPS[kind];
   return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : 7 + Math.random() * 3 };
 }
@@ -768,8 +769,8 @@ function buildProps(r) {
     if (r.room.scene === 'attic') p.w *= W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように
     p.html = gradeColors(p.html, gradeOf(r.room.scene));
     const pos = p.bottom == null ? 'top:0' : `bottom:${p.bottom}vh`;
-    const eggKind = kind === 'recordStand' ? 'turntable' : kind;
-    const egg = ['boombox', 'sneakers', 'turntable'].includes(eggKind) ? ` data-egg="${eggKind}"` : '';
+    const eggKind = kind === 'recordStand' ? 'turntable' : kind === 'musicStand' ? 'musicbox' : kind;
+    const egg = ['boombox', 'sneakers', 'turntable', 'musicbox'].includes(eggKind) ? ` data-egg="${eggKind}"` : '';
     return `<div class="prop ${p.cls}${egg ? ' egg-prop' : ''}"${egg} style="left:${(s * W * FACTORS.mid + x) * U}px;${pos};width:${p.w}vh">${p.html}</div>`;
   }).join('') + roomEggHTML(r.room.id, W, U, r.items.length, W * FACTORS.mid) + birdHTML(r);
   buildSwimmers(r); buildLiving(r); // 小物を置いたあとに足す（innerHTML で消えないように）
@@ -1670,6 +1671,7 @@ function toggleBeat() {
   beatBtn.setAttribute('aria-pressed', on);
   beatBtn.setAttribute('aria-label', on ? (RADIO ? 'ラジオを止める' : 'ビートを止める') : (RADIO ? 'ラジオを流す' : 'ビートを流す'));
   document.body.classList.toggle('beat-on', on);
+  document.dispatchEvent(new CustomEvent('beat', { detail: on })); // 小屋のプレーヤーの曲は、ビート／ラジオが始まったら止める
 }
 beatBtn.addEventListener('click', toggleBeat);
 if (!SOUND) document.body.classList.add('no-sound'); // ビートボタン・音の選択・ラジカセの「▶」を出さない

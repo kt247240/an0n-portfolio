@@ -1105,3 +1105,11 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
 .sunpath.moon i { background: radial-gradient(closest-side, rgba(240, 228, 190, .34), rgba(190, 188, 220, .12) 50%, rgba(160, 166, 210, 0)); } /* 夜は月の光の道（白く冷たい光） */
+
+/* 小屋の画面つきプレーヤー：流れているあいだ、画面の光がまわりにふわっとにじみ、赤い小さな灯りが緑に */
+.music-stand { cursor: pointer; }
+.music-stand .mb-glow { position: absolute; left: 22%; right: 22%; top: 2%; height: 38%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 170, 190, .45), rgba(255, 140, 170, .12) 55%, transparent); opacity: 0; transition: opacity .6s; pointer-events: none; mix-blend-mode: screen; }
+.music-stand.playing .mb-glow { opacity: 1; animation: mbpulse 2.2s ease-in-out infinite alternate; }
+.music-stand.playing .mb-led { fill: #5fd07a; }
+@keyframes mbpulse { from { transform: scale(1); opacity: .7; } to { transform: scale(1.08); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .music-stand.playing .mb-glow { animation: none; } }

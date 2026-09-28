@@ -83,6 +83,10 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
   let lastPointer = { x: 50, y: 60 };
   let lastActive = performance.now();
 
+  // 小屋の画面つきプレーヤーの曲（最初にタップしたときに読み込む）
+  let musicbox = null;
+  const mbState = (on) => document.querySelectorAll('.music-stand').forEach((e) => e.classList.toggle('playing', on));
+  document.addEventListener('beat', (e) => { if (e.detail && musicbox && !musicbox.paused) musicbox.pause(); });
   // ---- クリックで反応する隠し小物 ----
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-egg]');
@@ -118,6 +122,13 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
         beat.nextGroove();
         el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
         break;
+      case 'musicbox': {
+        // 小屋の画面つきプレーヤー：タップで BHI STORE の曲を流す／止める（ビートやラジオが鳴っていたら止めてから）
+        if (!musicbox) { musicbox = new Audio('assets/audio/bhi-store.mp3'); musicbox.loop = true; musicbox.preload = 'auto'; musicbox.addEventListener('pause', () => mbState(false)); musicbox.addEventListener('play', () => mbState(true)); }
+        if (musicbox.paused) { if (isBeatOn()) toggleBeat(); musicbox.play().catch(() => mbState(false)); } else musicbox.pause();
+        el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+        break;
+      }
       case 'tv': {
         const v = el.querySelector('video');
         // 番組が映っているときに画面をダブルクリックすると、作品として大きく見られる

@@ -29,6 +29,23 @@ export const PROPS = {
       <g class="arm"><path d="M47 17.6L45 21L37 21.4" stroke="#d8d0bc" stroke-width=".9" fill="none" stroke-linecap="round"/><rect x="35.6" y="20.6" width="2.2" height="1.4" rx=".3" fill="#bdb5a0"/></g><circle cx="47" cy="17.6" r="1.6" fill="#bdb5a0"/>
       <circle cx="47.6" cy="27" r="1.1" fill="#c9a36a"/><rect x="11" y="26.4" width="6" height="1.2" rx=".6" fill="#c9a36a" opacity=".8"/></svg>`,
   },
+  // 夜更けの小屋：同じサイドテーブルに、画面つきの小さなプレーヤー（左右にスピーカー、真ん中の画面に BHI STORE の絵）。
+  // 画面（どこでも）をタップすると曲が流れる／止まる（eggs.js の musicbox）
+  musicStand: {
+    w: 12, h: 13,
+    svg: () => `<svg viewBox="0 0 60 72"><ellipse cx="30" cy="70.6" rx="25" ry="1.8" fill="#000" opacity=".2"/>
+      <path d="M9 34L10.6 70H13.4L13.6 34ZM46.4 34L46.6 70H49.4L51 34Z" fill="#6b4630"/><path d="M11 34L11.8 70H13.4L13.6 34Z" fill="#7d5438"/>
+      <rect x="10" y="52" width="40" height="2.6" fill="#7d5438"/>
+      ${['#e8483b', '#2f6a44', '#e4c496', '#385871', '#df7418', '#c7b3e6', '#1f1d1a'].map((c, i) => `<rect x="${14 + i * 4.6}" y="${39.5 + (i % 3) * .8}" width="3.6" height="${12.5 - (i % 3) * .8}" fill="${c}" transform="rotate(${i === 6 ? 8 : 0} ${16 + i * 4.6} 52)"/>`).join('')}
+      <rect x="5" y="31" width="50" height="4" rx="1" fill="#8f602e"/><rect x="5" y="31" width="50" height="1.2" rx=".6" fill="#b07a48"/>
+      <ellipse cx="30" cy="31.2" rx="23" ry=".8" fill="#000" opacity=".25"/>
+      <rect x="7" y="4" width="46" height="27.4" rx="2.2" fill="#5a3b24"/><rect x="7" y="4" width="46" height="1.6" rx=".8" fill="#7a5234"/>
+      <rect x="8.4" y="5.8" width="43.2" height="24.2" rx="1.4" fill="#231d19"/>
+      ${[12.9, 47.1].map((x) => `<circle cx="${x}" cy="11.6" r="2" fill="#15110f"/><circle cx="${x}" cy="11.6" r="1.2" fill="#3a322c"/><circle cx="${x}" cy="21.4" r="4.3" fill="#15110f"/><circle cx="${x}" cy="21.4" r="3.4" fill="#3a322c"/><circle cx="${x}" cy="21.4" r="1.4" fill="#4a4038"/><circle cx="${x}" cy="27.6" r=".8" fill="#c9a36a"/>`).join('')}
+      <rect x="17.6" y="6.6" width="24.8" height="22.6" rx=".8" fill="#0e0c0b"/>
+      <image href="assets/art/bhi-store.webp" x="18.8" y="7.6" width="22.4" height="20.6" preserveAspectRatio="xMidYMid slice"/>
+      <rect x="20" y="29.6" width="4" height=".7" rx=".35" fill="#c9a36a" opacity=".8"/><circle cx="39.4" cy="29.95" r=".45" fill="#e8483b" class="mb-led"/></svg>`,
+  },
   turntable: {
     w: 22, h: 12,
     svg: () => `<svg viewBox="0 0 130 70"><rect x="2" y="30" width="126" height="38" rx="3" fill="#8f602e"/><rect x="2" y="30" width="126" height="6" fill="#a8764a"/>
