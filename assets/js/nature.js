@@ -217,6 +217,38 @@ export function bushMass(cx, cy, r, tones, n = 26, { cls = '' } = {}) {
   }
   return anim(cls, cx, cy + r, s);
 }
+// 入口の並木の樹冠（ていねいな版）：丸いふくらみを重ね、ふちは小さな葉のふくらみで細かく波打たせる（浮いた葉は置かない）。
+// 光は左上から：ふくらみごとに左上が明るく、下へなめらかに暗くなる。葉の形の明るい面は、ふくらみの中にだけ
+function crownMass(cx, cy, r, tones, g) {
+  const [sh, body, hi, rimHi] = [tones[0], tones[1], tones[2] || light(tones[1], .14), tones[3] || tones[2] || light(tones[1], .2)], id = `cm${gid++}`;
+  const k = r > 9 ? 9 : 7, lobes = [[cx, cy, r * .56]];
+  for (let i = 0; i < k; i++) { const a = (i / k) * 360 + (g() - .5) * 28, d = r * (.4 + g() * .16); lobes.push([cx + Math.sin(a * D) * d, cy - Math.cos(a * D) * d * .8, r * (.3 + g() * .12)]); }
+  // ふちの小さなふくらみ（葉のかたまり）：ふくらみの外周の上側に並べる
+  const bumps = [];
+  for (const [x, y, rr] of lobes) {
+    const n = Math.max(6, Math.round(rr * 1.6));
+    for (let i = 0; i < n; i++) { const a = -150 + 300 * (i + .2 + g() * .6) / n, br = rr * (.16 + g() * .08); bumps.push([x + Math.sin(a * D) * rr * .96, y - Math.cos(a * D) * rr * .96, br]); }
+  }
+  const all = lobes.concat(bumps), circ = (list, dx = 0, dy = 0, k2 = 1) => list.map(([x, y, rr]) => `<circle cx="${n1(x + dx)}" cy="${n1(y + dy)}" r="${n2(rr * k2)}"/>`).join('');
+  track(cx, cy, r * 1.12);
+  const [sg, sd] = lgrad([[0, sh, 0], [.55, sh, .35], [1, sh, .85]]);
+  let s = `<defs><clipPath id="${id}">${circ(all)}</clipPath>${sd}</defs>`;
+  // 地面側に落ちる、樹冠の影（少し右下にずらした同じ形）
+  s += `<g fill="${dark(sh, .08)}" opacity=".3">${circ(bumps.filter(([, y]) => y > cy), r * .02, r * .05)}</g>`;
+  s += `<g clip-path="url(#${id})"><rect x="${n1(cx - r * 1.3)}" y="${n1(cy - r * 1.3)}" width="${n1(r * 2.6)}" height="${n1(r * 2.6)}" fill="${hi}"/>`;
+  // ふくらみごとの陰：右下にずらした形で覆い、左上のふちだけ明るく残す
+  s += `<g fill="${body}">${circ(lobes, r * .07, r * .1, .97)}${circ(bumps, r * .05, r * .07)}</g>`;
+  // ふくらみどうしの境目：上のふくらみの下のふちに沿って、少し暗い面（奥行き）
+  s += `<g fill="${mixC(body, sh, .45)}" opacity=".5">${lobes.filter(([, y]) => y > cy - r * .5).map(([x, y, rr]) => `<path d="M${n1(x - rr * .95)} ${n1(y + rr * .1)}A${n2(rr)} ${n2(rr)} 0 0 0 ${n1(x + rr * .95)} ${n1(y + rr * .1)}A${n2(rr)} ${n2(rr * .7)} 0 0 1 ${n1(x - rr * .95)} ${n1(y + rr * .1)}Z"/>`).join('')}</g>`;
+  // ふくらみの境目に、葉の形の明るい面（上向きのふくらみの上だけ、向きをそろえて）
+  for (const [x, y, rr] of lobes) for (let i = 0; i < 3; i++) {
+    const a = -60 + g() * 50, lx = x - rr * (.35 - g() * .5), ly = y - rr * (.45 + g() * .25), L = rr * (.28 + g() * .12);
+    s += `<path d="M0 0Q${n1(L * .5)} ${n1(-L * .3)} ${n1(L)} 0Q${n1(L * .5)} ${n1(L * .3)} 0 0Z" transform="translate(${n1(lx)} ${n1(ly)}) rotate(${n1(a + 180)})" fill="${rimHi}" opacity=".45"/>`;
+  }
+  // 下へなめらかに暗く
+  s += `<rect x="${n1(cx - r * 1.3)}" y="${n1(cy - r * .1)}" width="${n1(r * 2.6)}" height="${n1(r * 1.3)}" fill="url(#${sg})"/></g>`;
+  return s;
+}
 // シダ：羽片は根元と先が短く、真ん中が長い
 export function fern(x, y, len, a, c, { cls = 'sway', n = 16 } = {}) {
   const bend = R(2.2, 4.5) * (rnd() < .5 ? -1 : 1), step = len / n, pts = [[x, y, a]];
@@ -1080,13 +1112,14 @@ function sceneEntrance(W) {
     const tones = [P.dark, P.mid, P.leaf, P.fresh].map((c) => mixC(c, hazeC, z * .7));
     mid += tree(x, yb, H, { trunkC, tones: null, w, lean: side * R(0, 1.5) * t, branches: 0 });
     const top = yb - H, cy = top + H * .24, cr = H * .2;
-    if (cy + cr > -4) { mid += bushMass(x, cy, cr, tones, 26) + bushMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, 18) + bushMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, 16); }
+    // 樹冠は crownMass で描く（前の bushMass は乱数の呼び出しだけ残して、並木の配置を変えない）
+    if (cy + cr > -4) { bushMass(x, cy, cr, tones, 26); bushMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, 18); bushMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, 16); const gC = hrng(x * 3.7 + cy); mid += crownMass(x, cy, cr, tones, gC) + crownMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, gC) + crownMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, gC); }
     if (t > .2) mid += shrub(x + side * w * 1.5, yb + .5, 3 + t * 9, [P.dark, P.mid, P.leaf, P.fresh].map((c) => mixC(c, hazeC, z * .7)), { leaf: .6 + t * 1.2, n: t > .6 ? 5 : 4 });
     if (t > .45 && rnd() < .6) mid += fern(x - side * w * 1.4, yb + .5, 4 + t * 9, -side * R(20, 50), mixC(P.leaf, hazeC, z * .5), { cls: '' });
   }
   mid += flowers(-5, cx - pw * .6, hz + 4, 104, 30, ['#fffaf2', '#f6d7e0', '#f2c14e', '#c7b3e6'], { scale: (y) => .35 + (y - hz) / deep * 1.6 });
   mid += flowers(cx + pw * .6, mw, hz + 4, 104, 30, ['#fffaf2', '#f6d7e0', '#f2c14e', '#c7b3e6'], { scale: (y) => .35 + (y - hz) / deep * 1.6 });
-  for (let x = -6; x < mw + 6; x += R(8, 13)) mid += bushMass(x, R(-7, -2), R(8, 12), [P.deep, P.dark, P.mid, P.leaf], 22);
+  for (let x = -6; x < mw + 6; x += R(8, 13)) { const y = R(-7, -2), rr = R(8, 12); bushMass(x, y, rr, [P.deep, P.dark, P.mid, P.leaf], 22); mid += crownMass(x, y, rr, [P.deep, P.dark, P.mid, P.leaf], hrng(x * 5.1 + 3)); }
   mid += beams(cx - 70, cx + 20, 7, '#fffbe0', { opacity: .12, slant: [16, 30] });
   // 小道のわき：切り株ときのこ、倒木（手前ほど大きく。案内人の道の上には置かない）
   mid += stump(cx - pw * 1.75, 93.5, 2.2, '#7a5638') + mushroom(cx - pw * 1.75 + 4, 93.8, 1, '#b8604a') + mushroom(cx - pw * 1.75 + 5.4, 94.1, .7, '#d4b884');
