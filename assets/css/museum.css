@@ -950,6 +950,12 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .sunpath { pointer-events: none; }
 .sunpath i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 242, 214, .9), rgba(255, 226, 180, .4) 55%, rgba(255, 214, 160, 0)); opacity: .5; animation: sunbar 3s ease-in-out infinite alternate; will-change: transform, opacity; }
 @keyframes sunbar { 0% { transform: translateX(-6%) scaleX(.82); opacity: .28; } 100% { transform: translateX(6%) scaleX(1.12); opacity: .85; } }
+/* 夕凪の浜：海の面のゆらぎ（横長のぼかした光と影が、左右に寄せては返して明滅） */
+.swell { border-radius: 50%; background: radial-gradient(closest-side, rgba(252, 232, 212, .6), rgba(252, 232, 212, .18) 60%, rgba(252, 232, 212, 0)); animation: swell 7s ease-in-out infinite alternate; will-change: transform, opacity; }
+.swell.dk { background: radial-gradient(closest-side, rgba(86, 136, 140, .4), rgba(86, 136, 140, .12) 60%, rgba(86, 136, 140, 0)); }
+.room.moonlit .swell { background: radial-gradient(closest-side, rgba(196, 208, 242, .32), rgba(196, 208, 242, .1) 60%, rgba(196, 208, 242, 0)); }
+.room.moonlit .swell.dk { background: radial-gradient(closest-side, rgba(18, 26, 64, .35), rgba(18, 26, 64, .1) 60%, rgba(18, 26, 64, 0)); }
+@keyframes swell { 0% { transform: translateX(calc(var(--dx) * -1)) scaleX(.85); opacity: .15; } 50% { opacity: 1; } 100% { transform: translateX(var(--dx)) scaleX(1.12); opacity: .2; } }
 /* 夕凪の浜（夜）：岬の家の窓の灯り。夜の部屋でだけ */
 .townlight { display: none; width: 1.6vh; height: 1.6vh; border-radius: 50%; background: radial-gradient(closest-side, var(--c) 0 16%, rgba(255, 190, 120, .35) 40%, rgba(255, 180, 110, 0)); }
 .room.moonlit .townlight { display: block; }
@@ -984,7 +990,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
 .flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
 @keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
-@media (prefers-reduced-motion: reduce) { .sunpath i, .townlight.blink, .harborlight b, .harborlight s, .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .swell, .sunpath i, .townlight.blink, .harborlight b, .harborlight s, .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
 
 /* 長押し：作品だけが照らされる */
 .room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }

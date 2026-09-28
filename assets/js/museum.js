@@ -696,6 +696,15 @@ function buildLiving(r) {
     const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 12 + t * 80; return `<i style="top:${(t * t * 100).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(.25 + t * .7).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
     S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
   }
+  // 夕凪の浜：海の面のゆらぎ。空を映す明るいゆらぎと、うねりの暗い帯が、ゆっくり寄っては離れて明滅する（奥ほど細く短く、ゆっくり）
+  if (D.sunpath) {
+    const hz = D.sunpath[1], fw = W + (r.stops - 1) * W * FACTORS.far + 40, rows = COARSE ? 7 : 10, sw = [];
+    for (let k = 0; k < rows; k++) {
+      const t = (k + .6) / rows, y = hz + .6 + (80 - hz) * t * t, w = 3 + t * 20, h = .16 + t * .55, gap = w * (COARSE ? 3.2 : 2.4);
+      for (let x = Math.random() * gap; x < fw; x += gap * (.7 + Math.random() * .6)) sw.push(`<i class="living swell${Math.random() < .42 ? ' dk' : ''}" style="left:${((x - w / 2) * U).toFixed(1)}px;top:${((y - h / 2) * U).toFixed(1)}px;width:${w.toFixed(1)}vh;height:${h.toFixed(2)}vh;animation-duration:${(5 + t * 3 + Math.random() * 3).toFixed(1)}s;animation-delay:${(-Math.random() * 8).toFixed(1)}s;--dx:${(w * .12).toFixed(2)}vh"></i>`);
+    }
+    S.insertAdjacentHTML('beforeend', sw.join(''));
+  }
   // 夕凪の浜（夜）：岬の家の窓に灯り。いくつかはときどき消えたり点いたりする（夜の部屋でだけ見える）
   if (D.houses && D.houses.length) S.insertAdjacentHTML('beforeend', D.houses.map(([x, y], i) => `<i class="living townlight${i % 3 === 0 ? ' blink' : ''}" style="left:${((x - .8) * U).toFixed(1)}px;top:${((y - .8) * U).toFixed(1)}px;animation-delay:${(-(i * 7.3) % 37).toFixed(1)}s;--c:${['#ffcf85', '#ffe0a6', '#ffbd78'][i % 3]}"></i>`).join(''));
   // 夕凪の浜：遠くの空を、飛行機が飛行機雲を引いてゆっくり横切る（空は動かない層なので、いつ見ても画面の中を通る）
