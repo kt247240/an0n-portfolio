@@ -19,7 +19,7 @@ export const ARTIST = {
 };
 
 // 全収蔵数（まだ公開していない作品も含めた予定数）。部屋ごとの「搬入中」の表示に使う
-export const PLANNED_TOTAL = 20;
+export const PLANNED_TOTAL = 21;
 // 音（曲・環境音・効果音）を使うか。false なら音の選択画面・ビートボタンも出さない
 export const SOUND = true;
 // 森のラジオ：SoundCloud のプレイリスト（非公開のシークレットリンクなら secret も）。null にすると、サイトで作った曲（beat.js）を流す
@@ -33,7 +33,7 @@ export const ROOMS = [
     lead: '睡蓮の浮かぶ水の上、木のデッキに作品を立てかけて。' },
   { id: 'dusk', no: 'III', ja: '夕凪の間', en: 'Evening Calm', scene: 'cove', frame: 'post', planned: 4,
     lead: '夕焼けと珊瑚の浜辺。吊りランプの灯りの下で。' },
-  { id: 'night', no: 'IV', ja: '夜の庭', en: 'Night Garden', scene: 'night', frame: 'lightbox', planned: 5,
+  { id: 'night', no: 'IV', ja: '夜の庭', en: 'Night Garden', scene: 'night', frame: 'lightbox', planned: 6,
     lead: 'ホタルとネオンの灯る庭。この先は、もう閉館後。' },
   { id: 'afterhours', no: 'V', ja: '夜更けの小屋', en: 'Late Night Cabin', scene: 'attic', frame: 'wall', planned: 5,
     lead: '明かりの消えた屋根裏。懐中電灯で、そっと照らしてみてください。' },
@@ -117,6 +117,13 @@ export const WORKS = [
     title: 'Paradise Falls', ja: '', year: '2026', medium: 'Cover Art (Motion)', credit: 'Kapsoul feat. BHI',
     type: 'video', src: 'assets/works/paradise.mp4', poster: 'assets/works/paradise.jpg', aspect: 0.8,
     note: '夜の大通りを歩くふたり。ネオンと煙とヤシの木。',
+  },
+  {
+    id: 'dope-boy-future', room: 'night',
+    nfs: true, // 非売品（価格の代わりに NOT FOR SALE）
+    title: 'DOPE BOY FUTURE', ja: '', year: '2026', medium: 'Animation', credit: 'feat. BHI',
+    type: 'video', src: 'assets/works/dope-boy-future.mp4', poster: 'assets/works/dope-boy-future.jpg', aspect: 1,
+    note: '夜の BHI STORE。ネオンの看板、ビデオの並ぶ店先、2 階の窓にはミラーボールと踊るふたり。',
   },
   {
     id: 'night-piano', room: 'night',
