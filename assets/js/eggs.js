@@ -123,8 +123,8 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
         el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
         break;
       case 'musicbox': {
-        // 小屋の画面つきプレーヤー：タップで BHI STORE の曲を流す／止める（ビートやラジオが鳴っていたら止めてから）
-        if (!musicbox) { musicbox = new Audio('assets/audio/bhi-store.mp3'); musicbox.loop = true; musicbox.preload = 'auto'; musicbox.addEventListener('pause', () => mbState(false)); musicbox.addEventListener('play', () => mbState(true)); }
+        // 小屋の画面つきプレーヤー：タップで BHI STORE の曲を 1 回流す／止める（ビートやラジオが鳴っていたら止めてから。最後まで流れたら止まり、もう一度タップで最初から）
+        if (!musicbox) { musicbox = new Audio('assets/audio/bhi-store.mp3'); musicbox.loop = false; musicbox.preload = 'auto'; musicbox.addEventListener('pause', () => mbState(false)); musicbox.addEventListener('ended', () => mbState(false)); musicbox.addEventListener('play', () => mbState(true)); }
         if (musicbox.paused) { if (isBeatOn()) toggleBeat(); musicbox.play().catch(() => mbState(false)); } else musicbox.pause();
         el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
         break;
