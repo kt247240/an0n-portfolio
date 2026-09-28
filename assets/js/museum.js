@@ -509,6 +509,12 @@ function buildRoomScene(r) {
       // 台座・柱が、作品の大きさによらず地面（遊歩道・桟橋・砂浜）まで届くように
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
       if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
+      // 作品の台の正面にはめ込む画面つきプレーヤー（Deep In. の樽の台）。台の高さの真ん中に、台の幅に収まる大きさで
+      const onPlinth = PLINTH_MUSIC[w.id];
+      if (onPlinth && groundY) {
+        const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)), pw = Math.min(plinth * 1.6, h * w.aspect * .55, 24), ph = pw * 30.2 / 48;
+        el.insertAdjacentHTML('beforeend', `<button class="music-stand pedestal-player egg-prop" data-egg="musicbox" data-track="${onPlinth.track}" aria-label="曲を流す" style="width:${pw.toFixed(2)}vh;top:calc(100% + ${Math.max(.8, (plinth - ph) / 2).toFixed(2)}vh)">${gradeColors(PROPS.musicPanel.svg(onPlinth.art), gradeOf(r.room.scene))}<i class="mb-glow" aria-hidden="true"></i></button>`);
+      }
       const wv = el.querySelector('video');
       if (wv) { wv.dataset.vsrc = wv.getAttribute('src'); wv.removeAttribute('src'); wv.addEventListener('playing', () => wv.classList.add('ready')); wv.addEventListener('emptied', () => wv.classList.remove('ready')); }
       const cv = el.querySelector('.canvas');
@@ -554,11 +560,12 @@ function buildRoomScene(r) {
 // ヒップホップの小物は、森に自然に置けるものを各部屋 1 つまで（あとは苔むした岩など自然のもの）
 const STREET = {
   dapple: { intro: 'boombox', pool: ['rock'] },
-  water: { intro: null, pool: [], extra: [[2.5, 'musicStandDeep', 'right']] }, // Deep In. のすぐ手前のデッキに、画面つきプレーヤー（インコの止まり木とぶつからないよう右へ）
+  water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
   afterhours: { intro: 'musicStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
+const PLINTH_MUSIC = { 'deep-in': { art: 'assets/works/deep-in.jpg', track: 'assets/audio/deep-in.mp3' } }; // 作品の台にはめ込むプレーヤー
 const MUSIC = {
   musicStand: { art: 'assets/art/bhi-store.webp', track: 'assets/audio/bhi-store.mp3' },
   musicStandDeep: { art: 'assets/works/deep-in.jpg', track: 'assets/audio/deep-in.mp3', bottom: 9.5, prop: 'musicBarrel' }, // 水辺は、作品と同じ樽の台に竹の枠のプレーヤー

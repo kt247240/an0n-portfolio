@@ -5,6 +5,27 @@
 
 const cone = (x, y, r) => `<g class="cone" style="transform-origin:${x}px ${y}px"><circle cx="${x}" cy="${y}" r="${r}" fill="#262420"/><circle cx="${x}" cy="${y}" r="${r * .72}" fill="#35322b"/><circle cx="${x}" cy="${y}" r="${r * .3}" fill="#1a1814"/><circle cx="${x - r * .25}" cy="${y - r * .3}" r="${r * .12}" fill="#57524a"/></g>`;
 
+// 水辺の画面つきプレーヤー（樽の台・苔・シダ・竹の枠）。musicBarrel と musicPanel（樽の台の正面にはめ込む版）で使う
+function PROPS_MUSIC_BARREL(art) {
+      const leaf = (x, y, L, a, c1, c2) => `<path d="M0 0Q${L * .45} ${-L * .19} ${L} 0Z" transform="translate(${x} ${y}) rotate(${a})" fill="${c1}"/><path d="M0 0Q${L * .45} ${L * .19} ${L} 0Z" transform="translate(${x} ${y}) rotate(${a})" fill="${c2}"/>`;
+      let staves = '';
+      for (let i = 0; i < 7; i++) { const x = 12.5 + i * 5.6; staves += `<path d="M${x} 35.5Q${x - (i - 3) * .5} 52 ${x} 68.4h2.2Q${x + 2.2 - (i - 3) * .5} 52 ${x + 2.2} 35.5Z" fill="${i % 2 ? '#6e4d33' : '#7f5a3c'}" opacity=".55"/>`; }
+      const fern = [[-160, 7], [-140, 8.4], [-118, 7.6], [-100, 6]].map(([a, L], i) => leaf(12 + i * .6, 70, L, a, '#6f8f3a', '#4f6a2c')).join('') + [[-20, 7.4], [-42, 8.2], [-64, 6.6]].map(([a, L], i) => leaf(47 - i * .6, 70, L, a, '#7d9a44', '#56722f')).join('');
+      return `<svg viewBox="0 0 60 72"><ellipse cx="30" cy="70.4" rx="24" ry="1.8" fill="#000" opacity=".22"/>
+      <path d="M11 34Q7.4 52 11 69.4H49Q52.6 52 49 34Z" fill="#7a5638"/>${staves}
+      <path d="M11 34Q7.4 52 11 69.4H14Q11.4 52 14 34Z" fill="#5f412a"/><path d="M46 34Q48.6 52 46 69.4H49Q52.6 52 49 34Z" fill="#5f412a"/>
+      <path d="M9.6 41.6Q30 43 50.4 41.6V44.2Q30 45.6 9.6 44.2Z" fill="#3a3632"/><path d="M10 61Q30 62.4 50 61V63.6Q30 65 10 63.6Z" fill="#3a3632"/>
+      <ellipse cx="30" cy="34" rx="19.4" ry="2.2" fill="#8f6a44"/><ellipse cx="30" cy="34" rx="17" ry="1.5" fill="#6a4a30"/>
+      <path d="M10.8 33.6Q14 31.6 18 33.2Q21 34.8 19.4 37.6Q17.6 36 15.6 36.8Q13.4 38.8 11.4 36.4Z" fill="#6f8f3a"/><path d="M40 33.4Q44.6 31.8 49.2 33.6Q50 36 47.6 37.8Q46.4 35.8 44 36.4Q41.6 37.6 40.6 35.6Z" fill="#7d9a44"/><path d="M26 34.6Q29 33.4 32 34.6Q31.4 36 29.4 35.8Q27.4 36.2 26 34.6Z" fill="#6f8f3a"/>
+      <ellipse cx="30" cy="31.2" rx="22" ry=".8" fill="#000" opacity=".25"/>
+      <rect x="7" y="4" width="46" height="27.4" rx="2.4" fill="#231d19"/>
+      ${[7, 50.4].map((x) => `<rect x="${x}" y="3.4" width="2.6" height="28.6" rx="1.3" fill="#a88a52"/><rect x="${x}" y="11" width="2.6" height=".7" fill="#7d6538"/><rect x="${x}" y="21.4" width="2.6" height=".7" fill="#7d6538"/><rect x="${x + .5}" y="3.4" width=".6" height="28.6" fill="#c2a66a" opacity=".6"/>`).join('')}
+      <rect x="7.6" y="2.6" width="44.8" height="2.4" rx="1.2" fill="#b39458"/><rect x="26" y="2.6" width=".6" height="2.4" fill="#7d6538"/><rect x="7.6" y="29.8" width="44.8" height="2.2" rx="1.1" fill="#a88a52"/>
+      ${[13.4, 46.6].map((x) => `<circle cx="${x}" cy="11.4" r="1.9" fill="#15110f"/><circle cx="${x}" cy="11.4" r="1.1" fill="#3a322c"/><circle cx="${x}" cy="20.8" r="4" fill="#15110f"/><circle cx="${x}" cy="20.8" r="3.2" fill="#3a322c"/><circle cx="${x}" cy="20.8" r="1.3" fill="#4a4038"/><circle cx="${x}" cy="27" r=".75" fill="#c9a36a"/>`).join('')}
+      <rect x="18" y="6.2" width="24" height="22.2" rx=".8" fill="#0e0c0b"/>
+      <image href="${art}" x="19.1" y="7.2" width="21.8" height="20.2" preserveAspectRatio="xMidYMid slice"/>
+      <circle cx="39.4" cy="29.2" r=".45" fill="#e8483b" class="mb-led"/>${fern}</svg>`;
+    }
 export const PROPS = {
   boombox: {
     w: 20, h: 12,
@@ -49,27 +70,10 @@ export const PROPS = {
   // 水辺用：作品と同じ木の樽を台にして（縁に苔、足もとにシダ）、竹の枠のプレーヤーをのせる
   musicBarrel: {
     w: 12, h: 13,
-    svg: (art) => {
-      const leaf = (x, y, L, a, c1, c2) => `<path d="M0 0Q${L * .45} ${-L * .19} ${L} 0Z" transform="translate(${x} ${y}) rotate(${a})" fill="${c1}"/><path d="M0 0Q${L * .45} ${L * .19} ${L} 0Z" transform="translate(${x} ${y}) rotate(${a})" fill="${c2}"/>`;
-      let staves = '';
-      for (let i = 0; i < 7; i++) { const x = 12.5 + i * 5.6; staves += `<path d="M${x} 35.5Q${x - (i - 3) * .5} 52 ${x} 68.4h2.2Q${x + 2.2 - (i - 3) * .5} 52 ${x + 2.2} 35.5Z" fill="${i % 2 ? '#6e4d33' : '#7f5a3c'}" opacity=".55"/>`; }
-      const fern = [[-160, 7], [-140, 8.4], [-118, 7.6], [-100, 6]].map(([a, L], i) => leaf(12 + i * .6, 70, L, a, '#6f8f3a', '#4f6a2c')).join('') + [[-20, 7.4], [-42, 8.2], [-64, 6.6]].map(([a, L], i) => leaf(47 - i * .6, 70, L, a, '#7d9a44', '#56722f')).join('');
-      return `<svg viewBox="0 0 60 72"><ellipse cx="30" cy="70.4" rx="24" ry="1.8" fill="#000" opacity=".22"/>
-      <path d="M11 34Q7.4 52 11 69.4H49Q52.6 52 49 34Z" fill="#7a5638"/>${staves}
-      <path d="M11 34Q7.4 52 11 69.4H14Q11.4 52 14 34Z" fill="#5f412a"/><path d="M46 34Q48.6 52 46 69.4H49Q52.6 52 49 34Z" fill="#5f412a"/>
-      <path d="M9.6 41.6Q30 43 50.4 41.6V44.2Q30 45.6 9.6 44.2Z" fill="#3a3632"/><path d="M10 61Q30 62.4 50 61V63.6Q30 65 10 63.6Z" fill="#3a3632"/>
-      <ellipse cx="30" cy="34" rx="19.4" ry="2.2" fill="#8f6a44"/><ellipse cx="30" cy="34" rx="17" ry="1.5" fill="#6a4a30"/>
-      <path d="M10.8 33.6Q14 31.6 18 33.2Q21 34.8 19.4 37.6Q17.6 36 15.6 36.8Q13.4 38.8 11.4 36.4Z" fill="#6f8f3a"/><path d="M40 33.4Q44.6 31.8 49.2 33.6Q50 36 47.6 37.8Q46.4 35.8 44 36.4Q41.6 37.6 40.6 35.6Z" fill="#7d9a44"/><path d="M26 34.6Q29 33.4 32 34.6Q31.4 36 29.4 35.8Q27.4 36.2 26 34.6Z" fill="#6f8f3a"/>
-      <ellipse cx="30" cy="31.2" rx="22" ry=".8" fill="#000" opacity=".25"/>
-      <rect x="7" y="4" width="46" height="27.4" rx="2.4" fill="#231d19"/>
-      ${[7, 50.4].map((x) => `<rect x="${x}" y="3.4" width="2.6" height="28.6" rx="1.3" fill="#a88a52"/><rect x="${x}" y="11" width="2.6" height=".7" fill="#7d6538"/><rect x="${x}" y="21.4" width="2.6" height=".7" fill="#7d6538"/><rect x="${x + .5}" y="3.4" width=".6" height="28.6" fill="#c2a66a" opacity=".6"/>`).join('')}
-      <rect x="7.6" y="2.6" width="44.8" height="2.4" rx="1.2" fill="#b39458"/><rect x="26" y="2.6" width=".6" height="2.4" fill="#7d6538"/><rect x="7.6" y="29.8" width="44.8" height="2.2" rx="1.1" fill="#a88a52"/>
-      ${[13.4, 46.6].map((x) => `<circle cx="${x}" cy="11.4" r="1.9" fill="#15110f"/><circle cx="${x}" cy="11.4" r="1.1" fill="#3a322c"/><circle cx="${x}" cy="20.8" r="4" fill="#15110f"/><circle cx="${x}" cy="20.8" r="3.2" fill="#3a322c"/><circle cx="${x}" cy="20.8" r="1.3" fill="#4a4038"/><circle cx="${x}" cy="27" r=".75" fill="#c9a36a"/>`).join('')}
-      <rect x="18" y="6.2" width="24" height="22.2" rx=".8" fill="#0e0c0b"/>
-      <image href="${art}" x="19.1" y="7.2" width="21.8" height="20.2" preserveAspectRatio="xMidYMid slice"/>
-      <circle cx="39.4" cy="29.2" r=".45" fill="#e8483b" class="mb-led"/>${fern}</svg>`;
-    },
+    svg: (art) => PROPS_MUSIC_BARREL(art),
   },
+  // 作品の台（樽）の正面にはめ込む、竹の枠のプレーヤーだけ（樽の台の絵は描かない）
+  musicPanel: { svg: (art) => PROPS_MUSIC_BARREL(art).replace('viewBox="0 0 60 72"', 'viewBox="6 2.4 48 30.2"') },
   turntable: {
     w: 22, h: 12,
     svg: () => `<svg viewBox="0 0 130 70"><rect x="2" y="30" width="126" height="38" rx="3" fill="#8f602e"/><rect x="2" y="30" width="126" height="6" fill="#a8764a"/>
