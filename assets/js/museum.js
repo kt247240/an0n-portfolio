@@ -766,7 +766,7 @@ function buildProps(r) {
   (cfg.extra || []).forEach(([s, kind, dx]) => spots.push([s, W / 2 + dx, kind])); // dx：金庫などとぶつからないよう横にずらす（vh）
   L.innerHTML = spots.map(([s, x, kind]) => {
     const p = propHTML(kind, r.room.scene);
-    if (r.room.scene === 'attic') p.w *= W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように
+    if (r.room.scene === 'attic') p.w *= kind === 'musicStand' ? (W < 80 ? 1.9 : 2.1) : W < 80 ? 1.25 : 2.1; // 小屋の家具は、絵と比べて小さすぎないように（画面つきプレーヤーは、スマホでも画面の絵が見えてタップしやすい大きさに）
     p.html = gradeColors(p.html, gradeOf(r.room.scene));
     const pos = p.bottom == null ? 'top:0' : `bottom:${p.bottom}vh`;
     const eggKind = kind === 'recordStand' ? 'turntable' : kind === 'musicStand' ? 'musicbox' : kind;
