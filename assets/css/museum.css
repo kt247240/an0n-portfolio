@@ -1046,3 +1046,10 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .v-ask .share.copied .done { opacity: 1; transform: translate(-50%, 0); }
 .v-ask { flex-wrap: wrap; row-gap: 10px; }
 .v-ask .tag { white-space: nowrap; }
+
+/* 水辺の波紋：蓮の葉と水草のまわりで、細い輪が広がりながら薄れていく（2 重、時間をずらして） */
+.lring { position: absolute; display: block; pointer-events: none; }
+.lring i { position: absolute; inset: 0; border-radius: 50%; border: .22vh solid rgba(236, 243, 214, .85); opacity: 0; transform: scale(1.12); animation: lring 5s ease-out infinite; animation-delay: var(--d); }
+.lring i + i { animation-delay: calc(var(--d) - 2.5s); }
+@keyframes lring { 0% { transform: scale(1.12); opacity: 0; } 12% { opacity: .85; } 100% { transform: scale(2.3); opacity: 0; } } /* 葉より一回り大きいところから外へ（葉の上に輪が重ならないように） */
+@media (prefers-reduced-motion: reduce) { .lring i { animation: none; opacity: .35; transform: none; } }

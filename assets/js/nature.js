@@ -1170,6 +1170,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   reseed(21 + stops);
   const P = PAL.forest, Q = PAL.water, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   let far = '', mid = '', move = '';
+  const rings = []; // 水面の波紋の場所 [x, y, 大きさ]
   // 奥：水面に映る木の影、水中の枝、ゆらめき
   const [rg, rd] = lgrad([[0, '#4f5a35', .28], [.6, '#4f5a35', .12], [1, '#4f5a35', 0]]);
   far += `<defs>${rd}</defs>`;
@@ -1190,7 +1191,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   for (let x = R(0, 8); x < mw; x += R(7, 13)) if (clearOfWorks(W, stops, x, 2)) mid += vine(x, 6, R(20, 48), '#4c5a2a', [P.fresh, P.lime, P.leaf]);
   for (let i = 0; i < mw / 4.5; i++) {
     const x = R(0, mw), y = R(34, 98), r = R(2.5, 5);
-    if (rnd() < .35) mid += ripple(x, y + .4, r * .9);
+    if (rnd() < .35) rings.push([x, y, r]); // 葉のまわりの波紋（止まった輪ではなく、museum.js がゆっくり広げて動かす）
     mid += lily(x, y, r, pick([Q.pad, Q.padDark, '#bcd65f']));
     if (rnd() < .12) mid += waterLily(x + r * .3, y - .2, r * .5);
   }
@@ -1204,7 +1205,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   for (let s = 0; s < stops; s++) {
     const cx = at(W, FACTORS.mid)(s, W / 2);
     // 葦は台（桟橋の上の木の台）の横に重ならないところだけ（狭い画面では台の縁にかかるので置かない）
-    for (const [dx, n, c] of [[-.34, 7, '#6f8a3a'], [.36, 6, '#7c9a40']]) { const x = cx + W * dx; if (clearOfWorks(W, stops, x - 3, 2) && clearOfWorks(W, stops, x + 3, 2)) mid += reeds(x, 100, n, c); }
+    for (const [dx, n, c] of [[-.34, 7, '#6f8a3a'], [.36, 6, '#7c9a40']]) { const x = cx + W * dx; if (clearOfWorks(W, stops, x - 3, 2) && clearOfWorks(W, stops, x + 3, 2)) { mid += reeds(x, 100, n, c); rings.push([x, 99.2, 3.6]); } } // 水草の根もとにも波紋
   }
   for (let i = 0; i < mw / 3; i++) { R(0, mw); R(30, 100); R(2, 6); } // （白い横線はやめた：チープに見えるので。乱数の並びだけ残す）
   mid += waterSheen(-5, mw + 5, 30, 100);
@@ -1246,7 +1247,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   move += tileGround(W, stops, ground);
   return {
     sky: `linear-gradient(${Q.light} 0%, ${Q.base} 55%, ${Q.deep} 100%)`,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'jungle', glowDefault: [214, 232, 150],
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'jungle', glowDefault: [214, 232, 150], rings,
     curtain: ['#1a3322', '#244d33', '#47733c', '#769721', '#a5c23e'],
   };
 }

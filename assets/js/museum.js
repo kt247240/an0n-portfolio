@@ -659,6 +659,8 @@ function swashURL(scene) {
     + `<path d="${sheet}" fill="url(#w)"/>${streaks}<path d="${foam}" fill="#fbf6ea" opacity=".9"/>${holes}<path d="M${edge}" stroke="#fffaf2" stroke-width=".06" fill="none" opacity=".6"/></svg>`;
   return (swashCache[scene] = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(svg, gradeOf(scene)))}`);
 }
+// 小さな決まった乱数（波紋の出るタイミングをずらすため。部屋を組み直しても同じ）
+function hrand(k) { let t0 = k | 0; return () => { t0 = t0 + 0x6D2B79F5 | 0; let t = Math.imul(t0 ^ t0 >>> 15, 1 | t0); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
   if (D.ferris) {
@@ -679,6 +681,8 @@ function buildLiving(r) {
   }
   if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
   if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, fw = 4.8 * k * .9; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - fw / 2) * U).toFixed(1)}px;top:${((y - sh + sh * .3 + sh * .42 - fw * 13 / 8 + .3) * U).toFixed(1)}px;width:${fw.toFixed(2)}vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
+  // 水辺：蓮の葉と水草のまわりに、ゆっくり広がって消える波紋（2 重の輪を時間をずらして）。数は画面の広さに合わせて控えめに
+  if (D.rings) { const d = hrand(7), list = D.rings.filter((_, i) => i % Math.max(1, Math.ceil(D.rings.length / (W < 80 ? 14 : 26))) === 0); P.insertAdjacentHTML('beforeend', list.map(([x, y, r]) => `<i class="living lring" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r * .38) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * .76).toFixed(2)}vh;--d:${(-d() * 5).toFixed(2)}s"><i></i><i></i></i>`).join('')); }
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
 }
 // 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける
