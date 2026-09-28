@@ -1194,7 +1194,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   reseed(21 + stops);
   const P = PAL.forest, Q = PAL.water, fw = planeW(W, stops, FACTORS.far), mw = planeW(W, stops, FACTORS.mid), vw = planeW(W, stops, FACTORS.move);
   let far = '', mid = '', move = '';
-  const rings = []; // 水面の波紋の場所 [x, y, 大きさ]
+  const rings = [], srings = []; // 水面の波紋の場所 [x, y, 大きさ]（rings は葉と水草のまわり、srings は飛び石と杭のまわり）
   // 奥：水面に映る木の影、水中の枝、ゆらめき
   const [rg, rd] = lgrad([[0, '#4f5a35', .28], [.6, '#4f5a35', .12], [1, '#4f5a35', 0]]);
   far += `<defs>${rd}</defs>`;
@@ -1242,12 +1242,12 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     if (s % 3 === 0 && s > 0) mid += guard(Z, () => { const x = gx + R(-8, 8), len = R(24, 34); return vine(x, 6, len, '#4c5a2a', [P.fresh, P.lime, P.leaf], { cls: '' }); }, { min: 1 });
   }
   // 手前の水ぎわ：苔むした石と、蓮のつぼみ
-  for (let x = R(0, 8); x < mw; x += R(12, 22)) if (clearOfWorks(W, stops, x, 6)) { const y = R(80, 86), w = R(3, 5); mid += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .45)}" fill="#6f6a58"/><ellipse cx="${n1(x - w * .2)}" cy="${n1(y - w * .18)}" rx="${n1(w * .7)}" ry="${n1(w * .25)}" fill="#8a8672"/><ellipse cx="${n1(x - w * .3)}" cy="${n1(y - w * .3)}" rx="${n1(w * .4)}" ry="${n1(w * .16)}" fill="#7a9a3c" opacity=".85"/>` + ripple(x, y + w * .3, w * .8, '#e9f0d0', .22); }
+  for (let x = R(0, 8); x < mw; x += R(12, 22)) if (clearOfWorks(W, stops, x, 6)) { const y = R(80, 86), w = R(3, 5); mid += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n1(w * .45)}" fill="#6f6a58"/><ellipse cx="${n1(x - w * .2)}" cy="${n1(y - w * .18)}" rx="${n1(w * .7)}" ry="${n1(w * .25)}" fill="#8a8672"/><ellipse cx="${n1(x - w * .3)}" cy="${n1(y - w * .3)}" rx="${n1(w * .4)}" ry="${n1(w * .16)}" fill="#7a9a3c" opacity=".85"/>`; srings.push([x, y + w * .3, w * 1.05]); } // 飛び石のまわりの波紋も museum.js が動かす
   for (let i = 0; i < mw / 14; i++) { const x = R(0, mw), y = R(40, 96); mid += `<path d="M${n1(x)} ${n1(y)}L${n1(x + .3)} ${n1(y - 3.5)}" stroke="#4f7a38" stroke-width=".3"/><ellipse cx="${n1(x + .3)}" cy="${n1(y - 4.2)}" rx=".7" ry="1.3" fill="#f4c3d0"/><ellipse cx="${n1(x + .1)}" cy="${n1(y - 4.2)}" rx=".35" ry="1.1" fill="#fbe0e6"/>`; }
   // 水ぎわの桟橋：部屋の端から端まで続く板の道。作品はこの上の台に立つ
   mid += `<path d="M-5 87.6H${n1(mw + 5)}V91.6H-5Z" fill="#a47a4e"/><path d="M-5 87.6H${n1(mw + 5)}V88.2H-5Z" fill="#c9a276"/><path d="M-5 91.6H${n1(mw + 5)}V93H-5Z" fill="#5a3b2a"/>`;
   for (let x = -5; x < mw + 5; x += R(2.6, 3.4)) mid += `<path d="M${n1(x)} 88.2L${n1(x - .4)} 91.6" stroke="#7d5a38" stroke-width=".3" opacity=".7"/>`;
-  for (let x = R(0, 6); x < mw; x += R(14, 20)) mid += `<path d="M${n1(x)} 93H${n1(x + 1.4)}V101H${n1(x)}Z" fill="#4a3322"/>` + ripple(x + .7, 101, 2.4);
+  for (let x = R(0, 6); x < mw; x += R(14, 20)) { mid += `<path d="M${n1(x)} 93H${n1(x + 1.4)}V101H${n1(x)}Z" fill="#4a3322"/>`; srings.push([x + .7, 101, 2.6]); } // 杭のまわりの波紋も動かす
   // 手前を横切る茂みとバナナの葉
   for (let s = 0; s < stops - 1; s++) {
     if (s === birdGap) continue; // インコがいるすき間は、手前に茂みを置かない
@@ -1271,7 +1271,7 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   move += tileGround(W, stops, ground);
   return {
     sky: `linear-gradient(${Q.light} 0%, ${Q.base} 55%, ${Q.deep} 100%)`,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'jungle', glowDefault: [214, 232, 150], rings,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'jungle', glowDefault: [214, 232, 150], rings, srings,
     curtain: ['#1a3322', '#244d33', '#47733c', '#769721', '#a5c23e'],
   };
 }
