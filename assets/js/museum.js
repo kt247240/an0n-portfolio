@@ -828,13 +828,13 @@ document.addEventListener('click', (e) => {
 }, true);
 
 // 部屋の背景をタップ／クリックしたときの、小さな反応（作品やボタンの上では何もしない）
-// 森＝葉が落ちる、水辺＝波紋と鯉が散る、夕凪＝砂が舞いカモメが飛び立つ、夜の庭＝ホタルが散る、小屋＝ほこりが舞う
+// 森＝光の粒がふわっと舞う（葉が落ちる表現は使わない）、水辺＝波紋と鯉が散る、夕凪＝砂が舞いカモメが飛び立つ、夜の庭＝ホタルが散る、小屋＝ほこりが舞う
 document.addEventListener('click', (e) => {
   if (vOpen || e.target.closest('.work, button, a, [data-egg], #viewer, #vault, header, nav')) return;
   const r = currentRoom; if (!r || !e.target.closest('.room')) return;
   const x = e.clientX / vw * 100, y = e.clientY / vh * 100, sc = r.room.scene;
   const add = (n, mk) => { for (let i = 0; i < n; i++) parts.push({ ...mk(), age: 0, ph: R(0, 10), z: 1, theme: sc }); };
-  if (sc === 'forest') add(6, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(4, 7), s: R(.8, 1.3), x: x + R(-6, 6), y: y - R(20, 40), col: ['#a5c23e', '#769721', '#c9d77a'][Math.floor(R(0, 3))] }));
+  if (sc === 'forest') add(6, () => ({ k: 'mote', vx: R(-1.5, 1.5), vy: R(-3, -1), life: R(1.6, 2.8), s: R(.18, .35), x: x + R(-3, 3), y: y + R(-2, 2) }));
   else if (sc === 'jungle') { add(3, () => ({ k: 'ring', vx: 0, vy: 0, life: R(.9, 1.4), s: R(.6, 1.2), x: x + R(-1, 1), y: y + R(-.5, .5) })); scatter(r, x, y); }
   else if (sc === 'cove') { add(10, () => ({ k: 'sand', vx: R(6, 22), vy: R(-4, -1), life: R(.8, 1.6), s: R(.14, .3), x: x + R(-3, 3), y: y + R(-1, 1) })); scatter(r, x, y); }
   else if (sc === 'night') add(8, () => ({ k: 'firefly', vx: R(-4, 4), vy: R(-4, 2), life: R(2, 4), s: R(.25, .45), x: x + R(-2, 2), y: y + R(-2, 2) }));
@@ -1270,11 +1270,10 @@ const parts = [];
 if (location.search.includes('memdebug')) window.__parts = parts; // 点検用
 const R = (a, b) => a + Math.random() * (b - a);
 const THEMES = {
-  forest: [[5, () => ({ k: 'mote', vx: R(-.5, .5), vy: R(-.6, .2), life: R(5, 9), s: R(.15, .35), x: R(0, 100), y: R(10, 90) })],
-    [2, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.3), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#c9d77a'][Math.floor(R(0, 3))] })]],
+  // 落ち葉は出さない（葉が落ちてくる表現は、どの部屋でも使わない）
+  forest: [[5, () => ({ k: 'mote', vx: R(-.5, .5), vy: R(-.6, .2), life: R(5, 9), s: R(.15, .35), x: R(0, 100), y: R(10, 90) })]],
   // （部屋の中を漂うキラキラ（四つ星の光）は出さない：作品の前で浮いて見えるので。さわったときの小さな反応だけに残す）
-  jungle: [[4, () => ({ k: 'leaf', vx: R(-1, 2), vy: R(3, 6), life: R(8, 12), s: R(.8, 1.4), x: R(0, 100), y: -5, col: ['#a5c23e', '#769721', '#47733c'][Math.floor(R(0, 3))] })],
-    [3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
+  jungle: [[3, () => ({ k: 'firefly', vx: R(-.8, .8), vy: R(-.6, .6), life: R(4, 7), s: R(.25, .4), x: R(0, 100), y: R(30, 85) })]],
   cove: [[6, () => ({ k: 'sand', vx: R(18, 30), vy: R(-1, 1), life: R(1.5, 2.5), s: R(.12, .28), x: R(-10, 60), y: R(78, 100) })]],
   // 小屋の外は雪。中には漂う粒を出さない（ほこりの白い点は、壁の前で雪のように浮いて見えて不自然なので。背景をさわったときの反応だけ残す）
   snow: [[9, () => ({ k: 'snow', vx: R(-1.2, 1.2), vy: R(3, 6), life: R(8, 14), s: R(.18, .45), x: R(-5, 105), y: -3 })]],

@@ -205,13 +205,13 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
     if (k === 'f') { v.playbackRate = 4; setTimeout(() => { v.playbackRate = 1; }, 1200); }
   });
 
-  // ---- フッターの © ANON. を 5 回で、葉が舞い落ちる ----
+  // ---- フッターの © ANON. を 5 回で、ホタルの光がふわっとのぼる（葉が落ちる表現は使わない） ----
   let footClicks = 0;
   $('footer span').addEventListener('click', () => {
     footClicks++;
     if (footClicks < 5) return;
     footClicks = 0;
-    burst('leaf', 0, 0, 40, (i) => ({ x: R(0, 100), y: R(-20, -2), vx: R(-3, 3), vy: R(6, 12), life: R(4, 7), s: R(.6, 1.1), age: -i * .05, col: ['#769721', '#a5c23e', '#47733c', '#2f6a44'][i % 4] }));
+    burst('firefly', 0, 0, 30, (i) => ({ x: R(5, 95), y: R(80, 100), vx: R(-2, 2), vy: R(-9, -4), life: R(3, 5), s: R(.25, .45), age: -i * .06 }));
     sfx('sparkle');
   });
 }
