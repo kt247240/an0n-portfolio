@@ -33,7 +33,10 @@ function sfx(kind) {
     case 'pop': tone('sine', 500, 1400, .08, .3); break;
     case 'splash': noise(.6, 'lowpass', 1800, .35); break;
     case 'sparkle': [0, .07, .14, .21].forEach((a, i) => tone('triangle', 1800 + i * 400, 2600 + i * 400, .15, .08, a)); break;
-    case 'tick': tone('square', 1200, 900, .03, .08); break;
+    // 看板：木の板が当たる、低くやわらかい「コトッ」
+    case 'knock': tone('sine', 150, 80, .12, .22); noise(.05, 'lowpass', 900, .12); tone('sine', 120, 70, .09, .1, .16); noise(.04, 'lowpass', 800, .06, .16); break;
+    // テレビ：ブラウン管のチャンネルを替えたときの「ザッ」という砂嵐と、低い接点の音
+    case 'zap': noise(.22, 'bandpass', 2400, .16); tone('sine', 95, 55, .07, .18); break;
     case 'spray': noise(.5, 'highpass', 5000, .25); break;
     case 'scratch': { const s = noise(.5, 'bandpass', 1200, .5); s.playbackRate.setValueAtTime(.4, t); s.playbackRate.linearRampToValueAtTime(2.2, t + .12); s.playbackRate.linearRampToValueAtTime(.3, t + .26); s.playbackRate.linearRampToValueAtTime(1.8, t + .4); tone('sawtooth', 220, 90, .12, .12); tone('sawtooth', 90, 260, .14, .12, .2); break; }
     case 'rewind': tone('sawtooth', 300, 1400, .5, .06); break;
@@ -119,7 +122,7 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
         // 番組が映っているときに画面をダブルクリックすると、作品として大きく見られる
         if (e.detail >= 2 && channel >= 0) { openViewer(CHANNELS[channel], e.clientX, e.clientY); break; }
         channel = channel + 1 >= CHANNELS.length ? -1 : channel + 1;
-        sfx('tick');
+        sfx('zap');
         el.classList.add('zap');
         setTimeout(() => {
           el.classList.remove('zap');
@@ -132,7 +135,7 @@ export function initEggs({ parts, toggleBeat, isBeatOn, works, openViewer, beat 
       }
       case 'sign':
         // 看板がくるりと揺れる
-        el.classList.remove('swing'); void el.offsetWidth; el.classList.add('swing'); sfx('tick');
+        el.classList.remove('swing'); void el.offsetWidth; el.classList.add('swing'); sfx('knock');
         break;
       default: break;
     }
