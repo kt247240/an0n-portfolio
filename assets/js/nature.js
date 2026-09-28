@@ -1608,6 +1608,18 @@ function headland(tipX, base, len, hgt, dir, g, sunX, c) {
   const cliffW = len * .07;
   // 岩は低く、裾は木々に隠れるように（尖った三角に見えないように）
   s += `<path d="M${P([xAt(0), base + .3])}L${P([xAt(0), base - hgt * .06])}L${P([xAt(.02), base - hgt * .13])}L${P([xAt(.05), base - hgt * .12])}L${P([xAt(0) + dir * cliffW * 1.3, base + .3])}Z" fill="${sunOnTip ? c.rockLit : c.rock}" opacity=".85"/>`;
+  // 斜面の小さな家（岬の先寄りの低いところに寄り添って）。夜は窓に灯りがともる（灯りは museum.js）
+  if (c.houses && hgt > 4) {
+    const n = Math.round(2 + hgt * .45 + g() * 2), cols = ['#eadfd2', '#dccbc2', '#e4d6c3', '#cdbdb8'], roofs = ['#b8715f', '#8d8196', '#6f8886', '#a8826a'];
+    const hs = [];
+    for (let i = 0; i < n; i++) { const u = .05 + g() * .38, xx = xAt(u), ty = topAt(xx), yy = ty + (base - ty) * (.45 + g() * .4); hs.push([xx, yy]); }
+    hs.sort((a, b) => a[1] - b[1]).forEach(([xx, yy]) => {
+      const w = .9 + g() * .7, h = .6 + g() * .35, rh = .35 + g() * .2, col = cols[Math.floor(g() * 4)], rf = roofs[Math.floor(g() * 4)];
+      s += `<path d="M${n1(xx - w / 2)} ${n1(yy)}V${n1(yy - h)}H${n1(xx + w / 2)}V${n1(yy)}Z" fill="${col}"/><path d="M${n1(xx + w * .12)} ${n1(yy)}V${n1(yy - h)}H${n1(xx + w / 2)}V${n1(yy)}Z" fill="${mixC(col, '#8f8aa3', .28)}"/>`;
+      s += `<path d="M${n1(xx - w / 2 - .12)} ${n1(yy - h)}L${n1(xx - w * .1)} ${n1(yy - h - rh)}H${n1(xx + w * .2)}L${n1(xx + w / 2 + .12)} ${n1(yy - h)}Z" fill="${rf}"/>`;
+      c.houses.push([n2(xx - w * .18), n2(yy - h * .5)]);
+    });
+  }
   // 尾根のヤシ（頂の手前、先の側に寄せて）
   for (let i = 0, np = hgt > 6 ? 4 : hgt > 4 ? 2 : 0; i < np; i++) { const u = .12 + i * .07 + g() * .04, xx = xAt(u); s += farPalm(xx, topAt(xx) + .4, hgt * (.24 + g() * .12), dir * -(.2 + g() * .5), c.palm, g); }
   return s;
@@ -1673,6 +1685,26 @@ function glitter(x, y0, y1, c, { spread = .45, n = 90, a = .8 } = {}) {
     const t = Math.pow(rnd(), .8), y = y0 + (y1 - y0) * t, w = 1.5 + (y - y0) * spread, xx = x + R(-w, w) * (1 - Math.abs(R(-1, 1)) * .3), l = R(.6, 2.8) * (1 + t * 2);
     s += `<path class="shimmer" style="animation-delay:${n1(-R(0, 4))}s" d="M${n1(xx - l / 2)} ${n1(y)}h${n1(l)}" stroke="${c}" stroke-width="${n1(.18 + t * .35)}" stroke-linecap="round" opacity="${n1(a * (1 - t * .55) * 100) / 100}"/>`;
   }
+  return s;
+}
+// 夕凪の海の面：白い筋は使わず、空を映す明るいゆらぎと、うねりの少し暗い帯を、ぼかした細長い楕円で重ねる（奥ほど細く短く）
+function seaSheen(x0, x1, hz, y1, g) {
+  const L = `ss${gid++}`, Dk = `sd${gid++}`;
+  let s = `<defs><radialGradient id="${L}"><stop offset="0" stop-color="#fbe4cf" stop-opacity=".5"/><stop offset=".6" stop-color="#fbe4cf" stop-opacity=".16"/><stop offset="1" stop-color="#fbe4cf" stop-opacity="0"/></radialGradient><radialGradient id="${Dk}"><stop offset="0" stop-color="#5f8f93" stop-opacity=".32"/><stop offset=".6" stop-color="#5f8f93" stop-opacity=".1"/><stop offset="1" stop-color="#5f8f93" stop-opacity="0"/></radialGradient></defs>`;
+  for (let t = .03; t < 1; t += .045 + t * .06) {
+    const y = hz + .5 + (y1 - hz) * t * t, w = 2.5 + t * 26, h = .1 + t * .9;
+    for (let x = x0 + g() * w; x < x1; x += w * (1.2 + g() * 1.6)) {
+      const dk = g() < .45;
+      s += `<ellipse cx="${n1(x)}" cy="${n1(y + (g() - .5) * h)}" rx="${n1(w * (.5 + g() * .6))}" ry="${n2(h * (.6 + g() * .5))}" fill="url(#${dk ? Dk : L})"/>`;
+    }
+  }
+  return s;
+}
+// 夕日が海に落とす光の道（動かない下地）：水平線から手前へ、横長のやわらかな光の帯が広がる。揺らぎは museum.js が重ねる
+function sunColumn(x, hz, y1) {
+  const id = `sc${gid++}`;
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#fff0cf" stop-opacity=".7"/><stop offset=".5" stop-color="#ffe2b4" stop-opacity=".25"/><stop offset="1" stop-color="#ffd9a6" stop-opacity="0"/></radialGradient></defs>`;
+  for (let i = 0; i < 16; i++) { const t = i / 15, y = hz + .4 + (y1 - hz) * t * t, w = 1.4 + t * 9; s += `<ellipse cx="${n1(x + Math.sin(i * 2.3) * t * 1.2)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n2(.22 + t * .7)}" fill="url(#${id})" opacity="${n2(1 - t * .45)}"/>`; }
   return s;
 }
 // 遠い波：奥ほど細かく、手前ほど長い白い筋
@@ -1746,11 +1778,14 @@ export function sceneCove(W, stops) {
   far += haze(-10, fw + 10, hz - 8, hz + .3, '#f6dcc6', 0, .35);
   const [sg, sd] = lgrad([[0, '#f4d9bd'], [.18, '#bfd9d3'], [1, '#86b3b3']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
-  far += glitter(sx, hz + .5, 100, '#fff6d8', { spread: .35, n: 170, a: 1 });
+  // 海の面と夕日の光の道（前の粒と白い筋は、乱数の呼び出しだけ残して描かない）
+  glitter(sx, hz + .5, 100, '#fff6d8', { spread: .35, n: 170, a: 1 });
+  { const gS = hrng(fw + 7.7); far += seaSheen(-5, fw + 5, hz, 84, gS) + sunColumn(sx, hz, 80); }
   // 水平線の帆船と、遠くの桟橋（先に灯りがともる）
   // 手前の緑の岬：作品と作品のあいだ（立ち止まると画面の真ん中）に岬の先が来るように。どれも先を夕日の側（左）へ向け、
   // 次の岬に重ならない長さに。最初の岬の先に防波堤と小さな灯台
   let harbor = null, lightSvg = '';
+  const houses = [];
   // 岬の後ろに、霞んだ緑の丘の連なり（海岸線が続いて見えるように。ところどころ切れて海と島が見える）
   for (let x = -8 + gM() * 6; x < fw + 10; x += (12 + gM() * 20) * big) { if (gM() < .22) continue; far += hazeIsland(x, hz + .15, (16 + gM() * 22) * big, (3.2 + gM() * 3.4) * big, gM, sx, { lit: '#b3b9a6', shade: '#9aaba5', tree: '#93a49b' }); }
   // 立ち止まる場所ごとに岬を 1 つ。大きさはまちまちで、右の岬ほど手前に重なる（左の岬の奥の裾を隠す）
@@ -1758,14 +1793,14 @@ export function sceneCove(W, stops) {
     const dir = 1, tip = at(W, FACTORS.far)(s, W * .5), bwl = W < 80 ? 4 : 7, isHarbor = s === 1.5, size = isHarbor ? 1 : [.55, .8, .45, .95, .6][k % 5] * (.85 + gM() * .3);
     const len = Math.min(W < 80 ? 26 : 56, W * FACTORS.far * 2.1) * (.6 + size * .4), hgt = (W < 80 ? 6.5 : 10) * size;
     const tipX = isHarbor ? tip + dir * bwl : tip + dir * (gM() * 4 - 1) * big;
-    far += headland(tipX, hz + .1, len, hgt, dir, gM, sx, { body: '#86a092', lit: '#a9b095', low: '#6f8d88', shade: '#5f7c7d', rock: '#7f8a86', rockLit: '#a9a497', refl: '#5f8583', trees: ['#6f8c84', '#8aa18f', '#a7b096'], palm: '#5a7169' });
+    far += headland(tipX, hz + .1, len, hgt, dir, gM, sx, { body: '#86a092', lit: '#a9b095', low: '#6f8d88', shade: '#5f7c7d', rock: '#7f8a86', rockLit: '#a9a497', refl: '#5f8583', trees: ['#6f8c84', '#8aa18f', '#a7b096'], palm: '#5a7169', houses });
     if (isHarbor) { const bw = breakwater(tipX, tip, hz + .1, gM, { top: '#c9b8b0', face: '#948a96', gap: '#7d7482', tower: '#efe4da', towerShade: '#d2c7cf', red: '#bd6a5c', lamp: '#6b6170' }); lightSvg = bw.svg; harbor = bw.light; }
   }
   // 灯台は最後に描く（後ろの岬に隠れないように）
   far += lightSvg;
   for (let k = 0; k < 3; k++) far += sailboat(R(fw * .1, fw * .9), hz - .2, R(2, 3.2), pick(['#8a97a8', '#7a7488']));
   far += pierFar(fw * .78, hz + 3.5, Math.min(26, fw * .18), '#6f6a7a');
-  far += waveLines(-5, fw + 5, hz + 1, 100, '#ffffff', Math.round(fw * 1.4));
+  waveLines(-5, fw + 5, hz + 1, 100, '#ffffff', Math.round(fw * 1.4));
   // 中景：浅瀬の珊瑚、波打ちぎわ、濡れた砂と乾いた砂、岩と流木
   // 珊瑚は作品（Sunset Session）の色で、波打ちぎわに群れで。根もとは水に沈める
   for (let x = R(0, 20); x < mw; x += R(38, 64)) {
@@ -1835,7 +1870,7 @@ export function sceneCove(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'linear-gradient(#aebbd6 0%, #e3b8b3 28%, #f3c69c 46%, #f8dcb0 58%, #f6e2c4 62%, #bfd9d3 66%, #86b3b3 100%)',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79, harbor, plane: true,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79, harbor, plane: true, houses, sunpath: [sx, hz],
     curtain: ['#1c3a3a', '#2a5550', '#3f7f73', '#5aa77a', '#7cc0a0'],
   };
 }

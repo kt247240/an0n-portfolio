@@ -946,6 +946,16 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .harborlight b { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(255, 232, 190, .95) 0 5%, rgba(255, 200, 140, .45) 12%, rgba(255, 190, 130, .12) 32%, transparent 60%); animation: harbor 4.8s ease-in-out infinite; will-change: opacity; }
 .harborlight s { position: absolute; left: 44%; width: 12%; height: 42%; background: linear-gradient(rgba(255, 214, 160, .5), transparent); border-radius: 50%; animation: harbor 4.8s ease-in-out infinite; will-change: opacity; }
 @keyframes harbor { 0%, 55%, 100% { opacity: .12; } 68%, 82% { opacity: 1; } }
+/* 夕凪の浜：夕日の光の道。横長のぼかした光の帯が、左右にゆらいで明滅する */
+.sunpath { pointer-events: none; }
+.sunpath i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 242, 214, .9), rgba(255, 226, 180, .4) 55%, rgba(255, 214, 160, 0)); opacity: .5; animation: sunbar 3s ease-in-out infinite alternate; will-change: transform, opacity; }
+@keyframes sunbar { 0% { transform: translateX(-6%) scaleX(.82); opacity: .28; } 100% { transform: translateX(6%) scaleX(1.12); opacity: .85; } }
+/* 夕凪の浜（夜）：岬の家の窓の灯り。夜の部屋でだけ */
+.townlight { display: none; width: 1.6vh; height: 1.6vh; border-radius: 50%; background: radial-gradient(closest-side, var(--c) 0 16%, rgba(255, 190, 120, .35) 40%, rgba(255, 180, 110, 0)); }
+.room.moonlit .townlight { display: block; }
+.townlight.blink { animation: townblink 37s steps(1) infinite; }
+@keyframes townblink { 0%, 100% { opacity: 1; } 41% { opacity: .08; } 63% { opacity: 1; } 82% { opacity: .08; } 90% { opacity: 1; } }
+.room.moonlit .harborlight b { background: radial-gradient(circle, rgba(255, 236, 196, 1) 0 6%, rgba(255, 200, 140, .55) 14%, rgba(255, 190, 130, .18) 36%, transparent 62%); }
 /* 夕凪の浜：遠くを横切る飛行機と飛行機雲。1 回およそ 46 秒で横切って、しばらく間をおく */
 .airplane { position: absolute; left: 0; top: 11vh; width: 4.6vh; will-change: transform; animation: airplane 80s linear infinite; animation-delay: -72s; }
 .airplane svg { display: block; width: 100%; height: auto; position: relative; }
@@ -974,7 +984,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
 .flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
 @keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
-@media (prefers-reduced-motion: reduce) { .harborlight b, .harborlight s, .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .sunpath i, .townlight.blink, .harborlight b, .harborlight s, .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
 
 /* 長押し：作品だけが照らされる */
 .room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }
@@ -1076,3 +1086,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
+.room.moonlit .sunpath i { background: radial-gradient(closest-side, rgba(214, 222, 246, .7), rgba(180, 194, 236, .28) 55%, rgba(170, 185, 230, 0)); }

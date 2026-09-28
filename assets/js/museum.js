@@ -690,6 +690,14 @@ function buildLiving(r) {
   if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
   // 夕凪の浜：防波堤の先の小さな灯台が、ゆっくり明滅する（光の輪と、水面に落ちる細い光）
   if (D.harbor) { const [x, y] = D.harbor; S.insertAdjacentHTML('beforeend', `<i class="living harborlight" style="left:${((x - 3) * U).toFixed(1)}px;top:${((y - 3) * U).toFixed(1)}px"><b></b><s style="top:${((63 - y + 3) / 6 * 100).toFixed(0)}%"></s></i>`); }
+  // 夕凪の浜：夕日の光の道。横長のやわらかな光の帯が、波に合わせて左右にゆらいで明滅する（色は部屋の色合いに合わせる。夜は月の光の色に）
+  if (D.sunpath) {
+    const [x, hz] = D.sunpath, n = COARSE ? 9 : 14;
+    const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 12 + t * 80; return `<i style="top:${(t * t * 100).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(.25 + t * .7).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
+    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
+  }
+  // 夕凪の浜（夜）：岬の家の窓に灯り。いくつかはときどき消えたり点いたりする（夜の部屋でだけ見える）
+  if (D.houses && D.houses.length) S.insertAdjacentHTML('beforeend', D.houses.map(([x, y], i) => `<i class="living townlight${i % 3 === 0 ? ' blink' : ''}" style="left:${((x - .8) * U).toFixed(1)}px;top:${((y - .8) * U).toFixed(1)}px;animation-delay:${(-(i * 7.3) % 37).toFixed(1)}s;--c:${['#ffcf85', '#ffe0a6', '#ffbd78'][i % 3]}"></i>`).join(''));
   // 夕凪の浜：遠くの空を、飛行機が飛行機雲を引いてゆっくり横切る（空は動かない層なので、いつ見ても画面の中を通る）
   if (D.plane && !REDUCED) { const sky = $('.sky', r.el); sky.querySelector('.airplane')?.remove(); sky.insertAdjacentHTML('beforeend', `<div class="airplane" aria-hidden="true"><i class="trail"></i><i class="trail t2"></i>${gradeColors(planeSVG(), gradeOf(r.room.scene))}</div>`); }
   if (D.foam) {
