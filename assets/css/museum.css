@@ -1054,3 +1054,10 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .lring i + i { animation-delay: calc(var(--d) - 2.5s); }
 @keyframes lring { 0% { transform: scale(1.12); opacity: 0; } 12% { opacity: .85; } 100% { transform: scale(2.3); opacity: 0; } } /* 葉より一回り大きいところから外へ（葉の上に輪が重ならないように） */
 @media (prefers-reduced-motion: reduce) { .lring i { animation: none; opacity: .35; transform: none; } }
+
+/* 小屋の壁時計の針（今の時刻を指す）。文字盤は背景の絵 */
+.wclock { position: absolute; display: block; pointer-events: none; }
+.wclock i { position: absolute; left: 50%; bottom: 50%; border-radius: 1vh; background: #2a1c12; transform-origin: 50% 100%; }
+.wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
+.wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
+.wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }

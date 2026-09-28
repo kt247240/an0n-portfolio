@@ -661,6 +661,12 @@ function swashURL(scene) {
 }
 // 小さな決まった乱数（波紋の出るタイミングをずらすため。部屋を組み直しても同じ）
 function hrand(k) { let t0 = k | 0; return () => { t0 = t0 + 0x6D2B79F5 | 0; let t = Math.imul(t0 ^ t0 >>> 15, 1 | t0); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// 壁時計の針：今の時刻（見ている人の端末の時計）に。20 秒ごとに合わせ直す
+function tickClocks() {
+  const now = new Date(), m = now.getMinutes() + now.getSeconds() / 60, h = (now.getHours() % 12) + m / 60;
+  document.querySelectorAll('.wclock').forEach((c) => { c.querySelector('.mh').style.transform = `rotate(${(m * 6).toFixed(1)}deg)`; c.querySelector('.hh').style.transform = `rotate(${(h * 30).toFixed(1)}deg)`; });
+  clearTimeout(tickClocks.t); tickClocks.t = setTimeout(tickClocks, 20000);
+}
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
   if (D.ferris) {
@@ -684,6 +690,8 @@ function buildLiving(r) {
   // 水辺：蓮の葉と水草のまわりに、ゆっくり広がって消える波紋（2 重の輪を時間をずらして）。数は画面の広さに合わせて控えめに
   // 桟橋の板（y 87〜92.6）にかかる波紋は出さない（いちばん広がったときの輪の大きさで判定）
   if (D.rings) { const d = hrand(7), clearOfDeck = ([, y, r]) => { const e = r * .38 * 2.3 + .3; return y + e < 87 || y - e > 92.6; }, list = D.rings.filter(clearOfDeck).filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / (W < 80 ? 14 : 26))) === 0); P.insertAdjacentHTML('beforeend', list.map(([x, y, r]) => `<i class="living lring" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r * .38) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * .76).toFixed(2)}vh;--d:${(-d() * 5).toFixed(2)}s"><i></i><i></i></i>`).join('')); }
+  // 小屋の壁時計：長針と短針を置いて、見ている人の今の時刻に合わせて回す
+  if (D.clocks?.length) { P.insertAdjacentHTML('beforeend', D.clocks.map(([x, y, r]) => `<i class="living wclock" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * 2).toFixed(2)}vh"><i class="hh"></i><i class="mh"></i><i class="cap"></i></i>`).join('')); tickClocks(); }
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
 }
 // 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける

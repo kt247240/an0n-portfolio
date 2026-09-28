@@ -2132,7 +2132,7 @@ function wallClock(x, y, s) {
   const r = s * .32, cy = y + s * .45; track(x - r * 1.1, cy - r * 1.1); track(x + r * 1.1, cy + r * 1.2);
   let o = `<circle cx="${n1(x + r * .06)}" cy="${n1(cy + r * .08)}" r="${n1(r * 1.05)}" fill="#000" opacity=".25"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * 1.05)}" fill="#6a4a30"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * .86)}" fill="#e8dcc0"/>`;
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = r * (i % 3 ? .74 : .68); o += `<path d="M${n1(x + Math.sin(a) * r1)} ${n1(cy - Math.cos(a) * r1)}L${n1(x + Math.sin(a) * r * .8)} ${n1(cy - Math.cos(a) * r * .8)}" stroke="#3a2718" stroke-width="${n1(r * (i % 3 ? .03 : .06))}"/>`; }
-  o += `<path d="M${n1(x)} ${n1(cy)}L${n1(x + r * .3)} ${n1(cy - r * .32)}" stroke="#2a1c12" stroke-width="${n1(r * .07)}" stroke-linecap="round"/><path d="M${n1(x)} ${n1(cy)}L${n1(x - r * .12)} ${n1(cy - r * .6)}" stroke="#2a1c12" stroke-width="${n1(r * .045)}" stroke-linecap="round"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * .06)}" fill="#b8925e"/>`;
+  // 針は描かない：museum.js が、見ている人の今の時刻に合わせて針を置いて回す
   return o;
 }
 function coatRack(x, y, w) {
@@ -2266,6 +2266,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   mid += `<path d="M${n1(workX(1) + W * .22)} 58v-6" stroke="#1d1510" stroke-width=".3"/><path d="M${n1(workX(1) + W * .22 - 1.2)} 58h2.4l-.4 3h-1.6Z" fill="#ffd98a"/>` + rglow(workX(1) + W * .22, 59, 9, '#ffc56b', .4);
   // 中景（内）：板壁と窓（窓の外は奥の空）、床、ラグ、ストーブ、棚
   // 作品と作品のあいだの壁：1 つ目に本棚とストーブ、2 つ目以降は窓（右ほど空が明けていく）
+  const clocks = [];
   let stove = null, mug = null;
   const mids = []; for (let k = 2; k < stops - 1; k++) mids.push((workX(k) + workX(k + 1)) / 2);
   // 作品と作品のすき間の幅（作品の枠の外側どうし）。狭い画面では窓や棚を小さくし、入らなければ置かない（絵に重ねない）
@@ -2335,7 +2336,9 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
       if (k === 1 && W >= 80) continue; // 広い画面ではコート掛けがある
       const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
       const f = kinds[i++ % kinds.length];
-      mid += guard(Zk, (kk) => f(gx, 24, 12 * kk), { min: .45 });
+      let last = null; const got = guard(Zk, (kk) => { last = 12 * kk; return f(gx, 24, last); }, { min: .45 });
+      mid += got;
+      if (got && f === wallClock) clocks.push([gx, 24 + last * .45, last * .32]); // 壁時計の中心と半径（針は museum.js が置く）
     }
   }
   // 天井のドライハーブ：電球のあいだに、作品にかからないところへ
@@ -2361,7 +2364,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   }
   return {
     sky: '#0d1027', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] }, stove, wins, mug,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame: '', fx: 'attic', glowDefault: [255, 206, 140], snow: { ...SP, corner: [facade0 - 17, 34, corner] }, stove, wins, mug, clocks,
     curtain: ['#0f1a14', '#16261c', '#223a2a', '#2f4f38', '#3f6547'],
   };
 }
