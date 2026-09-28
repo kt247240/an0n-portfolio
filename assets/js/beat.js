@@ -52,7 +52,7 @@ const GROOVES = [null, { k: [0, 3, 10, 11], s: [4, 12] }, { k: [0, 11], s: [8] }
 // 制作ツール（tools/make-beat.mjs）が、同じテンポ・コード・メロディでネタのレコードを録るために読む
 export const SONG = { BPM, PARTS, HOOK };
 
-export function createBeat({ onKick = () => {}, onSnare = () => {}, files = {}, ambience = true } = {}) { // ambience: false で森や海の環境音を鳴らさない（クラブなど）
+export function createBeat({ onKick = () => {}, onSnare = () => {}, files = {} } = {}) {
   let ctx, master, music, drums, filter, verb, crackleGain, noise, timer = 0, amb, wow, rec, recLp, bassBus, hv = [];
   const smp = { rec: {}, off: {}, drum: {}, bass: null, rev: new Map() }; // ネタのレコード、ドラム、ベース（assets/beats）
   let playing = false, scene = 'forest', want = 'forest', step = 0, bar = 0, nextT = 0, fillBar = -1, partBar = 0;
@@ -121,7 +121,7 @@ export function createBeat({ onKick = () => {}, onSnare = () => {}, files = {}, 
     crackleGain = ctx.createGain(); crackleGain.gain.value = .03;
     cs.connect(bp); bp.connect(crackleGain); crackleGain.connect(master); cs.start();
     document.addEventListener('visibilitychange', () => { if (!playing) return; document.hidden ? ctx.suspend() : ctx.resume(); });
-    amb = ambience ? createAmbience(ctx, comp) : { scene() {}, start() {}, stop() {}, tick() {} };
+    amb = createAmbience(ctx, comp);
     prepareSamples();
   }
   // ネタのレコードとドラムを読み込む（今いる部屋のレコードから先に）。読めるまでは合成の音で鳴らす
