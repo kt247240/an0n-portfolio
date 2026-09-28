@@ -993,6 +993,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* マグの湯気 */
 .steam { width: 2vh; height: 4vh; }
 .steam i { position: absolute; left: 50%; bottom: 0; width: .5vh; height: 1.6vh; border-radius: 50%; background: rgba(255, 250, 242, .55); animation: steam 2.8s ease-out infinite; }
+.steam.kettle { width: 3.2vh; height: 6vh; } .steam.kettle i { width: .8vh; height: 2.2vh; background: rgba(255, 248, 236, .4); animation-duration: 3.4s; }
 .steam i:nth-child(2) { animation-delay: -.9s; left: 30%; } .steam i:nth-child(3) { animation-delay: -1.8s; left: 70%; }
 @keyframes steam { 0% { transform: translate(-50%, 0) scale(.6); opacity: 0; } 25% { opacity: .7; } 100% { transform: translate(-50%, -3.2vh) scale(1.6); opacity: 0; } }
 /* 跳ねる鯉：弧を描いて水面へ */

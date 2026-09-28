@@ -2097,10 +2097,11 @@ export function ferrisSVG(r, part = 'wheel') {
 }
 // 薪ストーブ（鋳物）：脚つきの箱、縁の張り出した天板、焚き口の扉（蝶番と取っ手）、灰受け、煙突は壁の丸い受け口へ。
 // 焚き口のガラスの奥は、おき火で下ほど明るく、薪が 2 本交差する。炎と火の粉、壁と床に広がる火の光は museum.js
-function woodStove(m, k, sw, sh) {
+function woodStove(m, k, sw, sh, room = 30) {
   const top = 80 - sh, L = m - sw / 2, gx = m - sw * .32, gy = top + sh * .3, gw = sw * .64, gh = sh * .42, id = `ws${gid++}`;
   const P = (d, f, o) => `<path d="${d}" fill="${f}"${o != null ? ` opacity="${o}"` : ''}/>`;
-  let s = rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45);
+  const dd = hrng(m * 3.3 + k);
+  let s = stoveSurround(m, k, sw, sh, room, dd) + rglow(m, 80 - sh * .6, 16 * k, '#ff9a4a', .45);
   s += `<defs><linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2014"/><stop offset=".45" stop-color="#a8431f"/><stop offset=".8" stop-color="#f08a3a"/><stop offset="1" stop-color="#ffc56a"/></linearGradient>`
     + `<linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#171311"/><stop offset=".5" stop-color="#231d19"/><stop offset="1" stop-color="#1a1512"/></linearGradient></defs>`;
   // 脚（少し外に反る）
@@ -2128,14 +2129,78 @@ function woodStove(m, k, sw, sh) {
   s += `<rect x="${n1(gx - .2 * k)}" y="${n1(gy + gh + 1.2 * k)}" width="${n1(gw + .4 * k)}" height="${n1(1.1 * k)}" rx="${n1(.2 * k)}" fill="#2a2320"/><rect x="${n1(m - .6 * k)}" y="${n1(gy + gh + 1.55 * k)}" width="${n1(1.2 * k)}" height="${n1(.35 * k)}" rx="${n1(.17 * k)}" fill="#4a3b31"/>`;
   // 扉のまわりに当たる火の照り返し
   s += P(`M${n1(gx - .7 * k)} ${n1(gy + gh + .7 * k)}h${n1(gw + 1.4 * k)}v${n1(.22 * k)}h${n1(-gw - 1.4 * k)}Z`, '#ff9a4a', .35);
+  // 胴の横の空気の調整つまみと、角の鋲
+  s += `<circle cx="${n1(L + sw - 1.3 * k)}" cy="${n1(gy + gh + 1.75 * k)}" r="${n1(.32 * k)}" fill="#3a302a"/><circle cx="${n1(L + sw - 1.3 * k)}" cy="${n1(gy + gh + 1.75 * k)}" r="${n1(.14 * k)}" fill="#5a4a3e"/>`;
+  for (const [cx, cy] of [[L + .9 * k, top + 1.25 * k], [L + sw - .9 * k, top + 1.25 * k], [L + .9 * k, 78.2], [L + sw - .9 * k, 78.2]]) s += `<circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(.13 * k)}" fill="#3a302a"/>`;
+  // 天板の上のやかん（銅。胴に夕方の火の照り返し、取っ手と注ぎ口）。湯気は museum.js
+  { const kx = m - sw * .22, ky = top + .15 * k, kw = 3.2 * k, kh = 2.2 * k;
+    s += `<ellipse cx="${n1(kx)}" cy="${n1(ky - .05 * k)}" rx="${n1(kw * .42)}" ry="${n1(.18 * k)}" fill="#1a1512" opacity=".6"/>`;
+    s += P(`M${n1(kx - kw / 2)} ${n1(ky)}Q${n1(kx - kw * .55)} ${n1(ky - kh * .8)} ${n1(kx - kw * .2)} ${n1(ky - kh)}H${n1(kx + kw * .2)}Q${n1(kx + kw * .55)} ${n1(ky - kh * .8)} ${n1(kx + kw / 2)} ${n1(ky)}Z`, '#8f5236');
+    s += P(`M${n1(kx - kw * .46)} ${n1(ky - kh * .2)}Q${n1(kx - kw * .5)} ${n1(ky - kh * .78)} ${n1(kx - kw * .18)} ${n1(ky - kh * .96)}H${n1(kx - kw * .02)}Q${n1(kx - kw * .3)} ${n1(ky - kh * .7)} ${n1(kx - kw * .26)} ${n1(ky - kh * .2)}Z`, '#b06a42', .9);
+    s += P(`M${n1(kx + kw * .12)} ${n1(ky)}Q${n1(kx + kw * .5)} ${n1(ky - kh * .3)} ${n1(kx + kw * .45)} ${n1(ky - kh * .85)}Q${n1(kx + kw * .55)} ${n1(ky - kh * .3)} ${n1(kx + kw / 2)} ${n1(ky)}Z`, '#6e3d28', .8);
+    s += `<rect x="${n1(kx - kw * .16)}" y="${n1(ky - kh - .35 * k)}" width="${n1(kw * .32)}" height="${n1(.4 * k)}" rx="${n1(.15 * k)}" fill="#6e3d28"/>`;
+    s += `<path d="M${n1(kx - kw * .34)} ${n1(ky - kh * .9)}Q${n1(kx)} ${n1(ky - kh * 1.9)} ${n1(kx + kw * .34)} ${n1(ky - kh * .9)}" stroke="#2a2320" stroke-width="${n1(.28 * k)}" fill="none" stroke-linecap="round"/>`;
+    s += P(`M${n1(kx - kw * .44)} ${n1(ky - kh * .45)}L${n1(kx - kw * .82)} ${n1(ky - kh * .95)}L${n1(kx - kw * .74)} ${n1(ky - kh * 1.02)}L${n1(kx - kw * .36)} ${n1(ky - kh * .7)}Z`, '#7d4630');
+    woodStove.kettle = [kx - kw * .8, ky - kh * 1.02];
+  }
   // 煙突：天板から上へ。途中に継ぎ目の帯、上は曲がって壁の丸い受け口へ入る
   const px = m + 2 * k, pw = 1.4 * k, py = 55;
   s += P(`M${n1(px)} ${n1(top + .2 * k)}V${n1(py)}h${n1(pw)}V${n1(top + .2 * k)}Z`, '#1d1916') + P(`M${n1(px + pw * .62)} ${n1(top + .2 * k)}V${n1(py)}h${n1(pw * .38)}V${n1(top + .2 * k)}Z`, '#15110f');
   for (const yy of [top - 2.2 * k, py + 2.4 * k]) s += `<rect x="${n1(px - .15 * k)}" y="${n1(yy)}" width="${n1(pw + .3 * k)}" height="${n1(.45 * k)}" rx="${n1(.1 * k)}" fill="#2a2522"/>`;
   s += `<circle cx="${n1(px + pw / 2)}" cy="${n1(py - .3 * k)}" r="${n1(1.55 * k)}" fill="#2a2320"/><circle cx="${n1(px + pw / 2)}" cy="${n1(py - .3 * k)}" r="${n1(1.2 * k)}" fill="#1c1714"/>`;
   s += P(`M${n1(px)} ${n1(py + .5 * k)}V${n1(py - .3 * k)}A${n1(pw / 2)} ${n1(pw / 2)} 0 0 1 ${n1(px + pw)} ${n1(py - .3 * k)}V${n1(py + .5 * k)}Z`, '#1d1916');
+  // 煙突のダンパーの取っ手と、煙突の温度計（丸い文字盤、針は火の強さのあたり）
+  const dy = (top + py) / 2;
+  s += `<rect x="${n1(px - .9 * k)}" y="${n1(dy - .12 * k)}" width="${n1(pw + 1.8 * k)}" height="${n1(.24 * k)}" rx="${n1(.12 * k)}" fill="#2a2522"/><circle cx="${n1(px + pw + .9 * k)}" cy="${n1(dy)}" r="${n1(.28 * k)}" fill="#3a302a"/>`;
+  const ty = top - 1 * k;
+  s += `<circle cx="${n1(px + pw / 2)}" cy="${n1(ty)}" r="${n1(.62 * k)}" fill="#3a302a"/><circle cx="${n1(px + pw / 2)}" cy="${n1(ty)}" r="${n1(.5 * k)}" fill="#d9c9a8"/><path d="M${n1(px + pw / 2 - .35 * k)} ${n1(ty + .1 * k)}A${n1(.36 * k)} ${n1(.36 * k)} 0 0 1 ${n1(px + pw / 2 + .35 * k)} ${n1(ty + .1 * k)}" stroke="#c7703e" stroke-width="${n1(.1 * k)}" fill="none"/><path d="M${n1(px + pw / 2)} ${n1(ty)}L${n1(px + pw / 2 + .22 * k)} ${n1(ty - .28 * k)}" stroke="#2a2320" stroke-width="${n1(.07 * k)}" stroke-linecap="round"/>`;
   return s;
 }
+// ストーブのまわり：背の壁に耐熱のレンガ（上に石の笠木）、床に石の炉台、左に薪を積んだ鉄のラック、右に火かき棒などの道具立て
+function stoveSurround(m, k, sw, sh, room, d) {
+  const top = 80 - sh;
+  let s = '';
+  // 耐熱のレンガの壁（目地は暗い色の地に、レンガを少しずつ色違いで並べる）
+  const bw = Math.min(sw + 7 * k, room * 2 - 2), bx0 = m - bw / 2, by0 = 52, by1 = 79.4, rh = .95 * k, bl = 2.3 * k;
+  s += `<rect x="${n1(bx0)}" y="${n1(by0)}" width="${n1(bw)}" height="${n1(by1 - by0)}" fill="#3a2620"/>`;
+  s += `<clipPath id="brk${gid}"><rect x="${n1(bx0)}" y="${n1(by0)}" width="${n1(bw)}" height="${n1(by1 - by0)}"/></clipPath><g clip-path="url(#brk${gid++})">`;
+  for (let y = by0 + .12, r = 0; y < by1; y += rh, r++) for (let x = bx0 - (r % 2) * bl / 2; x < bx0 + bw; x += bl) s += `<rect x="${n1(x + .1)}" y="${n2(y)}" width="${n1(bl - .2)}" height="${n2(rh - .2)}" rx=".08" fill="${['#6e4434', '#7a4a38', '#5f3a2d', '#744636', '#664033'][Math.floor(d() * 5)]}"/>`;
+  s += '</g>';
+  // レンガの下ほど、火の熱で煤けて暗い
+  const [cg, cd] = lgrad([[0, '#1a110c', 0], [1, '#1a110c', .35]]);
+  s += `<defs>${cd}</defs><rect x="${n1(bx0)}" y="${n1(top - 4)}" width="${n1(bw)}" height="${n1(by1 - top + 4)}" fill="url(#${cg})"/>`;
+  s += `<rect x="${n1(bx0 - .5)}" y="${n1(by0 - .9)}" width="${n1(bw + 1)}" height=".9" rx=".2" fill="#6f665c"/><rect x="${n1(bx0 - .5)}" y="${n1(by0 - .9)}" width="${n1(bw + 1)}" height=".25" fill="#8c8276"/>`;
+  // 石の炉台：奥が狭く手前が広い台形。厚みの面と、石の継ぎ目
+  const hb = m - (sw / 2 + 3 * k), hf = m + (sw / 2 + 3 * k), fy0 = 79.3, fy1 = 84.2, sp = 1.8 * k;
+  s += `<path d="M${n1(hb)} ${fy0}L${n1(hf)} ${fy0}L${n1(hf + sp)} ${fy1}L${n1(hb - sp)} ${fy1}Z" fill="#4a4540"/>`;
+  s += `<path d="M${n1(hb - sp)} ${fy1}L${n1(hf + sp)} ${fy1}V${n1(fy1 + .8)}H${n1(hb - sp)}Z" fill="#2c2926"/>`;
+  for (let i = 1; i < 4; i++) { const t = i / 4, xa = hb + (hf - hb) * t, xb = hb - sp + (hf - hb + sp * 2) * t; s += `<path d="M${n1(xa)} ${fy0}L${n1(xb)} ${fy1}" stroke="#34302c" stroke-width=".22"/>`; }
+  s += `<path d="M${n1(hb - sp * .5)} ${n1((fy0 + fy1) / 2)}H${n1(hf + sp * .5)}" stroke="#34302c" stroke-width=".2"/>`;
+  for (let i = 0; i < 6; i++) { const t = d(), yy = fy0 + (fy1 - fy0) * d(); s += `<ellipse cx="${n1(hb + (hf - hb) * t)}" cy="${n1(yy)}" rx="${n1(.6 + d() * 1.2)}" ry=".25" fill="${d() < .5 ? '#57514b' : '#3e3a36'}" opacity=".7"/>`; }
+  s += `<path d="M${n1(m - gwOf(sw) / 2)} ${fy0 + .2}H${n1(m + gwOf(sw) / 2)}L${n1(m + gwOf(sw) * .8)} ${fy1}H${n1(m - gwOf(sw) * .8)}Z" fill="#ff9a4a" opacity=".16"/>`;
+  // 右（道具立てのさらに右）：鉄の薪ラック（2 本の脚）に、割った薪を俵に積む（切り口は明るい木の色に年輪）。左は床のレコードの山があるので置かない
+  const lx = hf + sp + 6.2 * k;
+  if (lx - m + 2.2 * k < room - 1) {
+    const lw = 3.6 * k, ly = 83, lh = 3.4 * k;
+    for (let r = 0, row = 0; r < 3; r++) for (let i = 0; i < 3 - r; i++, row++) { const cx = lx - lw / 2 + lw * (i + .5 + r * .5) / 3, cy = ly - .5 * k - r * .82 * k - .45 * k, rr = .5 * k * (.9 + d() * .2); s += `<circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(rr)}" fill="#6b4a30"/><circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(rr * .78)}" fill="#c69a64"/><circle cx="${n1(cx)}" cy="${n1(cy)}" r="${n1(rr * .45)}" fill="none" stroke="#a87c4c" stroke-width="${n1(.06 * k)}"/><path d="M${n1(cx - rr * .1)} ${n1(cy - rr * .1)}l${n1(rr * .5)} ${n1(-rr * .35)}" stroke="#8a6440" stroke-width="${n1(.05 * k)}"/>`; }
+    for (const sx of [-1, 1]) s += `<path d="M${n1(lx + sx * lw * .55)} ${n1(ly)}V${n1(ly - lh * .72)}" stroke="#1d1916" stroke-width="${n1(.22 * k)}" stroke-linecap="round"/>`;
+    s += `<path d="M${n1(lx - lw * .55)} ${n1(ly - .1)}Q${n1(lx)} ${n1(ly + .5)} ${n1(lx + lw * .55)} ${n1(ly - .1)}" stroke="#1d1916" stroke-width="${n1(.22 * k)}" fill="none"/>`;
+    s += `<ellipse cx="${n1(lx)}" cy="${n1(ly + .2)}" rx="${n1(lw * .6)}" ry=".35" fill="#1a110a" opacity=".45"/>`;
+  }
+  // 右：道具立て（火かき棒・ほうき・シャベル）
+  const tx = hf + sp + 1.6 * k;
+  if (tx - m < room - 1) {
+    const ty = 82.6, th = 8 * k;
+    s += `<ellipse cx="${n1(tx)}" cy="${n1(ty + .2)}" rx="${n1(1.1 * k)}" ry=".3" fill="#1a110a" opacity=".45"/><rect x="${n1(tx - .9 * k)}" y="${n1(ty - .3 * k)}" width="${n1(1.8 * k)}" height="${n1(.35 * k)}" rx="${n1(.15 * k)}" fill="#1d1916"/>`;
+    s += `<path d="M${n1(tx)} ${n1(ty - .2 * k)}V${n1(ty - th)}" stroke="#1d1916" stroke-width="${n1(.16 * k)}"/><circle cx="${n1(tx)}" cy="${n1(ty - th - .25 * k)}" r="${n1(.3 * k)}" fill="#3a302a"/>`;
+    s += `<path d="M${n1(tx - .9 * k)} ${n1(ty - th * .82)}H${n1(tx + .9 * k)}" stroke="#1d1916" stroke-width="${n1(.14 * k)}"/>`;
+    s += `<path d="M${n1(tx - .6 * k)} ${n1(ty - th * .82)}L${n1(tx - .75 * k)} ${n1(ty - .9 * k)}" stroke="#2a2522" stroke-width="${n1(.1 * k)}"/><path d="M${n1(tx - .75 * k)} ${n1(ty - .9 * k)}l${n1(-.3 * k)} ${n1(.5 * k)}" stroke="#2a2522" stroke-width="${n1(.1 * k)}"/>`;
+    s += `<path d="M${n1(tx + .6 * k)} ${n1(ty - th * .82)}L${n1(tx + .7 * k)} ${n1(ty - 1.8 * k)}" stroke="#6b4a30" stroke-width="${n1(.12 * k)}"/><path d="M${n1(tx + .4 * k)} ${n1(ty - 1.9 * k)}h${n1(.6 * k)}l${n1(.2 * k)} ${n1(1.3 * k)}h${n1(-1 * k)}Z" fill="#8a6a3e"/>`;
+    s += `<path d="M${n1(tx + .1 * k)} ${n1(ty - th * .82)}L${n1(tx + .15 * k)} ${n1(ty - 1.2 * k)}" stroke="#2a2522" stroke-width="${n1(.1 * k)}"/><path d="M${n1(tx - .25 * k)} ${n1(ty - 1.3 * k)}h${n1(.8 * k)}l${n1(-.1 * k)} ${n1(.9 * k)}h${n1(-.6 * k)}Z" fill="#2a2522"/>`;
+  }
+  return s;
+}
+function gwOf(sw) { return sw * .64; }
 // 薪ストーブの火（揺れる炎と、舞い上がる火の粉）
 export function fireSVG() {
   let s = '<svg viewBox="-4 -12 8 13" xmlns="http://www.w3.org/2000/svg">';
@@ -2332,12 +2397,28 @@ function cabinWallDetail(x0, x1) {
   return s;
 }
 // 小屋の床：板ごとの色むら（明るい板・暗い板）と、継ぎ目の釘
-function cabinFloorDetail(x0, x1) {
-  const d = hrng(x0 * 6.7 + x1);
-  let s = '';
-  for (let y = 80, r = 0; y < 106; y += 3.2, r++) for (let x = x0 + d() * 10; x < x1; x += 10 + d() * 18) {
-    const w = 8 + d() * 16; s += `<rect x="${n1(x)}" y="${n1(y + .15)}" width="${n1(w)}" height="3" fill="${d() < .55 ? '#8a6444' : '#2e1f14'}" opacity="${n1(.1 + d() * .18)}"/>`;
-    if (d() < .5) s += `<circle cx="${n1(x + .5)}" cy="${n1(y + .8)}" r=".13" fill="#1a110a"/><circle cx="${n1(x + .5)}" cy="${n1(y + 2.4)}" r=".13" fill="#1a110a"/>`;
+// 床板（遠近）：壁ぎわの板は細く、手前ほど太く見える。板の長さも手前ほど長く、継ぎ目は目の高さの消失点へ向かって傾く
+// （消失点は立ち止まる場所ごとの画面の真ん中。立ち止まる場所の中間では傾きを 0 に戻して、つなぎ目が目立たないように）
+function cabinFloorDetail(x0, x1, W) {
+  const d = hrng(x0 * 6.7 + x1), n = 11, VY = 36, rows = Array.from({ length: n + 1 }, (_, i) => 80 + 27 * Math.pow(i / n, 1.55));
+  const persp = (x, yA, yB) => { const vx = Math.round((x - W / 2) / W) * W + W / 2, dx = x - vx, c = Math.cos(Math.PI * dx / W); return x + dx * c * c * ((yB - VY) / (yA - VY) - 1); };
+  // 壁ぎわの影（奥ほど暗い）
+  const [ag, ad] = lgrad([[0, '#1d130c', .55], [1, '#1d130c', 0]]);
+  let s = `<defs>${ad}</defs><rect x="${n1(x0)}" y="80" width="${n1(x1 - x0)}" height="6" fill="url(#${ag})"/>`;
+  for (let r = 0; r < n; r++) {
+    const yA = rows[r], yB = rows[r + 1], h = yB - yA, tones = ['#8a6444', '#2e1f14', '#7a5638', '#3a2718'];
+    let x = x0 - d() * h * 8;
+    while (x < x1) {
+      const L = h * (7 + d() * 6), xb = x + L;
+      // 板 1 枚（色むら）
+      s += `<path d="M${n1(x)} ${n2(yA)}L${n1(xb)} ${n2(yA)}L${n1(persp(xb, yA, yB))} ${n2(yB)}L${n1(persp(x, yA, yB))} ${n2(yB)}Z" fill="${tones[Math.floor(d() * 4)]}" opacity="${n2(.06 + d() * .16)}"/>`;
+      // 継ぎ目（端）と、釘 2 つ
+      s += `<path d="M${n1(xb)} ${n2(yA)}L${n1(persp(xb, yA, yB))} ${n2(yB)}" stroke="#2e2016" stroke-width="${n2(.1 + h * .05)}" opacity=".85"/>`;
+      if (d() < .6) for (const t of [.28, .72]) { const yy = yA + h * t, xx = persp(xb, yA, yy) - .25 - h * .08; s += `<circle cx="${n1(xx)}" cy="${n2(yy)}" r="${n2(.05 + h * .035)}" fill="#1a110a"/>`; }
+      x = xb;
+    }
+    // 板と板の境（下の縁は少し暗く、上の縁はほんのり明るい）
+    s += `<path d="M${n1(x0)} ${n2(yB)}H${n1(x1)}" stroke="#2e1d12" stroke-width="${n2(.1 + h * .06)}"/><path d="M${n1(x0)} ${n2(yA + .08 + h * .03)}H${n1(x1)}" stroke="#8a6444" stroke-width="${n2(.05 + h * .025)}" opacity=".35"/>`;
   }
   return s;
 }
@@ -2536,11 +2617,11 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   mid += `<rect x="${n1(wallX)}" y="-5" width="3" height="87" fill="#2e2016"/>`;
   const [flG, flD] = lgrad([[0, '#6b4a30'], [1, '#4a3322']]);
   mid += `<defs>${flD}</defs><rect x="${n1(wallX)}" y="80" width="${n1(mw - wallX + 5)}" height="26" fill="url(#${flG})"/><rect x="${n1(wallX)}" y="80" width="${n1(mw - wallX + 5)}" height=".8" fill="#2e2016"/>`;
-  for (let y = 83; y < 106; y += 3.2) mid += `<path d="M${n1(wallX)} ${n1(y)}H${n1(mw + 5)}" stroke="#3f2a1c" stroke-width=".25"/>`;
   // 床板の継ぎ目と木目、巾木、額灯が床に落とす光
-  for (let y = 80, r = 0; y < 106; y += 3.2, r++) for (let x = wallX + (r % 3) * 7; x < mw + 5; x += R(16, 24)) mid += `<path d="M${n1(x)} ${n1(y)}v3.2" stroke="#2e2016" stroke-width=".25" opacity=".8"/>`;
+  // 床板は遠近をつけて描く（cabinFloorDetail）。前の等間隔の継ぎ目は、乱数の呼び出しだけ残す
+  for (let y = 80, r = 0; y < 106; y += 3.2, r++) for (let x = wallX + (r % 3) * 7; x < mw + 5; x += R(16, 24));
   for (let i = 0; i < (mw - wallX) / 3; i++) { const x = R(wallX, mw), y = R(81, 105); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(2, 4))} ${n1(R(-.3, .3))} ${n1(R(5, 9))} 0" stroke="#7a5638" stroke-width=".18" fill="none" opacity=".45"/>`; }
-  mid += cabinFloorDetail(wallX, mw + 5);
+  mid += cabinFloorDetail(wallX, mw + 5, W);
   mid += `<rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height="1.6" fill="#3a2718"/><rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height=".35" fill="#7a5638" opacity=".7"/>`;
   for (let k = 2; k < stops; k++) mid += rglow(workX(k), 86, 22, '#ffcf85', .16);
   // ラグ：部屋の奥まで続く 1 本の長い敷物（ランナー）。縁取り、内側の二重線、菱形の模様、両端のフリンジ
@@ -2594,7 +2675,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     if (shW >= 10) mid += shelf(m - shW / 2, 26, shW) + shelf(m - shW / 2, 40, shW);
     // 薪ストーブは床に置き、煙突は壁ぞいに天井へ（すき間が狭いときは置かない）
     // 薪ストーブ（鋳物の箱に脚、焚き口のガラス、上に煙突）。家具に合わせて大きめに
-    if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k; mid += woodStove(m, k, sw, sh); stove = [m, 80, k]; }
+    if (gap >= 11) { const k = 2.1, sw = 8 * k, sh = 9 * k; mid += woodStove(m, k, sw, sh, gap / 2); stove = [m, 80, k, woodStove.kettle]; }
   }
   // 壁に掛けたスケートボード：作品の枠にかからないときだけ
   const sk = [[wallX + 8, 26, '#d4d0b5', '#b8604a'], [wallX + 14, 27, '#3f5d59', '#e2b36f']];

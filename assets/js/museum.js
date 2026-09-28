@@ -716,6 +716,8 @@ function buildLiving(r) {
     const sheet = (cls, pos) => `<i class="living swash${cls}" style="left:-5vh;top:${((D.foam - 1.6) * U).toFixed(1)}px;width:${mw + 10}vh;height:6vh;background-image:url(&quot;${tile}&quot;);background-size:48vh 6vh;background-position:${pos}vh 0"></i>`;
     P.insertAdjacentHTML('beforeend', `<i class="living wetshine" style="left:-5vh;top:${((D.foam + .8) * U).toFixed(1)}px;width:${mw + 10}vh;height:3.2vh"></i>` + sheet('', 0) + sheet(' s2', -19));
   }
+  // やかんの注ぎ口から湯気
+  if (D.stove && D.stove[3]) { const [x, y] = D.stove[3]; P.insertAdjacentHTML('beforeend', `<div class="living steam kettle" style="left:${((x - 1.6) * U).toFixed(1)}px;top:${((y - 6) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
   if (D.mug) { const [x, y] = D.mug; P.insertAdjacentHTML('beforeend', `<div class="living steam" style="left:${((x - 1) * U).toFixed(1)}px;top:${((y - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`); }
   // 薪ストーブの火の光：焚き口から壁へ広がる光と、床に落ちる光だまりが、炎に合わせて不規則に揺らめく（周期の違う 2 枚を重ねて、同じ揺れのくり返しに見えないように）
   if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, gy = y - sh + sh * .51, ww = 44 * k * (W < 80 ? .8 : 1), wh = 34 * k, fw2 = 30 * k * (W < 80 ? .8 : 1);
