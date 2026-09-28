@@ -1109,6 +1109,8 @@ function updateRoom(r, now) {
   // 光の流れ・次の部屋の気配は、部屋の中にいる間だけ（葉のカーテンが開いている間）。いま見ている部屋だけに付けて軽く
   r.el.classList.toggle('lit', p > .015 && p < .985);
   put(q(r, '.lightplay'), '--p', p.toFixed(3));
+  // 部屋の入口の小さなアニメーション（落ち葉・カモメ・ホタルなど）は、入口にいる間だけ。最初の作品へ歩き出すと消える（作品に重ならないように）
+  { const io = Math.max(0, Math.min(1, 1 - r.c / .4)); const el = q(r, '.room-intro'); if (el) { put(el, 'opacity', io.toFixed(3)); put(el, 'visibility', io > 0 ? 'visible' : 'hidden'); } }
   // 部屋の終わりが近づくと、次の部屋の光の色が右からこぼれてくる（葉のカーテンが閉じると引く）
   put(q(r, '.nextglow'), '--nextk', (next ? smooth(.76, .93, p) * (1 - smooth(.965, .995, p)) : 0).toFixed(3));
   r.el.classList.toggle('focus', focus > .6);
