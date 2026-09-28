@@ -623,6 +623,14 @@ function trailDetail(x0, x1, y, h) {
   }
   return s;
 }
+// 水面らしさ：線は描かず、空の明るさが映るふちのぼやけた大きな光のむらと、手前ほど深くなる色
+function waterSheen(x0, x1, y0, y1) {
+  const d = hrng(x0 * 3.1 + x1 * .7), id = `ws${gid++}`, dp = `wd${gid++}`;
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#eef4dc" stop-opacity=".22"/><stop offset=".55" stop-color="#eef4dc" stop-opacity=".08"/><stop offset="1" stop-color="#eef4dc" stop-opacity="0"/></radialGradient><linearGradient id="${dp}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f2a18" stop-opacity="0"/><stop offset="1" stop-color="#1f2a18" stop-opacity=".22"/></linearGradient></defs>`;
+  s += `<rect x="${n1(x0)}" y="${n1(y0 + (y1 - y0) * .35)}" width="${n1(x1 - x0)}" height="${n1((y1 - y0) * .65)}" fill="url(#${dp})"/>`;
+  for (let x = x0; x < x1; x += 7 + d() * 12) { const y = y0 + 4 + d() * (y1 - y0 - 8), t = (y - y0) / (y1 - y0), rx = 6 + d() * 12 * (1.2 - t * .5); s += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n1(rx)}" ry="${n1(rx * (.07 + d() * .05))}" fill="url(#${id})"/>`; }
+  return s;
+}
 function hazeTrunk(x, base, h, w, lean, c) {
   const d = hrng(x * 5.3 + h), top = base - h - 6, fork = base - h * (.55 + d() * .2), bend = (d() - .5) * w * 1.6;
   const X = (y) => { const t = (base - y) / (base - top); return x + lean * t * 4 + Math.sin(t * Math.PI) * bend; }, Wd = (y) => { const t = (base - y) / (base - top); return w * (1 - t * .45) * (t < .04 ? 1.5 - t * 12 : 1); };
@@ -1192,13 +1200,14 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     for (let k = 0; k < 14; k++) mid += `<circle cx="${n1(cx + R(-sp, sp))}" cy="${n1(cy + R(-sp, sp) * .3)}" r="${n1(R(.12, .3))}" fill="${pick(['#a5c23e', '#8aa35a', '#c9d77a'])}" opacity=".8"/>`;
   }
   mid += litter(-5, mw, 36, 98, Math.round(mw * .35), ['#8a6a3a', '#a5813e', '#b8923e', '#6f7d2e']);
-  for (let i = 0; i < mw / 10; i++) { const x = R(0, mw), y = R(30, 98); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(3, 7))} ${n1(R(-.6, .6))} ${n1(R(7, 14))} 0" stroke="#4f5a35" stroke-width=".25" fill="none" opacity=".35"/>`; }
+  for (let i = 0; i < mw / 10; i++) { R(0, mw); R(30, 98); R(3, 7); R(-.6, .6); R(7, 14); } // （水面の暗い線はやめた。乱数の並びだけ残す）
   for (let s = 0; s < stops; s++) {
     const cx = at(W, FACTORS.mid)(s, W / 2);
     // 葦は台（桟橋の上の木の台）の横に重ならないところだけ（狭い画面では台の縁にかかるので置かない）
     for (const [dx, n, c] of [[-.34, 7, '#6f8a3a'], [.36, 6, '#7c9a40']]) { const x = cx + W * dx; if (clearOfWorks(W, stops, x - 3, 2) && clearOfWorks(W, stops, x + 3, 2)) mid += reeds(x, 100, n, c); }
   }
-  for (let i = 0; i < mw / 3; i++) mid += `<path d="M${n1(R(0, mw))} ${n1(R(30, 100))}h${n1(R(2, 6))}" stroke="#e8efd0" stroke-width=".25" opacity=".35" stroke-linecap="round"/>`;
+  for (let i = 0; i < mw / 3; i++) { R(0, mw); R(30, 100); R(2, 6); } // （白い横線はやめた：チープに見えるので。乱数の並びだけ残す）
+  mid += waterSheen(-5, mw + 5, 30, 100);
   // 生きもの：蓮の葉のカエル、水面のトンボとアメンボ、丸太のカメ、浅瀬のサギ、つるの先のカワセミ（作品の枠にはかからないところに）
   for (let s = 0; s < stops; s++) {
     // 立入禁止の枠：作品そのもの（上のほう）と、その下の台（細い）。台の横の水面は使える
