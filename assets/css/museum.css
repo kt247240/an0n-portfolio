@@ -885,7 +885,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* ゴンドラは輪と逆向きに同じ速さで回して、いつも真下に吊り下がる（吊り金具を軸に） */
 .ferris-wheel .gondola { position: absolute; height: auto; transform-origin: 50% 0; animation: spin 90s linear infinite reverse; }
 .ferris-refl { overflow: hidden; -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent); }
-.ferris-refl i { position: absolute; left: 50%; height: .3vh; border-radius: .2vh; opacity: .45; transform: translateX(-50%); animation: refl 2.6s ease-in-out infinite alternate; }
+.ferris-refl i { position: absolute; left: 50%; height: 1.1vh; border-radius: 50%; opacity: .28; transform: translateX(-50%); animation: refl 2.6s ease-in-out infinite alternate; }
 @keyframes refl { from { transform: translateX(-56%) scaleX(.8); opacity: .25; } to { transform: translateX(-44%) scaleX(1.1); opacity: .55; } }
 .puddle-shine { border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 220, 150, .5), rgba(255, 200, 115, .18) 55%, transparent); mix-blend-mode: screen; animation: pshine 3.2s ease-in-out infinite alternate; }
 @keyframes pshine { from { opacity: .35; transform: scaleX(.92); } to { opacity: 1; transform: scaleX(1.06); } }
@@ -957,11 +957,13 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 @keyframes harbor { 0%, 55%, 100% { opacity: .12; } 68%, 82% { opacity: 1; } }
 /* 夕凪の浜：夕日の光の道。横長のぼかした光の帯が、左右にゆらいで明滅する */
 .sunpath { pointer-events: none; }
-.sunpath i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 242, 214, .9), rgba(255, 226, 180, .4) 55%, rgba(255, 214, 160, 0)); opacity: .5; animation: sunbar 3s ease-in-out infinite alternate; will-change: transform, opacity; }
+.sunpath i { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 242, 214, .55), rgba(255, 226, 180, .2) 50%, rgba(255, 214, 160, 0)); opacity: .5; animation: sunbar 3s ease-in-out infinite alternate; will-change: transform, opacity; }
 @keyframes sunbar { 0% { transform: translateX(-6%) scaleX(.82); opacity: .28; } 100% { transform: translateX(6%) scaleX(1.12); opacity: .85; } }
 /* 夕凪の浜：海の面のゆらぎ（横長のぼかした光と影が、左右に寄せては返して明滅） */
-.swell { border-radius: 50%; background: radial-gradient(closest-side, rgba(252, 232, 212, .6), rgba(252, 232, 212, .18) 60%, rgba(252, 232, 212, 0)); animation: swell 7s ease-in-out infinite alternate; will-change: transform, opacity; }
-.swell.dk { background: radial-gradient(closest-side, rgba(86, 136, 140, .4), rgba(86, 136, 140, .12) 60%, rgba(86, 136, 140, 0)); }
+.swell { border-radius: 50%; background: radial-gradient(closest-side, rgba(252, 232, 212, .38), rgba(252, 232, 212, .1) 55%, rgba(252, 232, 212, 0)); animation: swell 7s ease-in-out infinite alternate; will-change: transform, opacity; }
+.swell.dk { background: radial-gradient(closest-side, rgba(86, 136, 140, .3), rgba(86, 136, 140, .08) 55%, rgba(86, 136, 140, 0)); }
+.scene-night .swell { background: radial-gradient(closest-side, rgba(170, 182, 236, .26), rgba(170, 182, 236, .07) 55%, rgba(170, 182, 236, 0)); }
+.scene-night .swell.dk { background: radial-gradient(closest-side, rgba(12, 14, 40, .38), rgba(12, 14, 40, .1) 55%, rgba(12, 14, 40, 0)); }
 .room.moonlit .swell { background: radial-gradient(closest-side, rgba(196, 208, 242, .32), rgba(196, 208, 242, .1) 60%, rgba(196, 208, 242, 0)); }
 .room.moonlit .swell.dk { background: radial-gradient(closest-side, rgba(18, 26, 64, .35), rgba(18, 26, 64, .1) 60%, rgba(18, 26, 64, 0)); }
 @keyframes swell { 0% { transform: translateX(calc(var(--dx) * -1)) scaleX(.85); opacity: .15; } 50% { opacity: 1; } 100% { transform: translateX(var(--dx)) scaleX(1.12); opacity: .2; } }
@@ -1102,4 +1104,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
-.sunpath.moon i { background: radial-gradient(closest-side, rgba(250, 246, 226, .8), rgba(214, 222, 246, .3) 55%, rgba(200, 210, 240, 0)); } /* 夜は月の光の道（白く冷たい光） */
+.sunpath.moon i { background: radial-gradient(closest-side, rgba(250, 246, 226, .5), rgba(214, 222, 246, .18) 50%, rgba(200, 210, 240, 0)); } /* 夜は月の光の道（白く冷たい光） */

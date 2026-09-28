@@ -1764,11 +1764,12 @@ function glitter(x, y0, y1, c, { spread = .45, n = 90, a = .8 } = {}) {
   return s;
 }
 // 夕凪の海の面：白い筋は使わず、空を映す明るいゆらぎと、うねりの少し暗い帯を、ぼかした細長い楕円で重ねる（奥ほど細く短く）
-function seaSheen(x0, x1, hz, y1, g) {
+function seaSheen(x0, x1, hz, y1, g, { light = '#fbe4cf', dark = '#5f8f93', la = .5, da = .32 } = {}) {
   const L = `ss${gid++}`, Dk = `sd${gid++}`;
-  let s = `<defs><radialGradient id="${L}"><stop offset="0" stop-color="#fbe4cf" stop-opacity=".5"/><stop offset=".6" stop-color="#fbe4cf" stop-opacity=".16"/><stop offset="1" stop-color="#fbe4cf" stop-opacity="0"/></radialGradient><radialGradient id="${Dk}"><stop offset="0" stop-color="#5f8f93" stop-opacity=".32"/><stop offset=".6" stop-color="#5f8f93" stop-opacity=".1"/><stop offset="1" stop-color="#5f8f93" stop-opacity="0"/></radialGradient></defs>`;
-  for (let t = .03; t < 1; t += .045 + t * .06) {
-    const y = hz + .5 + (y1 - hz) * t * t, w = 2.5 + t * 26, h = .1 + t * .9;
+  let s = `<defs><radialGradient id="${L}"><stop offset="0" stop-color="${light}" stop-opacity="${la}"/><stop offset=".6" stop-color="${light}" stop-opacity="${n2(la * .3)}"/><stop offset="1" stop-color="${light}" stop-opacity="0"/></radialGradient><radialGradient id="${Dk}"><stop offset="0" stop-color="${dark}" stop-opacity="${da}"/><stop offset=".6" stop-color="${dark}" stop-opacity="${n2(da * .3)}"/><stop offset="1" stop-color="${dark}" stop-opacity="0"/></radialGradient></defs>`;
+  // 細い横線に見えないように、ゆらぎは縦にも厚みのある、ふちのぼけた面にする
+  for (let t = .03; t < 1; t += .06 + t * .08) {
+    const y = hz + .5 + (y1 - hz) * t * t, w = 3 + t * 24, h = .45 + t * 2.4;
     for (let x = x0 + g() * w; x < x1; x += w * (1.2 + g() * 1.6)) {
       const dk = g() < .45;
       s += `<ellipse cx="${n1(x)}" cy="${n1(y + (g() - .5) * h)}" rx="${n1(w * (.5 + g() * .6))}" ry="${n2(h * (.6 + g() * .5))}" fill="url(#${dk ? Dk : L})"/>`;
@@ -1777,10 +1778,11 @@ function seaSheen(x0, x1, hz, y1, g) {
   return s;
 }
 // 夕日が海に落とす光の道（動かない下地）：水平線から手前へ、横長のやわらかな光の帯が広がる。揺らぎは museum.js が重ねる
-function sunColumn(x, hz, y1) {
+function sunColumn(x, hz, y1, c = ['#fff0cf', '#ffe2b4', '#ffd9a6']) {
   const id = `sc${gid++}`;
-  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="#fff0cf" stop-opacity=".7"/><stop offset=".5" stop-color="#ffe2b4" stop-opacity=".25"/><stop offset="1" stop-color="#ffd9a6" stop-opacity="0"/></radialGradient></defs>`;
-  for (let i = 0; i < 16; i++) { const t = i / 15, y = hz + .4 + (y1 - hz) * t * t, w = 1.4 + t * 9; s += `<ellipse cx="${n1(x + Math.sin(i * 2.3) * t * 1.2)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n2(.22 + t * .7)}" fill="url(#${id})" opacity="${n2(1 - t * .45)}"/>`; }
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c[0]}" stop-opacity=".55"/><stop offset=".5" stop-color="${c[1]}" stop-opacity=".2"/><stop offset="1" stop-color="${c[2]}" stop-opacity="0"/></radialGradient></defs>`;
+  // 横長の帯を重ねず、縦にやわらかく広がる光の面にする（線に見えないように）
+  for (let i = 0; i < 9; i++) { const t = i / 8, y = hz + .8 + (y1 - hz) * t * t, w = 1.6 + t * 8; s += `<ellipse cx="${n1(x + Math.sin(i * 2.3) * t * 1.2)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n2(1 + t * 3.2)}" fill="url(#${id})" opacity="${n2(.9 - t * .4)}"/>`; }
   return s;
 }
 // 遠い波：奥ほど細かく、手前ほど長い白い筋
@@ -1991,9 +1993,12 @@ export function sceneNight(W, stops) {
   { const lx = lighthouse.x; far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
   const [sg, sd] = lgrad([[0, '#2d3263'], [1, '#141733']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
-  far += glitter(mx, hz + .5, 100, '#fdf1d6', { spread: .25, n: 110, a: .7 });
-  far += waveLines(-5, fw + 5, hz + 1, 100, '#8f98c9', Math.round(fw));
-  for (let i = 0; i < fw / 2.2; i++) { const x = R(0, fw), y = R(hz + .8, hz + 6); far += `<path d="M${n1(x)} ${n1(y)}v${n1(R(.6, 1.6))}" stroke="${pick(['#ffd79a', '#ffb45a'])}" stroke-width=".22" opacity="${n1(R(.25, .55) * 100) / 100}"/>`; }
+  // 水面：白い横線（遠い波・月の光の粒）はやめて、やわらかな光と影のゆらぎと、月の光の道に（乱数の呼び出しは残す）
+  glitter(mx, hz + .5, 100, '#fdf1d6', { spread: .25, n: 110, a: .7 });
+  waveLines(-5, fw + 5, hz + 1, 100, '#8f98c9', Math.round(fw));
+  { const gS = hrng(fw + 9.1); far += seaSheen(-5, fw + 5, hz, 96, gS, { light: '#9aa3d6', dark: '#0f1230', la: .32, da: .4 }) + sunColumn(mx, hz, 88, ['#f6f0d8', '#d8dcf2', '#b8c0e8']); }
+  // 町の灯りの映り込み：線ではなく、縦に少し伸びたぼけた光
+  for (let i = 0; i < fw / 2.2; i++) { const x = R(0, fw), y = R(hz + .8, hz + 6), l = R(.6, 1.6), c = pick(['#ffd79a', '#ffb45a']), o = R(.25, .55); far += `<ellipse cx="${n1(x)}" cy="${n1(y + l / 2)}" rx=".32" ry="${n1(l * .75)}" fill="${c}" opacity="${n2(o * .6)}"/>`; }
   for (let k = 0; k < Math.max(2, Math.round(fw / 60)); k++) { const x = R(fw * .05, fw * .95), y = hz + R(2.5, 5); far += `<path d="M${n1(x - 2)} ${n1(y)}h4l-.6 .8h-2.8Z" fill="#141733"/><path d="M${n1(x)} ${n1(y)}v-3" stroke="#141733" stroke-width=".2"/><circle cx="${n1(x)}" cy="${n1(y - 3)}" r=".25" fill="#ffe7a8"/>` + rglow(x, y - 3, 2, '#ffe7a8', .35); }
   far += haze(-10, fw + 10, hz - 14, hz + 2, '#3c3f73', 0, .35);
   // 中景：海沿いの遊歩道（手すり、街灯、ヤシ、電球の紐）と植え込み
@@ -2056,7 +2061,7 @@ export function sceneNight(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'radial-gradient(120% 38% at 50% 66%, rgba(150, 104, 158, .5), rgba(90, 70, 140, .18) 55%, transparent 80%), linear-gradient(#04051a 0%, #0a0d2e 28%, #151a45 50%, #252a5c 64%, #3a3a6c 74%, #2b3162 100%)', skyArt, skyDom,
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110], puddles, ferris, lighthouse,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'night', glowDefault: [255, 180, 110], puddles, ferris, lighthouse, sunpath: [mx, hz], moonpath: true,
     curtain: ['#0b100a', '#141d0f', '#1f2b15', '#2f3a1a', '#3f4a22'],
   };
 }

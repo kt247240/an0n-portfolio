@@ -658,9 +658,9 @@ function swashURL(scene) {
   const foam = `M${xs.map((x) => `${n(x)} ${n(f(x) - band(x))}`).join('L')}L${[...xs].reverse().map((x) => `${n(x)} ${n(f(x) + .12)}`).join('L')}Z`;
   let holes = '', streaks = '';
   for (let i = 0; i < 44; i++) { const x = (i * 1.09 + Math.sin(i * 7.3) * .4 + Wt) % Wt, y = f(x) - band(x) * (.3 + .4 * ((Math.sin(i * 3.1) + 1) / 2)); holes += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(.12 + .1 * ((Math.sin(i * 5.7) + 1) / 2))}" ry=".07" fill="#b9d6cf" opacity=".75"/>`; }
-  for (let i = 0; i < 9; i++) { const x = (i * 5.4 + 2 + Math.sin(i * 2.3)) % Wt, y = f(x) - 1 - (i % 3) * .55; streaks += `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(1.1 + (i % 4) * .5)}" ry=".08" fill="#fbf6ea" opacity=".45"/>`; }
+  // （波の上の細い白い筋はやめた：横線に見えるので）
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wt} 6" preserveAspectRatio="none" width="480" height="60"><defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9d0cb" stop-opacity="0"/><stop offset=".45" stop-color="#b3d6cf" stop-opacity=".35"/><stop offset=".62" stop-color="#c4ded6" stop-opacity=".55"/></linearGradient></defs>`
-    + `<path d="${sheet}" fill="url(#w)"/>${streaks}<path d="${foam}" fill="#fbf6ea" opacity=".9"/>${holes}<path d="M${edge}" stroke="#fffaf2" stroke-width=".06" fill="none" opacity=".6"/></svg>`;
+    + `<path d="${sheet}" fill="url(#w)"/>${streaks}<path d="${foam}" fill="#fbf6ea" opacity=".9"/>${holes}</svg>`; // 泡のふちをなぞる線も引かない
   return (swashCache[scene] = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(svg, gradeOf(scene)))}`);
 }
 // 小さな決まった乱数（波紋の出るタイミングをずらすため。部屋を組み直しても同じ）
@@ -697,14 +697,14 @@ function buildLiving(r) {
   // 夕凪の浜：夕日の光の道。横長のやわらかな光の帯が、波に合わせて左右にゆらいで明滅する（色は部屋の色合いに合わせる。夜は月の光の色に）
   if (D.sunpath) {
     const [x, hz] = D.sunpath, n = COARSE ? 9 : 14;
-    const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 12 + t * 80; return `<i style="top:${(t * t * 100).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(.25 + t * .7).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
+    const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 14 + t * 76; return `<i style="top:${(t * t * 92).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(1.1 + t * 2.6).toFixed(2)}vh;margin-top:-${(.5 + t * 1.3).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
     S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath${D.moonpath ? ' moon' : ''}" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
   }
   // 夕凪の浜：海の面のゆらぎ。空を映す明るいゆらぎと、うねりの暗い帯が、ゆっくり寄っては離れて明滅する（奥ほど細く短く、ゆっくり）
   if (D.sunpath) {
     const hz = D.sunpath[1], fw = W + (r.stops - 1) * W * FACTORS.far + 40, rows = COARSE ? 7 : 10, sw = [];
     for (let k = 0; k < rows; k++) {
-      const t = (k + .6) / rows, y = hz + .6 + (80 - hz) * t * t, w = 3 + t * 20, h = .16 + t * .55, gap = w * (COARSE ? 3.2 : 2.4);
+      const t = (k + .6) / rows, y = hz + .6 + (80 - hz) * t * t, w = 3.5 + t * 20, h = .6 + t * 1.8, gap = w * (COARSE ? 3.2 : 2.4);
       for (let x = Math.random() * gap; x < fw; x += gap * (.7 + Math.random() * .6)) sw.push(`<i class="living swell${Math.random() < .42 ? ' dk' : ''}" style="left:${((x - w / 2) * U).toFixed(1)}px;top:${((y - h / 2) * U).toFixed(1)}px;width:${w.toFixed(1)}vh;height:${h.toFixed(2)}vh;animation-duration:${(5 + t * 3 + Math.random() * 3).toFixed(1)}s;animation-delay:${(-Math.random() * 8).toFixed(1)}s;--dx:${(w * .12).toFixed(2)}vh"></i>`);
     }
     S.insertAdjacentHTML('beforeend', sw.join(''));
