@@ -256,10 +256,10 @@ footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 2
 #v-meta { margin: 0; font-family: var(--serif); font-size: 13px; letter-spacing: .15em; opacity: .85; }
 /* 価格：ASK と、問い合わせ（Instagram の DM・メッセージ） */
 .v-ask { display: flex; align-items: center; gap: 10px; margin-top: 14px; pointer-events: auto; }
-.v-ask .tag { font-family: "VT323", monospace; font-size: 18px; letter-spacing: .12em; color: rgb(var(--glow)); margin-right: 4px; }
+.v-ask .tag { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: rgb(var(--glow)); margin-right: 4px; }
 .v-ask a { color: var(--cream); text-decoration: none; font-size: 12px; letter-spacing: .2em; padding: 8px 16px; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
 .v-ask a:hover { background: var(--cream); color: var(--ink); }
-.spec .ask { position: absolute; right: -6px; bottom: 14px; font-style: normal; font-family: "VT323", monospace; font-size: 14px; letter-spacing: .12em; color: #3b2a1c; background: #efe3c3; padding: 1px 8px 0; border-radius: 2px; box-shadow: 0 2px 4px rgba(0, 0, 0, .25); transform: rotate(-4deg); pointer-events: none; }
+.spec .ask { position: absolute; right: -6px; bottom: 14px; font-style: normal; font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #3b2a1c; background: #efe3c3; padding: 2px 8px 1px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0, 0, 0, .25); transform: rotate(-4deg); pointer-events: none; }
 .v-ask.sold a, .v-ask.nfs a { display: none; }
 .v-ask.nfs .tag { opacity: .8; }
 .spec .ask.nfs { background: #e4ddcc; color: #5a4a3a; } /* 売約済みの作品は問い合わせボタンを出さない */
@@ -986,16 +986,16 @@ body.forest-night .farewell .fw-win { fill: #ffc873; }
 body.forest-night .farewell .fw-glow { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #entrance .fleck, body.beat-on .player-btn .arm { animation: none; } }
 
-/* 作品名：ビューアは美術館の壁の札のように（題はクラシックな欧文セリフ、年とクレジットは値札と同じ VT323）。
+/* 作品名：ビューアは美術館の壁の札のように（題はクラシックな欧文セリフ、年とクレジットは同じ書体の斜体。値札は同じ書体の大文字）。
    目録は、ピンで留めた台紙にマーカーで書き込んだ手書きの題（ストリートの手ざわり）。日本語の題はそれぞれの書体の日本語へ */
 #v-meta { display: grid; gap: 6px; }
 #v-meta .v-title { font-family: "Cormorant Garamond", "Shippori Mincho", serif; font-weight: 600; font-size: clamp(26px, 3.2vw, 40px); line-height: 1; letter-spacing: .01em; opacity: 1; text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
-#v-meta .v-year, #v-meta .v-credit { font-family: "VT323", monospace; font-size: 17px; letter-spacing: .14em; line-height: 1; opacity: .8; }
+#v-meta .v-year, #v-meta .v-credit { font-family: "Cormorant Garamond", "Shippori Mincho", serif; font-style: italic; font-weight: 500; font-size: 18px; letter-spacing: .05em; line-height: 1.1; opacity: .85; }
 #v-meta .v-year::before { content: "— "; opacity: .6; }
 #v-meta .v-credit { opacity: .95; color: rgb(var(--glow)); }
 .spec .name { position: absolute; left: -6px; right: -6px; top: calc(100% + 8px); display: block; text-align: center; font-family: "Permanent Marker", "Zen Kaku Gothic New", sans-serif; font-weight: 400; font-size: 16px; letter-spacing: .03em; color: #33291f; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: rotate(-1.2deg); }
 .spec:nth-child(2n) .name { transform: rotate(.9deg); }
-.spec .name small { display: block; font-family: "VT323", monospace; font-weight: 400; font-size: 13px; letter-spacing: .22em; opacity: .55; margin-top: 3px; }
+.spec .name small { display: block; font-family: "Cormorant Garamond", serif; font-style: italic; font-weight: 500; font-size: 14px; letter-spacing: .06em; opacity: .6; margin-top: 3px; }
 .specimen .bed { row-gap: 64px; padding-bottom: 64px; }
 
 /* ビューア：作品は見出しと作品名の欄のあいだに収める（位置と高さは fitVScreen が測って決める） */
@@ -1041,7 +1041,7 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .v-ask .share { position: relative; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--cream); border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); cursor: pointer; transition: background .3s, color .3s; }
 .v-ask .share svg { width: 17px; height: 17px; }
 .v-ask .share:hover { background: var(--cream); color: var(--ink); }
-.v-ask .share .done { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translate(-50%, 4px); font-family: "VT323", monospace; font-size: 16px; letter-spacing: .14em; color: var(--cream); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+.v-ask .share .done { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translate(-50%, 4px); font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 15px; letter-spacing: .14em; color: var(--cream); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
 .v-ask .share.copied .done { opacity: 1; transform: translate(-50%, 0); }
 .v-ask { flex-wrap: wrap; row-gap: 10px; }
 .v-ask .tag { white-space: nowrap; }
