@@ -1847,6 +1847,8 @@ export function sceneCove(W, stops, { night = false } = {}) {
   // 看板（流木の台）の下の縁に切られる帯（台の真下で、地面の y が 92 より上）には、砂の上の小物を置かない：
   // 板の下から半分だけのぞいて、台の下にもぐり込んでいるように見えるので
   const open = (x, y) => y >= 92 || clearOfWorks(W, stops, x, 3);
+  // 小瓶の置き場所（eggs.js の roomEggHTML と同じ計算：2 つ目のすき間の真ん中から右へ）
+  const bottleX = at(W, FACTORS.mid)(Math.min(stops - 1, 2) - .5, W * .5) + Math.min(W * .3, 15);
   mid += pebbles(-5, mw, 85, 103, Math.round(mw * .5), open);
   for (let i = 0; i < mw * .35; i++) { const x = R(0, mw), y = R(84, 102); if (!open(x, y)) continue; mid += `<path d="M${n1(x)} ${n1(y)}a.6 .45 0 0 1 1.2 0Z" fill="#f4e9da" opacity=".85"/>`; }
   for (let i = 0; i < mw / 16; i++) {
@@ -1862,11 +1864,13 @@ export function sceneCove(W, stops, { night = false } = {}) {
     if (!clearOfWorks(W, stops, x - 7, 10) || !clearOfWorks(W, stops, x + 16, 10)) continue;
     const y = R(85, 94), c = pick(['#6f6a6a', '#7c746c', '#5f5f66']), rw = R(7, 13);
     // 夕日の長い影（太陽は左の奥なので、右手前へ長く）
-    mid += `<ellipse cx="${n1(x + rw * .9)}" cy="${n1(y + .6)}" rx="${n1(rw * 1.1)}" ry="${n1(rw * .12)}" fill="#7a5a5a" opacity=".22"/>`;
-    mid += rock(x, y, rw, R(3.5, 6), c);
-    if (rnd() < .6) mid += rock(x + R(4, 8), y + R(.5, 1.5), R(3, 6), R(1.6, 3), mixC(c, '#8a8278', .3));
+    // 小瓶（museum.js の隠し小物）を置く場所には、岩と流木を置かない（乱数の呼び出しは同じまま、描くかどうかだけ変える）
+    let rk = `<ellipse cx="${n1(x + rw * .9)}" cy="${n1(y + .6)}" rx="${n1(rw * 1.1)}" ry="${n1(rw * .12)}" fill="#7a5a5a" opacity=".22"/>`;
+    rk += rock(x, y, rw, R(3.5, 6), c);
+    if (rnd() < .6) rk += rock(x + R(4, 8), y + R(.5, 1.5), R(3, 6), R(1.6, 3), mixC(c, '#8a8278', .3));
+    if (x + rw * 2 < bottleX - 5 || x - 2 > bottleX + 5) mid += rk;
   }
-  for (let x = R(10, 30); x < mw; x += R(40, 70)) if (clearOfWorks(W, stops, x - 7, 10) && clearOfWorks(W, stops, x + 7, 10)) mid += driftwood(x, R(92, 98), R(8, 14), R(-8, 8));
+  for (let x = R(10, 30); x < mw; x += R(40, 70)) if (clearOfWorks(W, stops, x - 7, 10) && clearOfWorks(W, stops, x + 7, 10)) { const dw = driftwood(x, R(92, 98), R(8, 14), R(-8, 8)); if (Math.abs(x - bottleX) > 12) mid += dw; }
   // 貝殻・ヒトデ・シーグラス、波打ちぎわの足あとと泡
   for (let i = 0; i < mw / 7; i++) { const x = R(0, mw), y = R(84.5, 103), k = rnd(); if (!open(x - 1, y) || !open(x + 2, y)) continue; mid += beachShell(x, y, R(1.4, 2.4) * (1 + (y - 84) / 22), k < .45 ? 0 : k < .75 ? 1 : k < .85 ? 2 : 3); }
   for (let x = R(0, 40); x < mw; x += R(70, 130)) mid += footprints(x, x + R(26, 44), R(82.6, 84), Math.round(R(12, 20)), open);

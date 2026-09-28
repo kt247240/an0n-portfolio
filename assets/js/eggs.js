@@ -53,7 +53,8 @@ const bottleSVG = `<svg viewBox="0 0 50 30"><g transform="rotate(-18 25 15)"><re
 export function roomEggHTML(roomId, W, U, itemCount, step = W) {
   const at = (s, x, css, html, egg) => `<button class="egg-prop" data-egg="${egg}" aria-label="?" style="left:${(s * step + x) * U}px;${css}">${html}</button>`;
   switch (roomId) {
-    case 'dusk': return at(Math.min(itemCount, 2) - .5, W * .5, 'bottom:5vh;width:8vh', bottleSVG, 'bottle');
+    // 小瓶は、同じすき間に引き上げてある小舟と重ならないように、小舟の右の砂の上へ
+    case 'dusk': return at(Math.min(itemCount, 2) - .5, W * .5 + Math.min(W * .3, 15), 'bottom:3.5vh;width:7vh', bottleSVG, 'bottle');
     default: return '';
   }
 }
