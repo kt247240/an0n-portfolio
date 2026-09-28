@@ -962,7 +962,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* 夕凪の浜：海の面のゆらぎ（横長のぼかした光と影が、左右に寄せては返して明滅） */
 .swell { border-radius: 50%; background: radial-gradient(closest-side, rgba(252, 232, 212, .38), rgba(252, 232, 212, .1) 55%, rgba(252, 232, 212, 0)); animation: swell 7s ease-in-out infinite alternate; will-change: transform, opacity; }
 .swell.dk { background: radial-gradient(closest-side, rgba(86, 136, 140, .3), rgba(86, 136, 140, .08) 55%, rgba(86, 136, 140, 0)); }
-.scene-night .swell { background: radial-gradient(closest-side, rgba(170, 182, 236, .26), rgba(170, 182, 236, .07) 55%, rgba(170, 182, 236, 0)); }
+.scene-night .swell { background: radial-gradient(closest-side, rgba(70, 80, 150, .32), rgba(70, 80, 150, .08) 55%, rgba(70, 80, 150, 0)); } /* 夜の庭の海は白くしない（紺の濃淡だけ） */
 .scene-night .swell.dk { background: radial-gradient(closest-side, rgba(12, 14, 40, .38), rgba(12, 14, 40, .1) 55%, rgba(12, 14, 40, 0)); }
 .room.moonlit .swell { background: radial-gradient(closest-side, rgba(196, 208, 242, .32), rgba(196, 208, 242, .1) 60%, rgba(196, 208, 242, 0)); }
 .room.moonlit .swell.dk { background: radial-gradient(closest-side, rgba(18, 26, 64, .35), rgba(18, 26, 64, .1) 60%, rgba(18, 26, 64, 0)); }
@@ -1104,4 +1104,4 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }
 .wclock .cap { width: 12%; height: 12%; margin: 0 0 -6% -6%; border-radius: 50%; background: #b8925e; transform: none; }
-.sunpath.moon i { background: radial-gradient(closest-side, rgba(250, 246, 226, .5), rgba(214, 222, 246, .18) 50%, rgba(200, 210, 240, 0)); } /* 夜は月の光の道（白く冷たい光） */
+.sunpath.moon i { background: radial-gradient(closest-side, rgba(240, 228, 190, .34), rgba(190, 188, 220, .12) 50%, rgba(160, 166, 210, 0)); } /* 夜は月の光の道（白く冷たい光） */

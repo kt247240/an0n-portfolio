@@ -1778,9 +1778,9 @@ function seaSheen(x0, x1, hz, y1, g, { light = '#fbe4cf', dark = '#5f8f93', la =
   return s;
 }
 // 夕日が海に落とす光の道（動かない下地）：水平線から手前へ、横長のやわらかな光の帯が広がる。揺らぎは museum.js が重ねる
-function sunColumn(x, hz, y1, c = ['#fff0cf', '#ffe2b4', '#ffd9a6']) {
+function sunColumn(x, hz, y1, c = ['#fff0cf', '#ffe2b4', '#ffd9a6'], k = 1) {
   const id = `sc${gid++}`;
-  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c[0]}" stop-opacity=".55"/><stop offset=".5" stop-color="${c[1]}" stop-opacity=".2"/><stop offset="1" stop-color="${c[2]}" stop-opacity="0"/></radialGradient></defs>`;
+  let s = `<defs><radialGradient id="${id}"><stop offset="0" stop-color="${c[0]}" stop-opacity="${n2(.55 * k)}"/><stop offset=".5" stop-color="${c[1]}" stop-opacity="${n2(.2 * k)}"/><stop offset="1" stop-color="${c[2]}" stop-opacity="0"/></radialGradient></defs>`;
   // 横長の帯を重ねず、縦にやわらかく広がる光の面にする（線に見えないように）
   for (let i = 0; i < 9; i++) { const t = i / 8, y = hz + .8 + (y1 - hz) * t * t, w = 1.6 + t * 8; s += `<ellipse cx="${n1(x + Math.sin(i * 2.3) * t * 1.2)}" cy="${n1(y)}" rx="${n1(w)}" ry="${n2(1 + t * 3.2)}" fill="url(#${id})" opacity="${n2(.9 - t * .4)}"/>`; }
   return s;
@@ -1984,21 +1984,28 @@ export function sceneNight(W, stops) {
   const skyDom = { moon: { x: mx, y: 16, r: 4.5, kind: 'crescent' }, bright: SKY.bright.filter(([x, y]) => Math.hypot(x - mx, y - 16) > 12) };
   far += `<path d="M-5 106L-5 ${hz - 4}${smoothD(Array.from({ length: 9 }, (_, i) => [-5 + (fw + 10) * i / 8, hz - 6 + R(-3, 2)]))}L${n1(fw + 5)} 106Z" fill="#282c55"/>`;
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
-  for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); far += townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); }
+  let towns = ''; // 水面に逆さに映すので、町の並びをとっておく
+  for (let s = 0; s < stops; s += 1) { const x = at(W, FACTORS.far)(s, W * R(.15, .85)); const tr = townRow(x - R(10, 16), x + R(10, 16), hz, '#1d1f3c', { hmin: 2.5, hmax: 7 }); far += tr; towns += tr; }
   // 観覧車：対岸の水ぎわに立つ（脚の足もとが水平線）。museum.js が脚・回る輪・ゴンドラ・水面の映り込みを置く
   // 作品と作品のあいだで立ち止まったとき、画面の真ん中（作品のない所）に見える位置。狭い画面では小さく
   const ferris = { x: at(W, FACTORS.far)(Math.max(1, Math.floor(stops / 2)) + .5, W * .5), r: W < 80 ? 7 : 10, base: hz };
   ferris.y = ferris.base - ferris.r - 3.8; // いちばん下のゴンドラが足もとの台にかからない高さ
   const lighthouse = { x: at(W, FACTORS.far)(stops - 1, W * .85), y: hz - 9.6 };
-  { const lx = lighthouse.x; far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
+  { const lx = lighthouse.x; towns += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#8e8a98"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>`; far += `<path d="M${n1(lx - 1)} ${hz}L${n1(lx - .6)} ${hz - 9}H${n1(lx + .6)}L${n1(lx + 1)} ${hz}Z" fill="#e8e2d8"/><path d="M${n1(lx - .7)} ${hz - 6}h1.4v1h-1.4Z" fill="#b3261e"/><circle cx="${n1(lx)}" cy="${hz - 9.6}" r=".7" fill="#ffe7a8"/>` + rglow(lx, hz - 9.6, 8, '#ffe7a8', .35); }
   const [sg, sd] = lgrad([[0, '#2d3263'], [1, '#141733']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
   // 水面：白い横線（遠い波・月の光の粒）はやめて、やわらかな光と影のゆらぎと、月の光の道に（乱数の呼び出しは残す）
   glitter(mx, hz + .5, 100, '#fdf1d6', { spread: .25, n: 110, a: .7 });
   waveLines(-5, fw + 5, hz + 1, 100, '#8f98c9', Math.round(fw));
-  { const gS = hrng(fw + 9.1); far += seaSheen(-5, fw + 5, hz, 96, gS, { light: '#9aa3d6', dark: '#0f1230', la: .32, da: .4 }) + sunColumn(mx, hz, 88, ['#f6f0d8', '#d8dcf2', '#b8c0e8']); }
+  // 水面のゆらぎは白くしない（紺の濃淡だけ）。光るのは月明かりと建物の映り込みだけにする
+  { const gS = hrng(fw + 9.1); far += seaSheen(-5, fw + 5, hz, 96, gS, { light: '#3a4180', dark: '#0b0d26', la: .3, da: .38 }); }
+  // 建物の映り込み：町並みと灯台を上下さかさに、少し縦に伸ばして、水平線から下へ淡く消えていく形で
+  { const mk = `rf${gid++}`, [mg, md] = lgrad([[0, '#ffffff', .75], [.35, '#ffffff', .35], [1, '#ffffff', 0]]);
+    far += `<defs>${md}<mask id="${mk}" maskUnits="userSpaceOnUse" x="-5" y="${hz}" width="${n1(fw + 10)}" height="16"><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="16" fill="url(#${mg})"/></mask></defs><g mask="url(#${mk})" opacity=".55"><g transform="translate(0 ${n1(hz * 2.35 + .2)}) scale(1 -1.35)">${towns}</g></g>`; }
+  // 月明かりの反射：月の真下に、淡い黄みの光が水平線から手前へひろがる（白く強くしない）
+  far += sunColumn(mx, hz, 90, ['#efe3bd', '#b9b6d2', '#8e94c4'], .6);
   // 町の灯りの映り込み：線ではなく、縦に少し伸びたぼけた光
-  for (let i = 0; i < fw / 2.2; i++) { const x = R(0, fw), y = R(hz + .8, hz + 6), l = R(.6, 1.6), c = pick(['#ffd79a', '#ffb45a']), o = R(.25, .55); far += `<ellipse cx="${n1(x)}" cy="${n1(y + l / 2)}" rx=".32" ry="${n1(l * .75)}" fill="${c}" opacity="${n2(o * .6)}"/>`; }
+  for (let i = 0; i < fw / 2.2; i++) { const x = R(0, fw), y = R(hz + .8, hz + 6), l = R(.6, 1.6), c = pick(['#ffd79a', '#ffb45a']), o = R(.25, .55); far += `<ellipse cx="${n1(x)}" cy="${n1(y + l * .7)}" rx=".3" ry="${n1(l * 1.1)}" fill="${c}" opacity="${n2(o * .45)}"/>`; }
   for (let k = 0; k < Math.max(2, Math.round(fw / 60)); k++) { const x = R(fw * .05, fw * .95), y = hz + R(2.5, 5); far += `<path d="M${n1(x - 2)} ${n1(y)}h4l-.6 .8h-2.8Z" fill="#141733"/><path d="M${n1(x)} ${n1(y)}v-3" stroke="#141733" stroke-width=".2"/><circle cx="${n1(x)}" cy="${n1(y - 3)}" r=".25" fill="#ffe7a8"/>` + rglow(x, y - 3, 2, '#ffe7a8', .35); }
   far += haze(-10, fw + 10, hz - 14, hz + 2, '#3c3f73', 0, .35);
   // 中景：海沿いの遊歩道（手すり、街灯、ヤシ、電球の紐）と植え込み
