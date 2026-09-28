@@ -1050,10 +1050,10 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 
 /* 水辺の波紋：蓮の葉と水草のまわりで、細い輪が広がりながら薄れていく（2 重、時間をずらして） */
 .lring { position: absolute; display: block; pointer-events: none; }
-.lring i { position: absolute; inset: 0; border-radius: 50%; border: .22vh solid rgba(236, 243, 214, .85); opacity: 0; transform: scale(1.12); animation: lring 5s ease-out infinite; animation-delay: var(--d); }
-.lring i + i { animation-delay: calc(var(--d) - 2.5s); }
-@keyframes lring { 0% { transform: scale(1.12); opacity: 0; } 12% { opacity: .85; } 100% { transform: scale(2.3); opacity: 0; } } /* 葉より一回り大きいところから外へ（葉の上に輪が重ならないように） */
-@media (prefers-reduced-motion: reduce) { .lring i { animation: none; opacity: .35; transform: none; } }
+.lring i { position: absolute; inset: 0; border-radius: 50%; border: .15vh solid rgba(226, 238, 214, .7); opacity: 0; transform: scale(1.12); animation: lring 7s ease-out infinite; animation-delay: var(--d); }
+.lring i + i { animation-delay: calc(var(--d) - 3.5s); }
+@keyframes lring { 0% { transform: scale(1.12); opacity: 0; } 15% { opacity: .32; } 100% { transform: scale(1.95); opacity: 0; } } /* 葉より一回り大きいところから外へ（葉の上に輪が重ならないように） */
+@media (prefers-reduced-motion: reduce) { .lring i { animation: none; opacity: .15; transform: none; } }
 
 /* 小屋の壁時計の針（今の時刻を指す）。文字盤は背景の絵 */
 .wclock { position: absolute; display: block; pointer-events: none; }

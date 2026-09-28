@@ -695,7 +695,7 @@ function buildLiving(r) {
   if (D.stove) { const [x, y, k = 1] = D.stove, sh = 9 * k, fw = 4.8 * k * .9; P.insertAdjacentHTML('beforeend', `<div class="living stove-fire" style="left:${((x - fw / 2) * U).toFixed(1)}px;top:${((y - sh + sh * .3 + sh * .42 - fw * 13 / 8 + .3) * U).toFixed(1)}px;width:${fw.toFixed(2)}vh">${fireSVG()}</div>`); } // 炎の根もとが焚き口（y−3.2）に来るように
   // 水辺：蓮の葉と水草のまわりに、ゆっくり広がって消える波紋（2 重の輪を時間をずらして）。数は画面の広さに合わせて控えめに
   // 桟橋の板（y 87〜92.6）にかかる波紋は出さない（いちばん広がったときの輪の大きさで判定）
-  if (D.rings) { const d = hrand(7), clearOfDeck = ([, y, r]) => { const e = r * .38 * 2.3 + .3; return y + e < 87 || y - e > 92.6; }, list = D.rings.filter(clearOfDeck).filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / (W < 80 ? 14 : 26))) === 0); P.insertAdjacentHTML('beforeend', list.map(([x, y, r]) => `<i class="living lring" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r * .38) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * .76).toFixed(2)}vh;--d:${(-d() * 5).toFixed(2)}s"><i></i><i></i></i>`).join('')); }
+  if (D.rings) { const d = hrand(7), clearOfDeck = ([, y, r]) => { const e = r * .38 * 1.95 + .3; return y + e < 87 || y - e > 92.6; }, list = D.rings.filter(clearOfDeck).filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / (W < 80 ? 10 : 18))) === 0); P.insertAdjacentHTML('beforeend', list.map(([x, y, r]) => `<i class="living lring" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r * .38) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * .76).toFixed(2)}vh;--d:${(-d() * 7).toFixed(2)}s"><i></i><i></i></i>`).join('')); }
   // 小屋の壁時計：長針と短針を置いて、見ている人の今の時刻に合わせて回す
   // 置く場所は、両隣の額（枠の外側）のちょうど真ん中。作品の中心どうしの真ん中だと、幅の違う絵のあいだでずれるので
   if (D.clocks?.length) {
