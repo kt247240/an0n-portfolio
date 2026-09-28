@@ -2128,12 +2128,10 @@ function macrame(x, y, s) {
   return o;
 }
 // 壁の掛け物：丸い木の時計（文字盤は目盛りだけ）
+// 壁時計：場所の大きさだけ取っておき、絵は描かない（文字盤も針も museum.js が、両隣の額のちょうど真ん中に置く）
 function wallClock(x, y, s) {
   const r = s * .32, cy = y + s * .45; track(x - r * 1.1, cy - r * 1.1); track(x + r * 1.1, cy + r * 1.2);
-  let o = `<circle cx="${n1(x + r * .06)}" cy="${n1(cy + r * .08)}" r="${n1(r * 1.05)}" fill="#000" opacity=".25"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * 1.05)}" fill="#6a4a30"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * .86)}" fill="#e8dcc0"/>`;
-  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = r * (i % 3 ? .74 : .68); o += `<path d="M${n1(x + Math.sin(a) * r1)} ${n1(cy - Math.cos(a) * r1)}L${n1(x + Math.sin(a) * r * .8)} ${n1(cy - Math.cos(a) * r * .8)}" stroke="#3a2718" stroke-width="${n1(r * (i % 3 ? .03 : .06))}"/>`; }
-  // 針は描かない：museum.js が、見ている人の今の時刻に合わせて針を置いて回す
-  return o;
+  return '<g/>';
 }
 function coatRack(x, y, w) {
   track(x - w / 2, y - 2); track(x + w / 2, y + 16);

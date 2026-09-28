@@ -1057,6 +1057,7 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 
 /* 小屋の壁時計の針（今の時刻を指す）。文字盤は背景の絵 */
 .wclock { position: absolute; display: block; pointer-events: none; }
+.wclock .face { position: absolute; left: -2%; top: -2%; width: 104%; height: 104%; overflow: visible; }
 .wclock i { position: absolute; left: 50%; bottom: 50%; border-radius: 1vh; background: #2a1c12; transform-origin: 50% 100%; }
 .wclock .hh { width: 7%; height: 23%; margin-left: -3.5%; }
 .wclock .mh { width: 4.5%; height: 36%; margin-left: -2.25%; }

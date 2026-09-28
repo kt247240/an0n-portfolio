@@ -662,6 +662,12 @@ function swashURL(scene) {
 // 小さな決まった乱数（波紋の出るタイミングをずらすため。部屋を組み直しても同じ）
 function hrand(k) { let t0 = k | 0; return () => { t0 = t0 + 0x6D2B79F5 | 0; let t = Math.imul(t0 ^ t0 >>> 15, 1 | t0); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // 壁時計の針：今の時刻（見ている人の端末の時計）に。20 秒ごとに合わせ直す
+// 壁時計の文字盤（木の縁、生成りの文字盤、目盛り。数字は描かない）
+function clockFaceSVG() {
+  let t = '';
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = i % 3 ? .74 : .68; t += `<path d="M${(Math.sin(a) * r1).toFixed(3)} ${(-Math.cos(a) * r1).toFixed(3)}L${(Math.sin(a) * .8).toFixed(3)} ${(-Math.cos(a) * .8).toFixed(3)}" stroke="#3a2718" stroke-width="${i % 3 ? .03 : .06}"/>`; }
+  return `<svg class="face" viewBox="-1.12 -1.12 2.24 2.24" aria-hidden="true"><circle cx=".06" cy=".08" r="1.05" fill="#000" opacity=".25"/><circle r="1.05" fill="#6a4a30"/><circle r=".86" fill="#e8dcc0"/>${t}</svg>`;
+}
 function tickClocks() {
   const now = new Date(), m = now.getMinutes() + now.getSeconds() / 60, h = (now.getHours() % 12) + m / 60;
   document.querySelectorAll('.wclock').forEach((c) => { c.querySelector('.mh').style.transform = `rotate(${(m * 6).toFixed(1)}deg)`; c.querySelector('.hh').style.transform = `rotate(${(h * 30).toFixed(1)}deg)`; });
@@ -691,7 +697,17 @@ function buildLiving(r) {
   // 桟橋の板（y 87〜92.6）にかかる波紋は出さない（いちばん広がったときの輪の大きさで判定）
   if (D.rings) { const d = hrand(7), clearOfDeck = ([, y, r]) => { const e = r * .38 * 2.3 + .3; return y + e < 87 || y - e > 92.6; }, list = D.rings.filter(clearOfDeck).filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / (W < 80 ? 14 : 26))) === 0); P.insertAdjacentHTML('beforeend', list.map(([x, y, r]) => `<i class="living lring" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r * .38) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * .76).toFixed(2)}vh;--d:${(-d() * 5).toFixed(2)}s"><i></i><i></i></i>`).join('')); }
   // 小屋の壁時計：長針と短針を置いて、見ている人の今の時刻に合わせて回す
-  if (D.clocks?.length) { P.insertAdjacentHTML('beforeend', D.clocks.map(([x, y, r]) => `<i class="living wclock" style="left:${((x - r) * U).toFixed(1)}px;top:${((y - r) * U).toFixed(1)}px;width:${(r * 2).toFixed(2)}vh;height:${(r * 2).toFixed(2)}vh"><i class="hh"></i><i class="mh"></i><i class="cap"></i></i>`).join('')); tickClocks(); }
+  // 置く場所は、両隣の額（枠の外側）のちょうど真ん中。作品の中心どうしの真ん中だと、幅の違う絵のあいだでずれるので
+  if (D.clocks?.length) {
+    const face = gradeColors(clockFaceSVG(), gradeOf(r.room.scene));
+    const edges = r.itemEls.map((el) => { const c = el.querySelector('.canvas'); if (!c) return null; const x = parseFloat(el.style.left), half = parseFloat(c.style.width) / 2 + 1.4 * U; return [x - half, x + half]; });
+    P.insertAdjacentHTML('beforeend', D.clocks.map(([x, y, rr]) => {
+      let cx = x * U;
+      for (let i = 0; i < edges.length - 1; i++) { const a = edges[i], b = edges[i + 1]; if (a && b && a[1] < cx && cx < b[0]) { cx = (a[1] + b[0]) / 2; break; } }
+      return `<i class="living wclock" style="left:${(cx - rr * U).toFixed(1)}px;top:${((y - rr) * U).toFixed(1)}px;width:${(rr * 2).toFixed(2)}vh;height:${(rr * 2).toFixed(2)}vh">${face}<i class="hh"></i><i class="mh"></i><i class="cap"></i></i>`;
+    }).join(''));
+    tickClocks();
+  }
   if (D.wins) P.insertAdjacentHTML('beforeend', D.wins.map(([x, y, w, h]) => `<div class="living win-snow" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${w}vh;height:${h}vh">${windowSnowSVG(w, h)}</div>`).join(''));
 }
 // 立ち止まったときだけ現れる小さな動き（立ち止まる場所ごとに 1 回）：森は鳥が枝から飛び立つ、水辺はトンボが横切る、夕凪はカモメが砂から飛び立つ、夜の庭は流れ星、小屋は火の粉がはじける
