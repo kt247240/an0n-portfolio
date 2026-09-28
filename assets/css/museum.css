@@ -941,6 +941,20 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* 小屋：窓の外のオーロラがゆらぐ（左上） */
 .scene-attic .l3 { background: linear-gradient(100deg, transparent 0%, rgba(120, 220, 170, .14) 12%, transparent 22%, transparent 30%, rgba(140, 200, 220, .1) 38%, transparent 46%); -webkit-mask-image: linear-gradient(#000 0%, #000 25%, transparent 55%); mask-image: linear-gradient(#000 0%, #000 25%, transparent 55%); animation: shafts 12s ease-in-out infinite alternate; }
 /* 灯台の光が回る */
+/* 夕凪の浜：防波堤の先の小さな灯台の灯り（6vh の四角の真ん中が灯室）。ゆっくり点いて消える */
+.harborlight { width: 6vh; height: 6vh; }
+.harborlight b { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(255, 232, 190, .95) 0 5%, rgba(255, 200, 140, .45) 12%, rgba(255, 190, 130, .12) 32%, transparent 60%); animation: harbor 4.8s ease-in-out infinite; will-change: opacity; }
+.harborlight s { position: absolute; left: 44%; width: 12%; height: 42%; background: linear-gradient(rgba(255, 214, 160, .5), transparent); border-radius: 50%; animation: harbor 4.8s ease-in-out infinite; will-change: opacity; }
+@keyframes harbor { 0%, 55%, 100% { opacity: .12; } 68%, 82% { opacity: 1; } }
+/* 夕凪の浜：遠くを横切る飛行機と飛行機雲。1 回およそ 46 秒で横切って、しばらく間をおく */
+.airplane { position: absolute; left: 0; top: 11vh; width: 4.6vh; will-change: transform; animation: airplane 80s linear infinite; animation-delay: -72s; }
+.airplane svg { display: block; width: 100%; height: auto; position: relative; }
+.airplane .trail { position: absolute; left: 92%; top: 26%; width: 42vh; height: .16vh; border-radius: .1vh; background: linear-gradient(90deg, rgba(250, 232, 226, .55), rgba(250, 232, 226, .22) 35%, transparent); }
+.airplane .trail.t2 { top: 44%; opacity: .7; }
+.airplane .nav { animation: navblink 1.4s steps(1) infinite; }
+.airplane .strobe { animation: navblink 1.4s steps(1) infinite; animation-delay: -.7s; }
+@keyframes navblink { 0% { opacity: 1; } 30% { opacity: .15; } }
+@keyframes airplane { 0% { transform: translate3d(calc(100vw + 2vh), 0, 0); } 58% { transform: translate3d(-48vh, -2.2vh, 0); } 100% { transform: translate3d(-48vh, -2.2vh, 0); } }
 .lighthouse { will-change: transform; animation: spin 9s linear infinite; opacity: .42; } /* 灯台の光の帯は淡く（夜の庭の静けさを邪魔しないように） */
 /* 夕凪の波打ちぎわ：泡の線が寄せて引く */
 /* 波打ちぎわ：寄せては返す波（奥から砂を上り、少しとどまって、薄くなりながら引く）。2 枚目は周期をずらす */
@@ -960,7 +974,7 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 .flyer.koijump { width: 5vh; opacity: .6; animation-timing-function: ease-in-out; }
 .flyer.koijump svg { animation: koiarc 1.6s ease-in-out forwards; }
 @keyframes koiarc { 0% { transform: rotate(60deg) translateY(2vh); } 50% { transform: rotate(90deg) translateY(-8vh); } 100% { transform: rotate(120deg) translateY(2vh); } }
-@media (prefers-reduced-motion: reduce) { .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .harborlight b, .harborlight s, .lighthouse, .ferris-wheel, .ferris-wheel .gondola, .ferris-refl i, .swash, .wetshine, .steam i, .flyer.koijump svg { animation: none !important; } }
 
 /* 長押し：作品だけが照らされる */
 .room.spot .hush { display: block; opacity: 1 !important; transition: opacity .5s; }

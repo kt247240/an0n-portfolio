@@ -1513,6 +1513,120 @@ function sailboat(x, y, h, c = '#7a7488') {
   return `<path d="M${n1(x - h * .5)} ${n1(y)}L${n1(x + h * .5)} ${n1(y)}L${n1(x + h * .4)} ${n1(y + h * .18)}L${n1(x - h * .4)} ${n1(y + h * .18)}Z" fill="${c}"/><path d="M${n1(x + h * .05)} ${n1(y - .1)}L${n1(x + h * .05)} ${n1(y - h)}L${n1(x + h * .45)} ${n1(y - .1)}Z" fill="#f3e6d6" opacity=".9"/><path d="M${n1(x - h * .05)} ${n1(y - .1)}L${n1(x - h * .05)} ${n1(y - h * .85)}L${n1(x - h * .38)} ${n1(y - .1)}Z" fill="#e6d2bd" opacity=".9"/>`;
 }
 
+// ---------- 夕凪の浜の遠景（作品の山の描き方：光の面と影の面を平らな色で塗り分け、麓は木々の粒で埋める） ----------
+// 1 つの峰：稜線で左右の面に分け、太陽の側の面を明るく。面の中に小さな面を重ねて岩の起伏を出す。上に雪、麓に木の粒
+function facetPeak(x, base, w, h, g, sunX, c) {
+  const a = .38 + g() * .24, L = [x - w * a, base], Rr = [x + w * (1 - a), base], P = [x + w * (g() - .5) * .08, base - h];
+  const kink = (A, B, t, o) => [A[0] + (B[0] - A[0]) * t + o, A[1] + (B[1] - A[1]) * t - h * (.02 + g() * .06)];
+  const l1 = kink(P, L, .34 + g() * .1, -w * .02), l2 = kink(P, L, .68 + g() * .1, -w * .03), r1 = kink(P, Rr, .3 + g() * .1, w * .02), r2 = kink(P, Rr, .66 + g() * .1, w * .03);
+  const S = [x + w * (g() * .3 - .08), base], M = [P[0] + (S[0] - P[0]) * .45 + w * .04, P[1] + (S[1] - P[1]) * .45];
+  const litLeft = sunX < x, [cl, cr] = litLeft ? [c.lit, c.shade] : [c.shade, c.lit];
+  const pt = (q) => `${n1(q[0])} ${n1(q[1])}`, poly = (pts, f, o = 1) => `<path d="M${pts.map(pt).join('L')}Z" fill="${f}"${o < 1 ? ` opacity="${o}"` : ''}/>`;
+  track(L[0], P[1]); track(Rr[0], base);
+  let s = poly([P, l1, l2, L, S, M], cl) + poly([P, M, S, Rr, r2, r1], cr);
+  // 面の中の小さな面（明るい面には少し暗い面、暗い面には少し明るい面）
+  s += poly([l1, [l1[0] + w * .1, l1[1] + h * .18], [l2[0] + w * .14, l2[1] + h * .1], l2], mixC(cl, cr, .28));
+  s += poly([r1, [r1[0] - w * .08, r1[1] + h * .2], [r2[0] - w * .12, r2[1] + h * .12], r2], mixC(cr, cl, .22));
+  s += poly([M, [M[0] + w * .06, M[1] + h * .2], S], mixC(cr, cl, .12));
+  if (c.snowLit && h > c.snowMin) {
+    // 雪：頂から肩までを覆い、下の縁はぎざぎざ。稜線で光と影に分ける
+    const t = .3 + g() * .12, sl = [P[0] + (l1[0] - P[0]) * (t / .34) * .9, P[1] + (l1[1] - P[1]) * (t / .34) * .9], sr = [P[0] + (r1[0] - P[0]) * (t / .3) * .9, P[1] + (r1[1] - P[1]) * (t / .3) * .9];
+    const sm = [P[0] + (M[0] - P[0]) * .62, P[1] + (M[1] - P[1]) * .62];
+    const jag = (A, B, n) => Array.from({ length: n }, (_, i) => { const u = (i + 1) / (n + 1); return [A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u + (i % 2 ? h * (.04 + g() * .05) : -h * g() * .03)]; });
+    const [sL, sR] = litLeft ? [c.snowLit, c.snowShade] : [c.snowShade, c.snowLit];
+    s += poly([P, sl, ...jag(sl, sm, 3), sm], sL) + poly([P, sm, ...jag(sm, sr, 3), sr], sR);
+  }
+  // 麓の木々：面の色より少し暗い／明るい小さな粒（遠くなので輪郭は描かない）
+  if (c.trees) {
+    const n = Math.round(w * h * .06);
+    for (let i = 0; i < n; i++) {
+      const u = g(), yy = base - h * (.02 + Math.pow(g(), 1.6) * .34), half = (base - yy) / h, xl = x - w * a * (1 - half * .9), xr = x + w * (1 - a) * (1 - half * .9), xx = xl + (xr - xl) * u, r = w * (.012 + g() * .014);
+      s += `<ellipse cx="${n1(xx)}" cy="${n1(yy)}" rx="${n2(r)}" ry="${n2(r * 1.25)}" fill="${c.trees[Math.floor(g() * c.trees.length)]}" opacity="${n2(.2 + g() * .25)}"/>`;
+    }
+  }
+  return s;
+}
+function facetRange(x0, x1, base, hMin, hMax, wMin, wMax, g, sunX, c) {
+  const peaks = [];
+  for (let x = x0 + g() * wMin * .5; x < x1; x += wMin * (.4 + g() * .55)) { const k = Math.pow(g(), 1.8); peaks.push([x, wMin + (wMax - wMin) * (.3 + .7 * k) * (.8 + g() * .4), hMin + (hMax - hMin) * k]); }
+  // 低い峰を手前に（高い峰の麓に低い峰が重なる）
+  return peaks.sort((p, q) => q[2] - p[2]).map(([x, w, h]) => facetPeak(x, base, w, h, g, sunX, c)).join('');
+}
+// かすむ島：低く丸い背に、光と影の 2 面
+function hazeIsland(x, base, w, h, g, sunX, c) {
+  const p = [[x - w / 2, base]];
+  for (let i = 1; i < 6; i++) { const u = i / 6; p.push([x - w / 2 + w * u, base - h * Math.sin(Math.PI * Math.pow(u, .9)) * (.75 + g() * .35)]); }
+  p.push([x + w / 2, base]);
+  const top = p.reduce((m, q) => q[1] < m[1] ? q : m), d = `M${p.map((q) => `${n1(q[0])} ${n1(q[1])}`).join('L')}Z`;
+  const sh = sunX < x ? `M${n1(top[0])} ${n1(top[1])}${p.filter((q) => q[0] > top[0]).map((q) => `L${n1(q[0])} ${n1(q[1])}`).join('')}L${n1(top[0] + w * .06)} ${n1(base)}Z` : `M${n1(top[0])} ${n1(top[1])}${p.filter((q) => q[0] < top[0]).reverse().map((q) => `L${n1(q[0])} ${n1(q[1])}`).join('')}L${n1(top[0] - w * .06)} ${n1(base)}Z`;
+  track(x - w / 2, base - h); track(x + w / 2, base);
+  let s = `<path d="${d}" fill="${c.lit}"/><path d="${sh}" fill="${c.shade}"/>`;
+  for (let i = 0; i < w * h * .12; i++) { const xx = x - w * .42 + g() * w * .84, yy = base - g() * h * .55; s += `<circle cx="${n1(xx)}" cy="${n1(yy)}" r="${n2(.18 + g() * .22)}" fill="${c.tree}" opacity="${n2(.35 + g() * .3)}"/>`; }
+  return s;
+}
+// 遠くのヤシ：細い幹と、垂れた葉を平らな形で
+function farPalm(x, y, h, lean, c, g) {
+  const tx = x + lean * h * .35, ty = y - h;
+  let s = `<path d="M${n1(x - h * .035)} ${n1(y)}Q${n1(x + lean * h * .05)} ${n1(y - h * .55)} ${n1(tx - h * .02)} ${n1(ty)}L${n1(tx + h * .02)} ${n1(ty)}Q${n1(x + lean * h * .05 + h * .05)} ${n1(y - h * .55)} ${n1(x + h * .035)} ${n1(y)}Z" fill="${c}"/>`;
+  for (let i = 0; i < 7; i++) {
+    const a = -170 + i * 28 + (g() - .5) * 14, L = h * (.38 + g() * .14), ex = tx + Math.cos(a * D) * L, ey = ty + Math.sin(a * D) * L * .55 + L * .32, mx = tx + Math.cos(a * D) * L * .5, my = ty + Math.sin(a * D) * L * .4 - L * .06, wv = h * .05;
+    s += `<path d="M${n1(tx)} ${n1(ty)}Q${n1(mx)} ${n1(my - wv)} ${n1(ex)} ${n1(ey)}Q${n1(mx)} ${n1(my + wv)} ${n1(tx)} ${n1(ty + h * .02)}Z" fill="${c}"/>`;
+  }
+  track(tx - h * .5, ty - h * .1); track(tx + h * .5, y);
+  return s;
+}
+// 岬：海に突き出た丘。先は低い岩の崖で海へ落ち、なだらかに登って丸い頂、奥へまた下って霞に消える。
+// 上は木々のこんもりした丸みで縁どり、尾根にヤシ。水面にうっすら映る
+function headland(tipX, base, len, hgt, dir, g, sunX, c) {
+  const xAt = (u) => tipX + dir * len * u, sm = (e0, e1, v) => { const t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  const prof = (u) => .16 + .84 * sm(0, .42, u) - .62 * sm(.55, 1, u) + .04 * Math.sin(u * 23 + 1.7);
+  const N = 28, crest = Array.from({ length: N + 1 }, (_, i) => { const u = .03 + i / N * .97; return [xAt(u), base - hgt * prof(u)]; });
+  const foot = [[xAt(1), base + .3], [xAt(0), base + .3], [xAt(0), base - hgt * .08], [xAt(.015), base - hgt * .15]];
+  const P = (q) => `${n1(q[0])} ${n1(q[1])}`, d = `M${[...foot, ...crest].map(P).join('L')}Z`;
+  track(Math.min(xAt(0), xAt(1)), base - hgt * 1.1); track(Math.max(xAt(0), xAt(1)), base + 2.5);
+  const topAt = (xx) => { for (let i = 1; i < crest.length; i++) { const [ax, ay] = crest[i - 1], [bx, by] = crest[i]; if ((xx - ax) * (xx - bx) <= 0) return ay + (by - ay) * ((xx - ax) / ((bx - ax) || 1)); } return base; };
+  const [gid0, gdef] = lgrad([[0, c.lit], [.45, c.body], [1, c.low]]);
+  let s = `<defs>${gdef}</defs>`;
+  // 水面の映り込み（上下逆さの淡い影）
+  s += `<path d="M${P([xAt(0), base + .3])}${crest.map((q) => `L${n1(q[0])} ${n1(base + .3 + (base - q[1]) * .2)}`).join('')}L${P([xAt(1), base + .3])}Z" fill="${c.refl}" opacity=".3"/>`;
+  // 尾根のこんもりした木々（輪郭を丸く盛り上げる）
+  let crown = '';
+  for (let u = .05; u < .97; u += .018 + g() * .02) { const xx = xAt(u), yy = topAt(xx), r = hgt * (.045 + g() * .04) * (1.1 - u * .5); crown += `<circle cx="${n1(xx)}" cy="${n1(yy + r * .45)}" r="${n2(r)}"/>`; }
+  s += `<g fill="url(#${gid0})">${crown}<path d="${d}"/></g>`;
+  // 影の側（太陽と反対の斜面）を少し暗く：頂から先への斜面、または奥への斜面
+  const peakU = .42, sunOnTip = (sunX < tipX) === (dir > 0);
+  const shadeSeg = sunOnTip ? crest.filter((q) => (q[0] - xAt(peakU)) * dir > 0) : crest.filter((q) => (q[0] - xAt(peakU)) * dir <= 0);
+  // 影の面の内側の縁は、頂から麓へ斜めに下ろす（縦の継ぎ目に見えないように）
+  if (shadeSeg.length > 1) { const pk = sunOnTip ? shadeSeg[0] : shadeSeg[shadeSeg.length - 1], toward = sunOnTip ? -dir : dir, foot = [pk[0] + toward * len * .1, base + .3], far0 = sunOnTip ? shadeSeg[shadeSeg.length - 1] : shadeSeg[0];
+    s += `<path d="M${shadeSeg.map(P).join('L')}L${P(sunOnTip ? [far0[0], base + .3] : foot)}L${P(sunOnTip ? foot : [far0[0], base + .3])}Z" fill="${c.shade}" opacity=".4"/>`; }
+  // 木々の粒：明るい粒は上、暗い粒は下
+  for (let i = 0; i < len * hgt * .22; i++) {
+    const u = .04 + g() * .94, xx = xAt(u), ty = topAt(xx), depth = g(), yy = ty + (base - ty) * (.12 + depth * .8), r = (.22 + g() * .3) * (1.1 - depth * .4);
+    s += `<circle cx="${n1(xx)}" cy="${n1(yy)}" r="${n2(r)}" fill="${depth < .35 ? c.trees[2] : c.trees[depth < .7 ? 1 : 0]}" opacity="${n2(.35 + g() * .3)}"/>`;
+  }
+  // 先の岩の崖（光の面と影の面）と、波が当たる白っぽい岩の裾
+  const cliffW = len * .07;
+  s += `<path d="M${P([xAt(0), base + .3])}L${P([xAt(0), base - hgt * .08])}L${P([xAt(.015), base - hgt * .15])}L${P([xAt(.04), base - hgt * .28])}L${P([xAt(.07), base - hgt * .2])}L${P([xAt(0) + dir * cliffW * 1.4, base + .3])}Z" fill="${sunOnTip ? c.rockLit : c.rock}"/>`;
+  s += `<path d="M${P([xAt(.04), base - hgt * .28])}L${P([xAt(.07), base - hgt * .2])}L${P([xAt(0) + dir * cliffW * 1.4, base + .3])}L${P([xAt(.035), base + .3])}Z" fill="${c.rock}"/>`;
+  // 尾根のヤシ（頂の手前、先の側に寄せて）
+  for (let i = 0; i < 4; i++) { const u = .12 + i * .07 + g() * .04, xx = xAt(u); s += farPalm(xx, topAt(xx) + .4, hgt * (.24 + g() * .12), dir * -(.2 + g() * .5), c.palm, g); }
+  return s;
+}
+// 防波堤と、先の小さな灯台（灯りは museum.js がゆっくり明滅させる）
+function breakwater(x0, x1, base, g, c) {
+  const a = Math.min(x0, x1), b = Math.max(x0, x1), lx = x1;
+  let s = `<path d="M${n1(a)} ${n1(base - .55)}H${n1(b)}V${n1(base + .35)}H${n1(a)}Z" fill="${c.face}"/><path d="M${n1(a)} ${n1(base - .55)}H${n1(b)}V${n1(base - .25)}H${n1(a)}Z" fill="${c.top}"/>`;
+  for (let x = a + .8 + g(); x < b - 1; x += 1.4 + g() * 1.2) s += `<path d="M${n1(x)} ${n1(base - .25)}h${n2(.18)}V${n1(base + .35)}h${n2(-.18)}Z" fill="${c.gap}"/>`;
+  s += `<path d="M${n1(a)} ${n1(base + .45)}H${n1(b)}V${n1(base + 1.1)}H${n1(a)}Z" fill="${c.face}" opacity=".22"/>`;
+  // 灯台：白い塔（影の側はうす紫）、赤い帯と頭、灯室は暗く
+  const H = 4.2, bw = .62, tw = .42, y0 = base - .55;
+  s += `<path d="M${n1(lx - bw)} ${n1(y0)}L${n1(lx - tw)} ${n1(y0 - H)}H${n1(lx + tw)}L${n1(lx + bw)} ${n1(y0)}Z" fill="${c.tower}"/><path d="M${n1(lx)} ${n1(y0)}V${n1(y0 - H)}H${n1(lx + tw)}L${n1(lx + bw)} ${n1(y0)}Z" fill="${c.towerShade}"/>`;
+  s += `<path d="M${n1(lx - bw * .9)} ${n1(y0 - H * .38)}L${n1(lx - bw * .82)} ${n1(y0 - H * .55)}H${n1(lx + bw * .82)}L${n1(lx + bw * .9)} ${n1(y0 - H * .38)}Z" fill="${c.red}"/>`;
+  s += `<path d="M${n1(lx - tw - .18)} ${n1(y0 - H)}h${n2(tw * 2 + .36)}v.22h${n2(-(tw * 2 + .36))}Z" fill="${c.red}"/><path d="M${n1(lx - tw * .75)} ${n1(y0 - H - 1)}h${n2(tw * 1.5)}v1h${n2(-tw * 1.5)}Z" fill="${c.lamp}"/><path d="M${n1(lx - tw)} ${n1(y0 - H - 1)}L${n1(lx)} ${n1(y0 - H - 1.6)}L${n1(lx + tw)} ${n1(y0 - H - 1)}Z" fill="${c.red}"/>`;
+  track(a, y0 - H - 1.6); track(b, base + 1.1);
+  return { svg: s, light: [lx, y0 - H - .5] };
+}
+
 // ---------- 海辺の部品（夕凪の浜・夜の海辺の街） ----------
 // ヤシの葉 1 枚：垂れ下がる葉軸に、小葉が重力で下向きに垂れる
 function frond(x, y, len, ang, c, hi, { droop = 1, n = 18 } = {}) {
@@ -1621,13 +1735,28 @@ export function sceneCove(W, stops) {
   far += streakCloud(-10, fw + 10, hz - 13, 1.4, '#e7b6ae', '#ffcf8f');
   far += setSun(sx, hz - 6, 4.8);
   // 遠くを渡る鳥
-  far += mountains(-10, fw + 10, hz, 40, 55, '#b3c6cc', '#eef3f2', { wmin: 30, wmax: 70 });
-  far += haze(-10, fw + 10, 38, hz, '#f6dcc6', .05, .6);
-  far += mountains(-10, fw + 10, hz + .5, 53, 59, '#8eaeb5', null, { wmin: 22, wmax: 48 });
+  // 遠景は 3 段：奥の雪山、真ん中のかすむ島々、手前の緑の岬（作品の山の描き方で、光の面と影の面を塗り分ける）。
+  // 前の山の乱数の呼び出しはそのまま残す（浜の小物の位置を変えないため）。絵は位置から決まる別の乱数で
+  mountains(-10, fw + 10, hz, 40, 55, '#b3c6cc', '#eef3f2', { wmin: 30, wmax: 70 });
+  const gM = hrng(fw + 3.1), big = W < 80 ? .7 : 1;
+  far += facetRange(-10, fw + 10, hz, 9 * big + 3, 27 * big + 3, 30 * big, 70 * big, gM, sx, { lit: '#dcc3c3', shade: '#a6a8c4', snowLit: '#f7e6dd', snowShade: '#d5d2e4', snowMin: 12 * big });
+  far += haze(-10, fw + 10, 38, hz, '#f6dcc6', .05, .5);
+  mountains(-10, fw + 10, hz + .5, 53, 59, '#8eaeb5', null, { wmin: 22, wmax: 48 });
+  for (let x = -6 + gM() * 10; x < fw + 10; x += (18 + gM() * 26) * big) far += hazeIsland(x, hz + .2, (10 + gM() * 16) * big, (2.4 + gM() * 3.2) * big, gM, sx, { lit: '#c9b9c3', shade: '#aeaec4', tree: '#a3a3bb' });
+  far += haze(-10, fw + 10, hz - 8, hz + .3, '#f6dcc6', 0, .35);
   const [sg, sd] = lgrad([[0, '#f4d9bd'], [.18, '#bfd9d3'], [1, '#86b3b3']]);
   far += `<defs>${sd}</defs><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="${n1(106 - hz)}" fill="url(#${sg})"/>`;
   far += glitter(sx, hz + .5, 100, '#fff6d8', { spread: .35, n: 170, a: 1 });
   // 水平線の帆船と、遠くの桟橋（先に灯りがともる）
+  // 手前の緑の岬：作品と作品のあいだ（立ち止まると画面の真ん中）に岬の先が来るように。どれも先を夕日の側（左）へ向け、
+  // 次の岬に重ならない長さに。最初の岬の先に防波堤と小さな灯台
+  let harbor = null;
+  for (let s = 1.5, k = 0; s < stops - 1; s += 2, k++) {
+    const dir = 1, tip = at(W, FACTORS.far)(s, W * .5), bwl = W < 80 ? 4 : 7, len = Math.min(W < 80 ? 26 : 56, W * FACTORS.far * 2.1), hgt = W < 80 ? 6.5 : 10;
+    const tipX = k === 0 ? tip + dir * bwl : tip + dir * 2;
+    far += headland(tipX, hz + .1, len, hgt, dir, gM, sx, { body: '#86a092', lit: '#a9b095', low: '#6f8d88', shade: '#5f7c7d', rock: '#8a8290', rockLit: '#b9a39e', refl: '#5f8583', trees: ['#6f8c84', '#8aa18f', '#a7b096'], palm: '#5a7169' });
+    if (k === 0) { const bw = breakwater(tipX, tip, hz + .1, gM, { top: '#c9b8b0', face: '#948a96', gap: '#7d7482', tower: '#efe4da', towerShade: '#d2c7cf', red: '#bd6a5c', lamp: '#6b6170' }); far += bw.svg; harbor = bw.light; }
+  }
   for (let k = 0; k < 3; k++) far += sailboat(R(fw * .1, fw * .9), hz - .2, R(2, 3.2), pick(['#8a97a8', '#7a7488']));
   far += pierFar(fw * .78, hz + 3.5, Math.min(26, fw * .18), '#6f6a7a');
   far += waveLines(-5, fw + 5, hz + 1, 100, '#ffffff', Math.round(fw * 1.4));
@@ -1700,7 +1829,7 @@ export function sceneCove(W, stops) {
   move += tileGround(W, stops, ground);
   return {
     sky: 'linear-gradient(#aebbd6 0%, #e3b8b3 28%, #f3c69c 46%, #f8dcb0 58%, #f6e2c4 62%, #bfd9d3 66%, #86b3b3 100%)',
-    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79,
+    far: [fw, far], mid: [mw, mid], move: [vw, move], frame, fx: 'cove', glowDefault: [255, 214, 170], foam: 79, harbor, plane: true,
     curtain: ['#1c3a3a', '#2a5550', '#3f7f73', '#5aa77a', '#7cc0a0'],
   };
 }

@@ -668,6 +668,10 @@ function clockFaceSVG() {
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = i % 3 ? .74 : .68; t += `<path d="M${(Math.sin(a) * r1).toFixed(3)} ${(-Math.cos(a) * r1).toFixed(3)}L${(Math.sin(a) * .8).toFixed(3)} ${(-Math.cos(a) * .8).toFixed(3)}" stroke="#3a2718" stroke-width="${i % 3 ? .03 : .06}"/>`; }
   return `<svg class="face" viewBox="-1.12 -1.12 2.24 2.24" aria-hidden="true"><circle cx=".06" cy=".08" r="1.05" fill="#000" opacity=".25"/><circle r="1.05" fill="#6a4a30"/><circle r=".86" fill="#e8dcc0"/>${t}</svg>`;
 }
+// 遠くの旅客機（横向き、左へ飛ぶ）：上面は夕日を受けて明るく、下は影。線は描かない
+function planeSVG() {
+  return `<svg viewBox="0 0 40 12"><path d="M2 6.6Q2.4 5.3 4.6 5.1L31 4.7L35.6 1.2H37.4L36 5L37.6 5.4Q38.2 6.2 37 6.6L33 7.2H5Q2.4 7.2 2 6.6Z" fill="#8f8aa3"/><path d="M4.6 5.1L31 4.7L35.6 1.2H37.4L36 5L31 5.6H5.2Q3.4 5.7 4.6 5.1Z" fill="#c9b7bc"/><path d="M14 6.4L22.5 6.3L27 10.6H24.8Z" fill="#7b7690"/><path d="M15 5.4L21 5.3L24.2 3.4H23Z" fill="#a49db3"/><path d="M33 5.6L38.4 5.2L38.6 6H33.4Z" fill="#7b7690"/><circle class="nav" cx="26.6" cy="10.4" r=".55" fill="#e76a5a"/><circle class="strobe" cx="37.2" cy="1.5" r=".5" fill="#ffe6c4"/></svg>`;
+}
 function tickClocks() {
   const now = new Date(), m = now.getMinutes() + now.getSeconds() / 60, h = (now.getHours() % 12) + m / 60;
   document.querySelectorAll('.wclock').forEach((c) => { c.querySelector('.mh').style.transform = `rotate(${(m * 6).toFixed(1)}deg)`; c.querySelector('.hh').style.transform = `rotate(${(h * 30).toFixed(1)}deg)`; });
@@ -684,6 +688,10 @@ function buildLiving(r) {
   }
   if (D.puddles) P.insertAdjacentHTML('beforeend', D.puddles.map(([x, y, w], i) => `<i class="living puddle-shine" style="left:${((x - w * .9) * U).toFixed(1)}px;top:${((y - w * .13) * U).toFixed(1)}px;width:${(w * 1.8).toFixed(2)}vh;height:${(w * .26).toFixed(2)}vh;animation-delay:${-(i * .7)}s"></i>`).join(''));
   if (D.lighthouse) { const { x, y } = D.lighthouse; S.insertAdjacentHTML('beforeend', `<div class="living lighthouse" style="left:${((x - 40) * U).toFixed(1)}px;top:${((y - 40) * U).toFixed(1)}px;width:80vh">${beamSVG()}</div>`); }
+  // 夕凪の浜：防波堤の先の小さな灯台が、ゆっくり明滅する（光の輪と、水面に落ちる細い光）
+  if (D.harbor) { const [x, y] = D.harbor; S.insertAdjacentHTML('beforeend', `<i class="living harborlight" style="left:${((x - 3) * U).toFixed(1)}px;top:${((y - 3) * U).toFixed(1)}px"><b></b><s style="top:${((63 - y + 3) / 6 * 100).toFixed(0)}%"></s></i>`); }
+  // 夕凪の浜：遠くの空を、飛行機が飛行機雲を引いてゆっくり横切る（空は動かない層なので、いつ見ても画面の中を通る）
+  if (D.plane && !REDUCED) { const sky = $('.sky', r.el); sky.querySelector('.airplane')?.remove(); sky.insertAdjacentHTML('beforeend', `<div class="airplane" aria-hidden="true"><i class="trail"></i><i class="trail t2"></i>${gradeColors(planeSVG(), gradeOf(r.room.scene))}</div>`); }
   if (D.foam) {
     // 波打ちぎわ：寄せては返す 2 枚の波（奥の水から砂を上って、薄く引いていく）と、引いたあとに光る濡れた砂。
     // 波の絵は 1 枚の横に繰り返す絵（48vh 幅）。動きは要素ごとの transform と opacity だけ
