@@ -303,14 +303,14 @@ export function drape(x0, x1, y, depth, c, { cls = 'hang' } = {}) {
   }
   d += `L${n1(x1)} -5Z`;
   // 描き込み（位置から決まる別の乱数で。前の乱数の呼び出しは変えない）：
-  // 上ほど暗く先ほど明るい色、垂れの左のふちに光、長い垂れには苔の筋と、先に小さな葉
+  // 上ほど暗く先ほど明るい色、垂れの左のふちに光、長い垂れの先に小さな葉
   const g = hrng(x0 * 1.9 + y * 3.3 + depth), id = `dr${gid++}`, [gg, gd] = lgrad([[0, dark(c, .22)], [.5, c], [1, light(c, .06)]], [0, 0, 0, 1]);
   let inner = `<rect x="${n1(x0 - 2)}" y="-5" width="${n1(x1 - x0 + 4)}" height="${n1(y + depth * 1.4 + 6)}" fill="${light(c, .16)}"/><path d="${d}" transform="translate(.55 .15)" fill="url(#${gg})"/>`;
   let tips = '';
   pts.forEach(([px, py], i) => {
     const long = py - y > depth * .62;
     if (long) {
-      inner += `<path d="M${n1(px - .2)} ${n1(y)}Q${n1(px + (g() - .5) * 1.2)} ${n1((y + py) / 2)} ${n1(px + .1)} ${n1(py - .6)}" stroke="${dark(c, .18)}" stroke-width="${n2(.18 + g() * .12)}" fill="none" opacity=".55" stroke-linecap="round"/>`;
+      g(); g(); // （苔の筋の線はやめた：線の表現は使わない）
       if (g() < .7) tips += splitLeaf(px + (g() - .5) * .6, py - .4, .9 + g() * .7, .38, 70 + g() * 40, light(c, .1), dark(c, .08));
     } else if (g() < .3) inner += `<ellipse cx="${n1(px)}" cy="${n1(py - .5)}" rx="${n2(.5 + g() * .5)}" ry=".25" fill="${dark(c, .12)}" opacity=".4"/>`;
   });
