@@ -12,6 +12,8 @@
 let seed = 1;
 export const reseed = (s) => { seed = s; };
 const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+// 描き込み用の乱数：場所（数値）から決まる別の乱数。今の配置（rnd の並び）を変えずに細部を足すために使う
+function hrng(k) { let t0 = (Math.floor(k * 1000) ^ 0x9E3779B9) | 0; return () => { t0 = t0 + 0x6D2B79F5 | 0; let t = Math.imul(t0 ^ t0 >>> 15, 1 | t0); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const R = (a, b) => a + rnd() * (b - a);
 const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
 const n1 = (v) => Math.round(v * 10) / 10;
@@ -284,7 +286,9 @@ export function vine(x, y0, len, stem, tones, { cls = 'hang' } = {}) {
 export function lily(x, y, r, c, { cls = 'bob' } = {}) {
   const a = R(0, 360), b = a + 28;
   const p = (ang) => `${n1(x + Math.cos(ang * D) * r)} ${n1(y + Math.sin(ang * D) * r * .38)}`;
-  return `<path class="${cls}" style="animation-delay:${n1(-R(0, 4))}s" d="M${n1(x)} ${n1(y)}L${p(b)}A${n1(r)} ${n1(r * .38)} 0 1 1 ${p(a)}Z" fill="${c}"/><path d="M${n1(x)} ${n1(y)}L${p(b)}A${n1(r)} ${n1(r * .38)} 0 0 1 ${p(b + 90)}Z" fill="${light(c, .12)}" opacity=".7"/>`;
+  // 葉脈：切れ込みを避けて、中心から放射状に。縁は少し暗く
+  const veins = Array.from({ length: 7 }, (_, i) => b + 25 + i * 42).filter((g) => (g - a + 720) % 360 > 20).map((g) => `M${n1(x)} ${n1(y)}L${n1(x + Math.cos(g * D) * r * .88)} ${n1(y + Math.sin(g * D) * r * .38 * .88)}`).join('');
+  return `<path class="${cls}" style="animation-delay:${n1(-R(0, 4))}s" d="M${n1(x)} ${n1(y)}L${p(b)}A${n1(r)} ${n1(r * .38)} 0 1 1 ${p(a)}Z" fill="${c}" stroke="${dark(c, .18)}" stroke-width="${n1(r * .04)}"/><path d="M${n1(x)} ${n1(y)}L${p(b)}A${n1(r)} ${n1(r * .38)} 0 0 1 ${p(b + 90)}Z" fill="${light(c, .12)}" opacity=".7"/><path d="${veins}" stroke="${light(c, .2)}" stroke-width="${n1(r * .035)}" opacity=".55"/>`;
 }
 // 木漏れ日の光の帯：上ほど明るく、下へ消えていく
 export function beams(x0, x1, n, color = '#fffbe0', { opacity = .14, slant = [10, 24] } = {}) {
@@ -594,6 +598,43 @@ function forestBand(x0, x1, { top, depth, ground, c, trunkC, tw = .8, gap = [3, 
 
 // ---------- 近景の部品 ----------
 // 描き込んだ木：根の張り、樹皮、枝、葉のかたまり
+// 奥の並木の幹：根もとは少し広がり、上へ細く、ゆるく S 字に曲がる。上のほうで二股に分かれ、淡い樹皮の筋と、左に光
+// 梢の下のふち：葉の房が垂れ下がる（房ごとに 5〜8 枚の葉。奥ほど暗く）。すき間からこぼれる光の点
+function canopyFringe(x0, x1, tones) {
+  const d = hrng(x0 * 1.7 + x1), leaf = (cx, cy, l, a, c) => `<path d="M0 0Q${n1(l * .5)} ${n1(-l * .28)} ${n1(l)} 0Q${n1(l * .5)} ${n1(l * .28)} 0 0Z" transform="translate(${n1(cx)} ${n1(cy)}) rotate(${n1(a)})" fill="${c}"/>`;
+  let s = '';
+  for (let x = x0; x < x1; x += 2.6 + d() * 3.4) {
+    const y = 5 + d() * 7, n = 5 + Math.floor(d() * 4), base = Math.floor(d() * 3);
+    for (let k = 0; k < n; k++) { const a = 50 + d() * 80, l = 1.6 + d() * 1.6; s += leaf(x + (d() - .5) * 3, y + d() * 2.2, l, a, tones[Math.min(tones.length - 1, base + Math.floor(d() * 2.4))]); }
+  }
+  for (let x = x0; x < x1; x += 4 + d() * 7) s += `<ellipse cx="${n1(x)}" cy="${n1(1 + d() * 7)}" rx="${n1(.35 + d() * .6)}" ry="${n1(.25 + d() * .4)}" fill="#fff6c8" opacity="${n1(.35 + d() * .35)}"/>`;
+  return s;
+}
+// 小道の描き込み：土の色むら、落ち葉、ところどころ小道を横切る木の根（上のふちに光）
+function trailDetail(x0, x1, y, h) {
+  const d = hrng(x0 * 2.3 + y + x1);
+  let s = '';
+  for (let x = x0; x < x1; x += 3 + d() * 6) s += `<ellipse cx="${n1(x)}" cy="${n1(y + 1 + d() * (h - 2))}" rx="${n1(2 + d() * 5)}" ry="${n1(.4 + d() * .7)}" fill="${d() < .5 ? '#a8905e' : '#e2d3a4'}" opacity="${n1(.18 + d() * .2)}"/>`;
+  for (let x = x0; x < x1; x += 1.4 + d() * 2.6) { const cy = y + .6 + d() * (h - 1), l = .7 + d() * .8, a = d() * 180; s += `<path d="M0 0Q${n1(l * .5)} ${n1(-l * .35)} ${n1(l)} 0Q${n1(l * .5)} ${n1(l * .35)} 0 0Z" transform="translate(${n1(x)} ${n1(cy)}) rotate(${n1(a)})" fill="${['#b8793a', '#9a6a36', '#c9954a', '#7d6a3a', '#a5813e'][Math.floor(d() * 5)]}" opacity=".85"/>`; }
+  for (let x = x0 + 8 + d() * 20; x < x1; x += 34 + d() * 40) {
+    const dir = d() < .5 ? -1 : 1, w = .55 + d() * .35, y0 = y - .6, y1 = y + h - .4, x2 = x + dir * (4 + d() * 5);
+    s += `<path d="M${n1(x - w)} ${n1(y0)}C${n1(x - w + dir)} ${n1(y0 + h * .4)} ${n1(x2 - dir * 2)} ${n1(y1 - h * .3)} ${n1(x2)} ${n1(y1)}L${n1(x2 + w * .5)} ${n1(y1)}C${n1(x2 - dir * 1.6)} ${n1(y1 - h * .35)} ${n1(x + w + dir)} ${n1(y0 + h * .35)} ${n1(x + w)} ${n1(y0)}Z" fill="#6a4a2c"/>`;
+    s += `<path d="M${n1(x - w * .4)} ${n1(y0)}C${n1(x - w * .4 + dir)} ${n1(y0 + h * .4)} ${n1(x2 - dir * 2)} ${n1(y1 - h * .3)} ${n1(x2)} ${n1(y1 - .2)}" stroke="#a07a4e" stroke-width=".22" fill="none" opacity=".7"/>`;
+  }
+  return s;
+}
+function hazeTrunk(x, base, h, w, lean, c) {
+  const d = hrng(x * 5.3 + h), top = base - h - 6, fork = base - h * (.55 + d() * .2), bend = (d() - .5) * w * 1.6;
+  const X = (y) => { const t = (base - y) / (base - top); return x + lean * t * 4 + Math.sin(t * Math.PI) * bend; }, Wd = (y) => { const t = (base - y) / (base - top); return w * (1 - t * .45) * (t < .04 ? 1.5 - t * 12 : 1); };
+  const ys = Array.from({ length: 13 }, (_, i) => base - (base - fork) * i / 12);
+  let s = `<path d="M${ys.map((y) => `${n1(X(y) - Wd(y) / 2)} ${n1(y)}`).join('L')}L${[...ys].reverse().map((y) => `${n1(X(y) + Wd(y) / 2)} ${n1(y)}`).join('L')}Z" fill="${c}"/>`;
+  // 二股：左右に分かれて画面の上へ
+  const fx = X(fork), fw = Wd(fork);
+  for (const dir of [-1, 1]) { const ex = fx + dir * (2 + d() * 4), ew = fw * (dir < 0 ? .62 : .5); s += `<path d="M${n1(fx - fw / 2)} ${n1(fork + 1)}Q${n1(fx + dir * .8)} ${n1(fork - (fork - top) * .4)} ${n1(ex - ew / 2)} ${n1(top)}L${n1(ex + ew / 2)} ${n1(top)}Q${n1(fx + dir * 1.4)} ${n1(fork - (fork - top) * .4)} ${n1(fx + fw / 2)} ${n1(fork + 1)}Z" fill="${c}"/>`; }
+  s += `<path d="M${ys.slice(1, 11).map((y) => `${n1(X(y) - Wd(y) * .25)} ${n1(y)}`).join('L')}" stroke="${light(c, .1)}" stroke-width="${n1(w * .18)}" fill="none" opacity=".55"/>`;
+  for (let k = 0; k < 2; k++) { const y0 = base - 2 - d() * 8, y1 = y0 - 8 - d() * 14; s += `<path d="M${n1(X(y0) + w * (.05 + k * .12))} ${n1(y0)}L${n1(X(y1) + w * (.05 + k * .12))} ${n1(y1)}" stroke="${dark(c, .12)}" stroke-width="${n1(w * .07)}" opacity=".5" stroke-linecap="round"/>`; }
+  return s;
+}
 function tree(x, base, h, { trunkC = '#6b4a2e', tones, lean = R(-3, 3), w = R(2.4, 4.2), branches = 3 } = {}) {
   const tx = x + lean, ty = base - h, tw = w * .55;
   track(x - w * 1.2, base); track(tx + tw, ty);
@@ -604,7 +645,17 @@ function tree(x, base, h, { trunkC = '#6b4a2e', tones, lean = R(-3, 3), w = R(2.
     const t = R(.05, .95), xx = x + (tx - x) * t + R(-w * .3, w * .15), yy = base - h * t;
     s += `<path d="M${n1(xx)} ${n1(yy)}q.3 -1.2 0 -${n1(R(1.5, 3.5))}" stroke="${rnd() < .5 ? light(trunkC, .16) : dark(trunkC, .3)}" stroke-width=".28" fill="none" stroke-linecap="round" opacity=".75"/>`;
   }
-  if (rnd() < .6) { const t = R(.2, .6); s += `<ellipse cx="${n1(x + (tx - x) * t)}" cy="${n1(base - h * t)}" rx="${n1(w * .16)}" ry="${n1(w * .25)}" fill="${dark(trunkC, .35)}"/>`; }
+  if (rnd() < .6) { const t = R(.2, .6), kx = x + (tx - x) * t, ky = base - h * t; s += `<ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx="${n1(w * .26)}" ry="${n1(w * .4)}" fill="none" stroke="${dark(trunkC, .22)}" stroke-width="${n1(w * .05)}" opacity=".7"/><ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx="${n1(w * .16)}" ry="${n1(w * .25)}" fill="${dark(trunkC, .35)}"/>`; }
+  if (w > 1.6) { // 樹皮：幹に沿って伸びる、ゆるく波打つ縦の筋（根もとから上へ、ところどころ途切れる）
+    const d = hrng(x * 3.7 + base * 1.3), n = 5 + Math.floor(d() * 4);
+    for (let k = 0; k < n; k++) {
+      const off = -.35 + k / (n - 1) * .75, t0 = .02 + d() * .25, t1 = t0 + .25 + d() * .45, seg = 6;
+      let dd = '';
+      for (let q = 0; q <= seg; q++) { const t = t0 + (t1 - t0) * q / seg, cx = x + (tx - x) * t + off * w * (1 - t * .45) + Math.sin(t * 22 + k) * w * .04; dd += `${q ? 'L' : 'M'}${n1(cx)} ${n1(base - h * t)}`; }
+      const litSide = off < -.1 && d() < .6; // 光の当たる左側は明るい筋、ほかは深い溝
+      s += `<path d="${dd}" stroke="${litSide ? light(trunkC, .22) : dark(trunkC, .42)}" stroke-width="${n1(w * (.05 + d() * .045))}" fill="none" stroke-linecap="round" opacity="${n1(litSide ? .45 + d() * .2 : .55 + d() * .3)}"/>`;
+    }
+  }
   // 根の張り出し（左右に 2〜3 本、地面に潜る）
   if (w > 1.6) for (const dir of [-1, 1]) for (let k = 0; k < (rnd() < .5 ? 2 : 1); k++) {
     const rx = x + dir * w * R(.5, .9), len = w * R(1.2, 2.2);
@@ -627,7 +678,13 @@ function tree(x, base, h, { trunkC = '#6b4a2e', tones, lean = R(-3, 3), w = R(2.
   for (let i = 0; i < branches; i++) {
     const t = R(.5, .85), bx = x + (tx - x) * t, by = base - h * t, dir = i % 2 ? 1 : -1;
     const ex = bx + dir * R(5, 10), ey = by - R(3, 8), bw = w * .24;
-    s += `<path d="M${n1(bx)} ${n1(by - bw)}Q${n1(bx + dir * 3)} ${n1(by - 1 - bw)} ${n1(ex)} ${n1(ey)}Q${n1(bx + dir * 3)} ${n1(by - 1 + bw)} ${n1(bx)} ${n1(by + bw)}Z" fill="${trunkC}"/>`;
+    { // 枝：根もとは太く、先へ細く、少し上へ反る。途中から上向きの小枝が 1 本
+      const d = hrng(bx * 7.1 + by), mx = bx + (ex - bx) * .55, my = by + (ey - by) * .35 - 1.2, tip = bw * .16;
+      s += `<path d="M${n1(bx)} ${n1(by - bw)}Q${n1(mx)} ${n1(my - bw * .55)} ${n1(ex)} ${n1(ey - tip)}L${n1(ex)} ${n1(ey + tip)}Q${n1(mx)} ${n1(my + bw * .55)} ${n1(bx)} ${n1(by + bw)}Z" fill="${trunkC}"/>`;
+      s += `<path d="M${n1(bx)} ${n1(by - bw * .6)}Q${n1(mx)} ${n1(my - bw * .45)} ${n1(ex)} ${n1(ey - tip * .4)}" stroke="${light(trunkC, .14)}" stroke-width="${n1(bw * .22)}" fill="none" opacity=".6"/>`;
+      const fx = bx + (ex - bx) * (.45 + d() * .2), fy = by + (ey - by) * .5 - .6, sx = fx + dir * (1.5 + d() * 2.5), sy = fy - 3 - d() * 3, sw = bw * .32;
+      s += `<path d="M${n1(fx - sw)} ${n1(fy)}Q${n1(fx + dir * .6)} ${n1(fy - 1.6)} ${n1(sx)} ${n1(sy)}Q${n1(fx + dir * 1.2)} ${n1(fy - 1)} ${n1(fx + sw)} ${n1(fy + .2)}Z" fill="${trunkC}"/>`;
+    }
     if (tones) s += twig(ex, ey, R(9, 14), dir * R(35, 65), tones, { n: 6, leaf: R(2.4, 3), spread: 52, shrink: .35, bend: -dir * R(2, 5), kind: 'oval', stem: trunkC, twigs: true, backSide: -dir });
   }
   if (tones) s += bushMass(tx, ty + 3, R(9, 13), tones, 28) + bushMass(tx + R(-7, 7), ty - 3, R(6, 9), tones, 20);
@@ -1023,7 +1080,7 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   far += godRays(-10, fw + 10, -5, 80, Math.round(fw / 9), '#fff6d2', -.3);
   // 中景：地面、小道、木、根元の茂み、草、花
   mid += groundPath(-5, mw + 5, 76.5, 1.2, '#a3bd6b', '#6a8c42');
-  mid += trail(-5, mw + 5, 86.5, 6.5);
+  mid += trail(-5, mw + 5, 86.5, 6.5) + trailDetail(-5, mw + 5, 86.5, 6.5);
   mid += dapple(-5, mw, 80, 100, Math.round(mw / 3), '#fff4c0', .25);
   // 光だまり：梢のすき間から落ちる大きめの光（小道と草地に）
   mid += dapple(-5, mw, 82, 99, Math.round(mw / 14), '#fff6c8', .2, { rx: [5, 9], ry: [1.1, 2] });
@@ -1031,7 +1088,9 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
   // 奥の並木（霞んだ細い幹）：手前の木と遠い森のあいだに奥行きの層をもう 1 枚
   for (let x = R(0, 6); x < mw; x += R(6, 11)) {
     const z = R(.45, .65), hazeC = '#e3e9c4';
-    mid += tree(x, R(76.5, 78), R(70, 90), { trunkC: mixC(pick([P.trunk, '#7a5638', '#86623f']), hazeC, z), tones: null, w: R(.7, 1.3), lean: R(-.6, .6), branches: 0 });
+    const bb = R(76.5, 78), hh = R(70, 90), tc = mixC(pick([P.trunk, '#7a5638', '#86623f']), hazeC, z), ww = R(.7, 1.3), ll = R(-.6, .6);
+    tree(x, bb, hh, { trunkC: tc, tones: null, w: ww, lean: ll, branches: 0 }); // 乱数の並びを変えないために呼ぶ（絵は下の hazeTrunk で描く）
+    mid += hazeTrunk(x, bb, hh, ww * 1.15, ll, tc);
   }
   // 奥の下草の列と、幹のあいだにたまる朝の霧
   mid += understory(-5, mw + 5, 78.2, [P.dark, P.mid, P.leaf, P.fresh], '#e3e9c4');
@@ -1079,6 +1138,7 @@ export function sceneForest(W, stops, { entrance = false, birdGap = -1 } = {}) {
     const x = at(W, FACTORS.mid)(s, W / 2);
   }
   for (let x = -5; x < mw; x += R(9, 14)) mid += bushMass(x, R(-5, -1), R(9, 13), [P.deep, P.dark, P.mid, P.leaf], 22);
+  mid += canopyFringe(-5, mw + 5, [P.deep, P.dark, P.mid, P.leaf, P.fresh]);
   for (let x = R(0, 10); x < mw; x += R(22, 36)) mid += sprig(x, -3, R(12, 20), 180 + R(-20, 20), [P.leaf, P.fresh, P.lime, P.pale], { leaf: 2.8, cls: 'hang', stem: '#3d5a2a' });
   mid += beams(-10, mw, Math.round(mw / 18), '#fffbe0', { opacity: .08 });
   // 手前を横切る茂み（作品と作品のあいだ。作品の前には来ない）
@@ -1623,9 +1683,10 @@ export function sceneNight(W, stops) {
   // 遊歩道の石畳（目地）と、街灯の光が濡れた石に映る筋
   for (let y = 88.5; y < 106; y += 2.6) mid += `<path d="M-5 ${n1(y)}H${n1(mw + 5)}" stroke="#35313f" stroke-width=".18" opacity=".7"/>`;
   for (let y = 86, r = 0; y < 106; y += 2.6, r++) for (let x = -5 + (r % 2) * 2.5; x < mw + 5; x += 5) mid += `<path d="M${n1(x)} ${n1(y)}v2.6" stroke="#35313f" stroke-width=".15" opacity=".55"/>`;
+  { const d = hrng(mw * 1.3 + 41); for (let y = 86, r = 0; y < 106; y += 2.6, r++) for (let x = -5 + (r % 2) * 2.5; x < mw + 5; x += 5) { const k = d(); if (k < .45) mid += `<rect x="${n1(x + .12)}" y="${n1(y + .12)}" width="4.76" height="2.36" rx=".35" fill="${k < .2 ? '#3d3848' : '#1c1a24'}" opacity="${n1(.25 + d() * .3)}"/>`; else if (k < .55) mid += `<path d="M${n1(x)} ${n1(y + .4)}v1.8" stroke="#2d3a24" stroke-width=".35" opacity=".6"/>`; } }
   for (let x = R(4, 12); x < mw; x += R(22, 30)) if (clear(x, 2)) {
     const h = R(10, 13);
-    mid += `<ellipse cx="${n1(x)}" cy="${n1(96)}" rx="${n1(1.2)}" ry="${n1(7)}" fill="#ffc873" opacity=".12"/>` + streetLamp(x, 88, h);
+    mid += `<ellipse cx="${n1(x)}" cy="${n1(96)}" rx="${n1(1.2)}" ry="${n1(7)}" fill="#ffc873" opacity=".12"/>` + rglow(x, 93, 12, '#ffc873', .2) + streetLamp(x, 88, h); // 街灯の下の石畳に、やわらかい光のたまり
     { const px = x + R(-2, 2), py = R(96, 100), pw = R(6, 9); mid += puddle(px, py, pw, '#ffc873'); puddles.push([px, py, pw]); } // 街灯の下の、濡れた石畳の水たまり
   }
   // 石畳の上：ところどころ濡れて光る石、落ちたヤシの葉、散った花びら
@@ -1940,6 +2001,72 @@ function skis(x, y, h) {
   return o;
 }
 // コート掛け：壁の板に木のフック、ニット帽とジャケットとマフラー
+// 小屋の壁：天井の太い梁、腰板と見切りの縁、壁の上下の暗がり（奥行き）
+function cabinWallDetail(x0, x1) {
+  const d = hrng(x0 * 4.1 + x1);
+  let s = `<rect x="${n1(x0)}" y="-5" width="${n1(x1 - x0)}" height="85" fill="url(#cabShade)"/>`;
+  s = `<defs><linearGradient id="cabShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140c07" stop-opacity=".45"/><stop offset=".3" stop-color="#140c07" stop-opacity="0"/><stop offset=".72" stop-color="#140c07" stop-opacity="0"/><stop offset="1" stop-color="#140c07" stop-opacity=".3"/></linearGradient></defs>` + s;
+  // 腰板：横に張った板（色むら）と、上の見切りの縁
+  s += `<rect x="${n1(x0)}" y="62" width="${n1(x1 - x0)}" height="16.4" fill="#4a3222" opacity=".85"/>`;
+  for (let y = 62, r = 0; y < 78; y += 3.3, r++) { s += `<path d="M${n1(x0)} ${n1(y)}H${n1(x1)}" stroke="#2e1f14" stroke-width=".22"/>`; for (let x = x0 + (r % 2) * 9; x < x1; x += 14 + d() * 10) { s += `<rect x="${n1(x)}" y="${n1(y + .2)}" width="${n1(8 + d() * 12)}" height="3" fill="${d() < .5 ? '#5a3e2a' : '#3e2a1c'}" opacity="${n1(.25 + d() * .3)}"/><path d="M${n1(x)} ${n1(y)}v3.3" stroke="#2e1f14" stroke-width=".2"/>`; } }
+  s += `<rect x="${n1(x0)}" y="60.6" width="${n1(x1 - x0)}" height="1.6" fill="#6a4a30"/><rect x="${n1(x0)}" y="60.6" width="${n1(x1 - x0)}" height=".4" fill="#94704a" opacity=".8"/><rect x="${n1(x0)}" y="62.2" width="${n1(x1 - x0)}" height=".6" fill="#1d130c" opacity=".5"/>`;
+  // 天井の梁：太い角材に木目と、下の角の光
+  s += `<rect x="${n1(x0)}" y="-5" width="${n1(x1 - x0)}" height="6.6" fill="#3a2718"/><rect x="${n1(x0)}" y="1.2" width="${n1(x1 - x0)}" height=".45" fill="#7a5638" opacity=".7"/><rect x="${n1(x0)}" y="1.65" width="${n1(x1 - x0)}" height="1" fill="#140c07" opacity=".35"/>`;
+  for (let x = x0; x < x1; x += 5 + d() * 9) s += `<path d="M${n1(x)} ${n1(-1 + d() * 1.6)}q${n1(2 + d() * 3)} ${n1((d() - .5) * .6)} ${n1(6 + d() * 7)} 0" stroke="#261a10" stroke-width=".2" fill="none" opacity=".7"/>`;
+  return s;
+}
+// 小屋の床：板ごとの色むら（明るい板・暗い板）と、継ぎ目の釘
+function cabinFloorDetail(x0, x1) {
+  const d = hrng(x0 * 6.7 + x1);
+  let s = '';
+  for (let y = 80, r = 0; y < 106; y += 3.2, r++) for (let x = x0 + d() * 10; x < x1; x += 10 + d() * 18) {
+    const w = 8 + d() * 16; s += `<rect x="${n1(x)}" y="${n1(y + .15)}" width="${n1(w)}" height="3" fill="${d() < .55 ? '#8a6444' : '#2e1f14'}" opacity="${n1(.1 + d() * .18)}"/>`;
+    if (d() < .5) s += `<circle cx="${n1(x + .5)}" cy="${n1(y + .8)}" r=".13" fill="#1a110a"/><circle cx="${n1(x + .5)}" cy="${n1(y + 2.4)}" r=".13" fill="#1a110a"/>`;
+  }
+  return s;
+}
+// 壁の掛け物：木の釘掛けに、ニット帽とマフラー
+function scarfHook(x, y, s) {
+  track(x - s * .6, y - s * .1); track(x + s * .6, y + s * 1.3);
+  const d = hrng(x * 2.9 + y), rail = `<rect x="${n1(x - s * .55)}" y="${n1(y)}" width="${n1(s * 1.1)}" height="${n1(s * .1)}" rx="${n1(s * .03)}" fill="#6a4a30"/><rect x="${n1(x - s * .55)}" y="${n1(y)}" width="${n1(s * 1.1)}" height="${n1(s * .025)}" fill="#94704a"/>`;
+  const pegs = [-.28, .28].map((o) => `<rect x="${n1(x + o * s - s * .03)}" y="${n1(y + s * .08)}" width="${n1(s * .06)}" height="${n1(s * .14)}" fill="#3a2718"/>`).join('');
+  // ニット帽（リブの折り返しと、ぽんぽん）
+  const bx = x - s * .28, by = y + s * .2, hat = `<path d="M${n1(bx - s * .2)} ${n1(by + s * .36)}Q${n1(bx - s * .22)} ${n1(by)} ${n1(bx)} ${n1(by - s * .02)}Q${n1(bx + s * .22)} ${n1(by)} ${n1(bx + s * .2)} ${n1(by + s * .36)}Z" fill="#b8623e"/><rect x="${n1(bx - s * .21)}" y="${n1(by + s * .28)}" width="${n1(s * .42)}" height="${n1(s * .12)}" rx="${n1(s * .03)}" fill="#9a4e32"/>${[0, 1, 2, 3, 4, 5].map((i) => `<path d="M${n1(bx - s * .18 + i * s * .072)} ${n1(by + s * .29)}v${n1(s * .1)}" stroke="#7d3f28" stroke-width="${n1(s * .012)}"/>`).join('')}<circle cx="${n1(bx)}" cy="${n1(by - s * .04)}" r="${n1(s * .07)}" fill="#e8d3ad"/>`;
+  // マフラー（釘に掛けて、左右に垂れる。縞と房）
+  const mx = x + s * .28, my = y + s * .2, cols = ['#3f5d59', '#d9a35a'], L1 = s * (.9 + d() * .15), L2 = s * .7;
+  let scarf = `<path d="M${n1(mx - s * .09)} ${n1(my)}Q${n1(mx - s * .16)} ${n1(my + L1 * .5)} ${n1(mx - s * .12)} ${n1(my + L1)}L${n1(mx - s * .01)} ${n1(my + L1)}Q${n1(mx - s * .05)} ${n1(my + L1 * .5)} ${n1(mx + s * .02)} ${n1(my)}Z" fill="${cols[0]}"/><path d="M${n1(mx)} ${n1(my)}Q${n1(mx + s * .1)} ${n1(my + L2 * .5)} ${n1(mx + s * .06)} ${n1(my + L2)}L${n1(mx + s * .17)} ${n1(my + L2)}Q${n1(mx + s * .2)} ${n1(my + L2 * .5)} ${n1(mx + s * .1)} ${n1(my)}Z" fill="${dark(cols[0], .12)}"/>`;
+  for (const t of [.55, .7, .85]) scarf += `<path d="M${n1(mx - s * .15)} ${n1(my + L1 * t)}h${n1(s * .15)}" stroke="${cols[1]}" stroke-width="${n1(s * .035)}"/>`;
+  scarf += [0, 1, 2, 3].map((i) => `<path d="M${n1(mx - s * .11 + i * s * .03)} ${n1(my + L1)}v${n1(s * .07)}" stroke="${cols[0]}" stroke-width="${n1(s * .012)}"/>`).join('');
+  return `<ellipse cx="${n1(x)}" cy="${n1(y + s * 1.25)}" rx="${n1(s * .5)}" ry="${n1(s * .05)}" fill="#000" opacity="0"/>` + rail + pegs + scarf + hat;
+}
+// 壁の掛け物：交差させて掛けた古いスノーシュー（木の枠と、格子に張った革ひも）
+function snowshoes(x, y, s) {
+  track(x - s * .55, y - s * .05); track(x + s * .55, y + s * 1.3);
+  const shoe = (a) => { let o = `<g transform="rotate(${a} ${n1(x)} ${n1(y + s * .05)})"><path d="M${n1(x)} ${n1(y + s * .08)}Q${n1(x + s * .26)} ${n1(y + s * .3)} ${n1(x + s * .22)} ${n1(y + s * .75)}Q${n1(x + s * .1)} ${n1(y + s * 1.15)} ${n1(x)} ${n1(y + s * 1.25)}Q${n1(x - s * .1)} ${n1(y + s * 1.15)} ${n1(x - s * .22)} ${n1(y + s * .75)}Q${n1(x - s * .26)} ${n1(y + s * .3)} ${n1(x)} ${n1(y + s * .08)}Z" fill="none" stroke="#9a7a52" stroke-width="${n1(s * .035)}"/>`;
+    for (let i = 1; i < 7; i++) { const yy = y + s * (.2 + i * .14); o += `<path d="M${n1(x - s * .2)} ${n1(yy)}L${n1(x + s * .2)} ${n1(yy + s * .08)}M${n1(x + s * .2)} ${n1(yy)}L${n1(x - s * .2)} ${n1(yy + s * .08)}" stroke="#c9a877" stroke-width="${n1(s * .01)}" opacity=".8"/>`; }
+    o += `<rect x="${n1(x - s * .14)}" y="${n1(y + s * .62)}" width="${n1(s * .28)}" height="${n1(s * .05)}" fill="#6a4a30"/></g>`; return o; };
+  return `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(s * .03)}" fill="#8a7a62"/><path d="M${n1(x)} ${n1(y)}L${n1(x - s * .06)} ${n1(y + s * .12)}M${n1(x)} ${n1(y)}L${n1(x + s * .06)} ${n1(y + s * .12)}" stroke="#3a2718" stroke-width="${n1(s * .015)}"/>` + shoe(-16) + shoe(16);
+}
+// 壁の掛け物：マクラメの吊り紐に、葉の垂れる鉢
+function macrame(x, y, s) {
+  track(x - s * .45, y - s * .05); track(x + s * .45, y + s * 1.45);
+  const d = hrng(x * 1.9 + y * 3), py = y + s * .8;
+  let o = `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(s * .035)}" fill="#8a7a62"/><circle cx="${n1(x)}" cy="${n1(y + s * .06)}" r="${n1(s * .05)}" fill="none" stroke="#d9c49a" stroke-width="${n1(s * .015)}"/>`;
+  for (const o2 of [-.2, -.07, .07, .2]) o += `<path d="M${n1(x)} ${n1(y + s * .1)}Q${n1(x + o2 * s * .6)} ${n1(y + s * .45)} ${n1(x + o2 * s)} ${n1(py)}" stroke="#d9c49a" stroke-width="${n1(s * .014)}" fill="none"/>`;
+  for (const t of [.35, .55]) o += `<circle cx="${n1(x - s * .1)}" cy="${n1(y + s * t)}" r="${n1(s * .02)}" fill="#c9b184"/><circle cx="${n1(x + s * .1)}" cy="${n1(y + s * t)}" r="${n1(s * .02)}" fill="#c9b184"/>`;
+  o += `<path d="M${n1(x - s * .22)} ${n1(py)}H${n1(x + s * .22)}L${n1(x + s * .17)} ${n1(py + s * .28)}H${n1(x - s * .17)}Z" fill="#a8704a"/><path d="M${n1(x - s * .22)} ${n1(py)}H${n1(x + s * .22)}V${n1(py + s * .05)}H${n1(x - s * .22)}Z" fill="#8a5a3a"/>`;
+  for (let i = 0; i < 9; i++) { const sx = x + (d() - .5) * s * .4, len = s * (.2 + d() * .5), dir = d() < .5 ? -1 : 1; let st = `M${n1(sx)} ${n1(py)}`; const ex = sx + dir * s * (.05 + d() * .2), ey = py + len; st += `Q${n1(sx + dir * s * .12)} ${n1(py + len * .4)} ${n1(ex)} ${n1(ey)}`; o += `<path d="${st}" stroke="#4f6a2a" stroke-width="${n1(s * .012)}" fill="none"/>`; for (let q = 1; q <= 3; q++) { const t = q / 3.4, lx = sx + (ex - sx) * t + dir * s * .02, ly = py + len * t; o += `<ellipse cx="${n1(lx)}" cy="${n1(ly)}" rx="${n1(s * .035)}" ry="${n1(s * .022)}" fill="${['#5f7d2e', '#6f8a3a', '#4f6a2a'][q % 3]}" transform="rotate(${n1(dir * 30)} ${n1(lx)} ${n1(ly)})"/>`; } }
+  for (let i = 0; i < 6; i++) o += `<ellipse cx="${n1(x + (d() - .5) * s * .36)}" cy="${n1(py - s * .03 - d() * s * .08)}" rx="${n1(s * .06)}" ry="${n1(s * .03)}" fill="${['#5f7d2e', '#6f8a3a', '#7d9a46'][i % 3]}" transform="rotate(${n1((d() - .5) * 60)} ${n1(x)} ${n1(py)})"/>`;
+  return o;
+}
+// 壁の掛け物：丸い木の時計（文字盤は目盛りだけ）
+function wallClock(x, y, s) {
+  const r = s * .32, cy = y + s * .45; track(x - r * 1.1, cy - r * 1.1); track(x + r * 1.1, cy + r * 1.2);
+  let o = `<circle cx="${n1(x + r * .06)}" cy="${n1(cy + r * .08)}" r="${n1(r * 1.05)}" fill="#000" opacity=".25"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * 1.05)}" fill="#6a4a30"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * .86)}" fill="#e8dcc0"/>`;
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2, r1 = r * (i % 3 ? .74 : .68); o += `<path d="M${n1(x + Math.sin(a) * r1)} ${n1(cy - Math.cos(a) * r1)}L${n1(x + Math.sin(a) * r * .8)} ${n1(cy - Math.cos(a) * r * .8)}" stroke="#3a2718" stroke-width="${n1(r * (i % 3 ? .03 : .06))}"/>`; }
+  o += `<path d="M${n1(x)} ${n1(cy)}L${n1(x + r * .3)} ${n1(cy - r * .32)}" stroke="#2a1c12" stroke-width="${n1(r * .07)}" stroke-linecap="round"/><path d="M${n1(x)} ${n1(cy)}L${n1(x - r * .12)} ${n1(cy - r * .6)}" stroke="#2a1c12" stroke-width="${n1(r * .045)}" stroke-linecap="round"/><circle cx="${n1(x)}" cy="${n1(cy)}" r="${n1(r * .06)}" fill="#b8925e"/>`;
+  return o;
+}
 function coatRack(x, y, w) {
   track(x - w / 2, y - 2); track(x + w / 2, y + 16);
   let o = `<rect x="${n1(x - w / 2)}" y="${n1(y)}" width="${n1(w)}" height="1.6" rx=".3" fill="#8a5f3a"/>`;
@@ -2081,6 +2208,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   for (let x = wallX; x < mw + 5; x += R(4, 6)) mid += `<path d="M${n1(x)} -5V80" stroke="#3f2a1c" stroke-width=".35"/>` + (rnd() < .5 ? `<circle cx="${n1(x + 1)}" cy="${n1(R(5, 75))}" r=".18" fill="#2a1c12"/>` : '');
   // 板壁の木目（ゆるく波打つ細い線と、ところどころの節）と、板ごとのわずかな色むら
   for (let x = wallX; x < mw + 5; x += R(4, 6)) { const w = R(3.5, 5.5); if (rnd() < .5) mid += `<rect x="${n1(x)}" y="-5" width="${n1(w)}" height="85" fill="${pick(['#6a4a33', '#4e3524', '#5f412c'])}" opacity=".35"/>`; for (let k = 0; k < 2; k++) { const gx = x + R(.6, w - .6); mid += `<path d="M${n1(gx)} -5C${n1(gx + R(-.6, .6))} 20 ${n1(gx + R(-.6, .6))} 50 ${n1(gx + R(-.4, .4))} 80" stroke="#4a3222" stroke-width=".12" fill="none" opacity=".6"/>`; } if (rnd() < .3) { const ky = R(8, 72), kx = x + R(1, w - 1); mid += `<ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx=".45" ry=".9" fill="#3a2718" opacity=".7"/><ellipse cx="${n1(kx)}" cy="${n1(ky)}" rx=".8" ry="1.6" fill="none" stroke="#4a3222" stroke-width=".1" opacity=".6"/>`; } }
+  mid += cabinWallDetail(wallX, mw + 5);
   // 天井の梁に沿って、暖かい電球の飾り（ゆるく垂れる）
   { let d = `M${n1(wallX + 3)} 2`, bulbs = ''; for (let x = wallX + 3; x < mw; x += 12) { d += `Q${n1(x + 6)} 6 ${n1(x + 12)} 2`; for (const t of [.25, .5, .75]) { const bx = x + 12 * t, by = 2 + 4 * 2 * t * (1 - t) + .9; bulbs += `<circle cx="${n1(bx)}" cy="${n1(by)}" r="1.6" fill="#ffcf85" opacity=".16"/><circle cx="${n1(bx)}" cy="${n1(by)}" r=".42" fill="#ffe6b0"/>`; } } mid += `<path d="${d}" stroke="#1d140d" stroke-width=".18" fill="none"/>${bulbs}`; }
   mid += wins.map((w) => windowFrame(...w)).join('');
@@ -2097,6 +2225,7 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
   // 床板の継ぎ目と木目、巾木、額灯が床に落とす光
   for (let y = 80, r = 0; y < 106; y += 3.2, r++) for (let x = wallX + (r % 3) * 7; x < mw + 5; x += R(16, 24)) mid += `<path d="M${n1(x)} ${n1(y)}v3.2" stroke="#2e2016" stroke-width=".25" opacity=".8"/>`;
   for (let i = 0; i < (mw - wallX) / 3; i++) { const x = R(wallX, mw), y = R(81, 105); mid += `<path d="M${n1(x)} ${n1(y)}q${n1(R(2, 4))} ${n1(R(-.3, .3))} ${n1(R(5, 9))} 0" stroke="#7a5638" stroke-width=".18" fill="none" opacity=".45"/>`; }
+  mid += cabinFloorDetail(wallX, mw + 5);
   mid += `<rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height="1.6" fill="#3a2718"/><rect x="${n1(wallX)}" y="78.4" width="${n1(mw - wallX + 5)}" height=".35" fill="#7a5638" opacity=".7"/>`;
   for (let k = 2; k < stops; k++) mid += rglow(workX(k), 86, 22, '#ffcf85', .16);
   // ラグ：部屋の奥まで続く 1 本の長い敷物（ランナー）。縁取り、内側の二重線、菱形の模様、両端のフリンジ
@@ -2128,6 +2257,18 @@ export function sceneAttic(W, stops, { birdGap = -1 } = {}) {
     // 壁の小物は、作品にかからないときだけ（広い画面）
     if (k === 1) mid += guard(Zk, () => coatRack(gx, 30, 14 * Math.min(FK, 1.4)), { min: 1 });
     if (k === 2) mid += guard(Zk, () => sconce(gx, 38, 2.6), { min: 1 });
+  }
+  // 空いた壁（窓も棚も掛け物もない作品のあいだ）に、小屋らしい掛け物。作品にかからない大きさで（入らなければ置かない）
+  {
+    const kinds = [scarfHook, snowshoes, macrame, wallClock];
+    for (let k = 1, i = 0; k < stops - 1; k++) {
+      if (k === 2) continue; // 薪ストーブの煙突と棚のある壁
+      if (k >= 3 && wins.length) continue; // 窓のある壁
+      if (k === 1 && W >= 80) continue; // 広い画面ではコート掛けがある
+      const gx = (workX(k) + workX(k + 1)) / 2, Zk = [artZone(W, workX(k), 0, 80), artZone(W, workX(k + 1), 0, 80)];
+      const f = kinds[i++ % kinds.length];
+      mid += guard(Zk, (kk) => f(gx, 24, 12 * kk), { min: .45 });
+    }
   }
   // 天井のドライハーブ：電球のあいだに、作品にかからないところへ
   for (let x = wallX + 9; x < mw; x += 12) if (clearOfWorks(W, stops, x, 5)) mid += herbBundle(x, 4.2, 2.6);
