@@ -240,14 +240,28 @@ function crownMass(cx, cy, r, tones, g) {
   s += `<g fill="${body}">${circ(lobes, r * .07, r * .1, .97)}${circ(bumps, r * .05, r * .07)}</g>`;
   // ふくらみどうしの境目：上のふくらみの下のふちに沿って、少し暗い面（奥行き）
   s += `<g fill="${mixC(body, sh, .45)}" opacity=".5">${lobes.filter(([, y]) => y > cy - r * .5).map(([x, y, rr]) => `<path d="M${n1(x - rr * .95)} ${n1(y + rr * .1)}A${n2(rr)} ${n2(rr)} 0 0 0 ${n1(x + rr * .95)} ${n1(y + rr * .1)}A${n2(rr)} ${n2(rr * .7)} 0 0 1 ${n1(x - rr * .95)} ${n1(y + rr * .1)}Z"/>`).join('')}</g>`;
-  // ふくらみの境目に、葉の形の明るい面（上向きのふくらみの上だけ、向きをそろえて）
-  for (const [x, y, rr] of lobes) for (let i = 0; i < 3; i++) {
-    const a = -60 + g() * 50, lx = x - rr * (.35 - g() * .5), ly = y - rr * (.45 + g() * .25), L = rr * (.28 + g() * .12);
-    s += `<path d="M0 0Q${n1(L * .5)} ${n1(-L * .3)} ${n1(L)} 0Q${n1(L * .5)} ${n1(L * .3)} 0 0Z" transform="translate(${n1(lx)} ${n1(ly)}) rotate(${n1(a + 180)})" fill="${rimHi}" opacity=".45"/>`;
-  }
   // 下へなめらかに暗く
-  s += `<rect x="${n1(cx - r * 1.3)}" y="${n1(cy - r * .1)}" width="${n1(r * 2.6)}" height="${n1(r * 1.3)}" fill="url(#${sg})"/></g>`;
+  s += `<rect x="${n1(cx - r * 1.3)}" y="${n1(cy - r * .1)}" width="${n1(r * 2.6)}" height="${n1(r * 1.3)}" fill="url(#${sg})"/>`;
+  // 光の当たるふくらみの中に、作品の葉（葉脈で明るい半分と暗い半分に塗り分けた葉）を、下向きにそろえて少しだけ
+  for (const [x, y, rr] of lobes) { if (y > cy + r * .15) continue; for (let i = 0; i < 4; i++) { const lx = x - rr * (.5 - g() * .8), ly = y - rr * (.3 - g() * .6); { const L = rr * (.2 + g() * .08); s += splitLeaf(lx, ly, L, L * .42, 100 + g() * 50, mixC(hi, rimHi, .5), body, .75); } } }
+  s += '</g>';
+  // ふちの葉：ふくらみのふちから外へ生える形で並べる（かたまりから離れた葉は置かない）。上は光の色、下は陰の色
+  const warm = mixC(rimHi, '#f2e6a6', .25);
+  bumps.forEach(([x, y, br], i) => {
+    if (i % 2) return;
+    const [lx, ly] = [x, y], near = lobes.reduce((m, q) => (Math.hypot(q[0] - x, q[1] - y) - q[2] < Math.hypot(m[0] - x, m[1] - y) - m[2] ? q : m), lobes[0]);
+    const ang = Math.atan2(y - near[1], x - near[0]) * 180 / Math.PI, up = -(y - near[1]) / (near[2] || 1), left = -(x - near[0]) / (near[2] || 1);
+    const lit = up > .3, a = ang + 25 * (ang > -90 && ang < 90 ? 1 : -1) * .5 + (g() - .5) * 20;
+    if (up < -.35) return; // 下のふちには葉を出さない（暗いトゲに見えるので）
+    const [cl, cd] = lit ? [left > .2 ? warm : hi, body] : [hi, body];
+    const L = br * (1.35 + g() * .5); s += splitLeaf(lx, ly, L, L * .42, a, cl, cd, 1);
+  });
   return s;
+}
+// 作品の葉の描き方：先のとがった葉を、葉脈で明るい半分と暗い半分に塗り分ける（根もとが x, y）
+function splitLeaf(x, y, L, w, a, cLight, cDark, op = 1) {
+  const t = `transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(a)})"`, o = op < 1 ? ` opacity="${op}"` : '';
+  return `<path d="M0 0Q${n2(L * .45)} ${n2(-w * 1.25)} ${n2(L)} 0Z" ${t} fill="${cLight}"${o}/><path d="M0 0Q${n2(L * .45)} ${n2(w * 1.25)} ${n2(L)} 0Z" ${t} fill="${cDark}"${o}/>`;
 }
 // シダ：羽片は根元と先が短く、真ん中が長い
 export function fern(x, y, len, a, c, { cls = 'sway', n = 16 } = {}) {
@@ -1113,7 +1127,10 @@ function sceneEntrance(W) {
     mid += tree(x, yb, H, { trunkC, tones: null, w, lean: side * R(0, 1.5) * t, branches: 0 });
     const top = yb - H, cy = top + H * .24, cr = H * .2;
     // 樹冠は crownMass で描く（前の bushMass は乱数の呼び出しだけ残して、並木の配置を変えない）
-    if (cy + cr > -4) { bushMass(x, cy, cr, tones, 26); bushMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, 18); bushMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, 16); const gC = hrng(x * 3.7 + cy); mid += crownMass(x, cy, cr, tones, gC) + crownMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, gC) + crownMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, gC); }
+    // 木ごとに緑の色味を少し変える（黄みの強い木、青みの強い木）。樹冠の下に、幹から分かれる 2 本の枝をのぞかせる
+    const gT = hrng(x * 1.3 + d), tint = gT() < .5 ? '#c4c86a' : '#6f9a8c', tt = tones.map((c) => mixC(c, mixC(tint, hazeC, z * .6), .08 + gT() * .1));
+    if (cy + cr > -4 && t > .25) { const bc = mixC(trunkC, '#000000', .15), bw = w * .42, by = cy + cr * .55; for (const sd of [-1, 1]) mid += `<path d="M${n1(x - bw * .5)} ${n1(by + cr * .25)}Q${n1(x + sd * cr * .15)} ${n1(by)} ${n1(x + sd * cr * .42)} ${n1(by - cr * .3)}L${n1(x + sd * cr * .42 + bw * .35)} ${n1(by - cr * .3 - bw * .2)}Q${n1(x + sd * cr * .12 + bw * .4)} ${n1(by - bw * .2)} ${n1(x + bw * .5)} ${n1(by + cr * .25)}Z" fill="${bc}"/>`; }
+    if (cy + cr > -4) { bushMass(x, cy, cr, tones, 26); bushMass(x - side * cr * .7, cy + cr * .45, cr * .7, tones, 18); bushMass(x + side * cr * .6, cy + cr * .5, cr * .6, tones, 16); const gC = hrng(x * 3.7 + cy); mid += crownMass(x, cy, cr, tt, gC) + crownMass(x - side * cr * .7, cy + cr * .45, cr * .7, tt, gC) + crownMass(x + side * cr * .6, cy + cr * .5, cr * .6, tt, gC); }
     if (t > .2) mid += shrub(x + side * w * 1.5, yb + .5, 3 + t * 9, [P.dark, P.mid, P.leaf, P.fresh].map((c) => mixC(c, hazeC, z * .7)), { leaf: .6 + t * 1.2, n: t > .6 ? 5 : 4 });
     if (t > .45 && rnd() < .6) mid += fern(x - side * w * 1.4, yb + .5, 4 + t * 9, -side * R(20, 50), mixC(P.leaf, hazeC, z * .5), { cls: '' });
   }
