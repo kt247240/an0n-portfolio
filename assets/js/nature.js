@@ -1178,11 +1178,11 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
   // 水面に映る空の雲（見下ろした池に、白い雲がやわらかく映り込む）
   far += cloudReflections(-10, fw + 10, 8, 95, Math.round(fw / 14));
   // 対岸の茂み（上のほう）と、その映り込み
-  far += farBank(-10, fw + 10, 22, ['#1f3a22', '#2b5230', '#3d6b3a', '#5a8a3c']);
+  far += farBank(-10, fw + 10, 28, ['#1f3a22', '#2b5230', '#3d6b3a', '#5a8a3c']);
   // （鯉は背景に焼かず、museum.js のスクロールで泳ぐ鯉だけにする：止まった鯉が混ざらないように）
-  far += caustics(-5, fw, 5, 100, Math.round(fw * 1.2), 'rgba(210,222,170,.35)');
-  for (let i = 0; i < fw / 12; i++) far += `<path d="M${n1(R(0, fw))} ${n1(R(10, 90))}q${n1(R(-8, 8))} ${n1(R(4, 10))} ${n1(R(-10, 10))} ${n1(R(10, 20))}" stroke="#5f6a40" stroke-width="${n1(R(.4, 1))}" fill="none" opacity=".45" stroke-linecap="round"/>`;
-  for (let i = 0; i < fw / 7; i++) { const x = R(0, fw), y = R(15, 95); far += lily(x, y, R(1.5, 3), pick(['#9fb86a', '#8aa35a', '#b3c97a'])); }
+  far += caustics(-5, fw, 29, 100, Math.round(fw * 1.2), 'rgba(210,222,170,.35)');
+  for (let i = 0; i < fw / 12; i++) far += `<path d="M${n1(R(0, fw))} ${n1(R(30, 90))}q${n1(R(-8, 8))} ${n1(R(4, 10))} ${n1(R(-10, 10))} ${n1(R(10, 20))}" stroke="#5f6a40" stroke-width="${n1(R(.4, 1))}" fill="none" opacity=".45" stroke-linecap="round"/>`;
+  for (let i = 0; i < fw / 7; i++) { const x = R(0, fw), y = R(31, 95); far += lily(x, y, R(1.5, 3), pick(['#9fb86a', '#8aa35a', '#b3c97a'])); }
   // 中景：太い枝と苔、つる、睡蓮と花、波紋、葦
   const [bG, bD] = lgrad([[0, '#8a6442'], [1, '#5a3b2a']]);
   mid += `<defs>${bD}</defs><path d="M-5 6Q${n1(mw * .25)} -1 ${n1(mw * .5)} 8T${n1(mw + 5)} 6L${n1(mw + 5)} 11Q${n1(mw * .75)} 14 ${n1(mw * .5)} 12T-5 10Z" fill="url(#${bG})"/>`;
@@ -1254,14 +1254,55 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
 
 // ---------- 水辺の描き込み：対岸の茂み、水中の鯉、カエル、トンボ、カワセミ、サギ、カメ、アメンボ ----------
 // 対岸：暗い茂みの帯に丸い茂みとモンステラ。下に水面への映り込み（上下を反転して薄く）
+// 対岸の奥：霞んだ背の高い木々（幹と樹冠）、ヤシとバナナの大きな葉の影、上にうすい霧
+function farBankBackdrop(x0, x1, y, tones) {
+  const d = hrng(x0 * .9 + x1 * 1.7 + y), haze = (c, t) => mixC(c, '#c3d2a2', t);
+  let s = '';
+  for (let x = x0 + d() * 6; x < x1; x += 7 + d() * 9) { // 奥の木：細い幹と、重なる丸い樹冠
+    const h = 12 + d() * 9, top = y - h, c = haze(tones[1], .62), w = .5 + d() * .5;
+    s += `<path d="M${n1(x - w)} ${n1(y)}L${n1(x - w * .5)} ${n1(top + 3)}L${n1(x + w * .5)} ${n1(top + 3)}L${n1(x + w)} ${n1(y)}Z" fill="${haze(tones[0], .6)}"/>`;
+    for (let k = 0; k < 4; k++) s += `<ellipse cx="${n1(x + (d() - .5) * 5)}" cy="${n1(top + 1 + d() * 4)}" rx="${n1(2.2 + d() * 2.6)}" ry="${n1(1.6 + d() * 1.6)}" fill="${k % 2 ? c : haze(tones[2], .6)}"/>`;
+  }
+  for (let x = x0 + 3 + d() * 10; x < x1; x += 14 + d() * 16) { // ヤシ：細い幹が少し傾き、上に大きな羽の葉
+    const h = 13 + d() * 7, lean = (d() - .5) * 4, tx = x + lean, ty = y - h, c = haze(tones[1], .5);
+    s += `<path d="M${n1(x)} ${n1(y)}Q${n1(x + lean * .3)} ${n1(y - h * .5)} ${n1(tx)} ${n1(ty)}" stroke="${haze(tones[0], .5)}" stroke-width=".45" fill="none"/>`;
+    for (let k = 0; k < 7; k++) { const a = -170 + k * 27 + (d() - .5) * 10, L = 3 + d() * 2.2, ex = tx + Math.cos(a * Math.PI / 180) * L, ey = ty + Math.sin(a * Math.PI / 180) * L * .6 + L * .35; s += `<path d="M${n1(tx)} ${n1(ty)}Q${n1((tx + ex) / 2)} ${n1(Math.min(ty, ey) - .9)} ${n1(ex)} ${n1(ey)}Q${n1((tx + ex) / 2)} ${n1(Math.min(ty, ey) - .2)} ${n1(tx)} ${n1(ty + .25)}Z" fill="${c}"/>`; }
+  }
+  for (let x = x0 + 8 + d() * 12; x < x1; x += 18 + d() * 22) { // バナナの葉：大きく垂れる幅広の葉
+    const bx = x, by = y - 4 - d() * 3, c = haze(tones[2], .45);
+    for (const dir of [-1, 1]) { const L = 4 + d() * 2.5, ex = bx + dir * L, ey = by - 1 + d() * 3; s += `<path d="M${n1(bx)} ${n1(by)}Q${n1(bx + dir * L * .5)} ${n1(by - 3)} ${n1(ex)} ${n1(ey)}Q${n1(bx + dir * L * .45)} ${n1(by + .6)} ${n1(bx)} ${n1(by + .5)}Z" fill="${c}"/><path d="M${n1(bx)} ${n1(by + .1)}Q${n1(bx + dir * L * .5)} ${n1(by - 1.6)} ${n1(ex)} ${n1(ey)}" stroke="${haze(tones[1], .55)}" stroke-width=".12" fill="none"/>`; }
+  }
+  s += `<rect x="${n1(x0)}" y="${n1(y - 22)}" width="${n1(x1 - x0)}" height="14" fill="#d4dfb4" opacity=".22"/>`; // うすい霧
+  return s;
+}
+// 対岸の手前：岸から立つ太い幹と水に下りる根、水ぎわの苔むした岩、細長い水草の葉、濡れた土の帯
+function farBankFront(x0, x1, y, tones) {
+  const d = hrng(x0 * 1.3 + x1 * .4 + y * 2);
+  let s = `<path d="M${n1(x0)} ${n1(y + .2)}H${n1(x1)}V${n1(y + 1.1)}H${n1(x0)}Z" fill="#2a3420" opacity=".55"/>`;
+  for (let x = x0 + 5 + d() * 14; x < x1; x += 24 + d() * 30) { // 太い幹と根
+    const w = 1 + d() * .7, h = 9 + d() * 6, c = '#3a3a28';
+    s += `<path d="M${n1(x - w)} ${n1(y + .5)}Q${n1(x - w * .6)} ${n1(y - h * .5)} ${n1(x - w * .4)} ${n1(y - h)}L${n1(x + w * .4)} ${n1(y - h)}Q${n1(x + w * .7)} ${n1(y - h * .5)} ${n1(x + w)} ${n1(y + .5)}Z" fill="${c}"/><path d="M${n1(x - w * .5)} ${n1(y)}Q${n1(x - w * .35)} ${n1(y - h * .5)} ${n1(x - w * .25)} ${n1(y - h)}" stroke="#5a5a3c" stroke-width=".18" fill="none" opacity=".7"/>`;
+    for (const dir of [-1, 1, -1]) { const rx = x + dir * (w + d() * 2.5); s += `<path d="M${n1(x + dir * w * .5)} ${n1(y - 1.2)}Q${n1(rx)} ${n1(y - .8)} ${n1(rx + dir * .8)} ${n1(y + 1.4)}" stroke="${c}" stroke-width="${n1(.28 + d() * .2)}" fill="none" stroke-linecap="round"/>`; }
+  }
+  for (let x = x0 + d() * 8; x < x1; x += 9 + d() * 14) { // 水ぎわの岩（半分水に沈み、上に苔）
+    const w = 1.6 + d() * 2.2, h = w * (.45 + d() * .2), cy = y + .9;
+    s += `<path d="M${n1(x - w)} ${n1(cy)}Q${n1(x - w * .8)} ${n1(cy - h)} ${n1(x)} ${n1(cy - h)}Q${n1(x + w * .8)} ${n1(cy - h)} ${n1(x + w)} ${n1(cy)}Z" fill="#5a5f4a"/><path d="M${n1(x - w * .7)} ${n1(cy - h * .7)}Q${n1(x)} ${n1(cy - h * 1.15)} ${n1(x + w * .5)} ${n1(cy - h * .8)}Q${n1(x)} ${n1(cy - h * .55)} ${n1(x - w * .7)} ${n1(cy - h * .7)}Z" fill="${tones[3]}" opacity=".75"/><path d="M${n1(x + w * .2)} ${n1(cy - h * .2)}Q${n1(x + w * .7)} ${n1(cy - h * .4)} ${n1(x + w * .9)} ${n1(cy)}" stroke="#3a3e30" stroke-width=".25" fill="none" opacity=".6"/>`;
+  }
+  for (let x = x0 + d() * 4; x < x1; x += 3 + d() * 6) { // 細長い水草の葉（線ではなく、先の細い葉の形）
+    const n = 2 + Math.floor(d() * 3);
+    for (let k = 0; k < n; k++) { const bx = x + (d() - .5) * 1.4, h = 2.2 + d() * 2.8, lean = (d() - .5) * 1.8, wd = .16 + d() * .1; s += `<path d="M${n1(bx - wd)} ${n1(y + .8)}Q${n1(bx + lean * .4)} ${n1(y + .8 - h * .6)} ${n1(bx + lean)} ${n1(y + .8 - h)}Q${n1(bx + lean * .4 + wd)} ${n1(y + .8 - h * .55)} ${n1(bx + wd)} ${n1(y + .8)}Z" fill="${d() < .5 ? tones[2] : tones[3]}"/>`; }
+  }
+  return s;
+}
 function farBank(x0, x1, y, tones) {
   const id = `bk${gid++}`;
   let x = x0, d = `M${n1(x0)} ${n1(y + 2)}L${n1(x0)} ${n1(y - 3)}`;
   while (x < x1) { const w = R(4, 9), h = R(3, 7); d += `Q${n1(x + w / 2)} ${n1(y - h - w * .3)} ${n1(x + w)} ${n1(y - h * R(.2, .6))}`; x += w; }
-  let b = `<path d="${d}L${n1(x)} ${n1(y + 2)}Z" fill="${tones[0]}"/>`;
+  let b = farBankBackdrop(x0, x1, y, tones) + `<path d="${d}L${n1(x)} ${n1(y + 2)}Z" fill="${tones[0]}"/>`;
   for (let bx = x0 + R(2, 6); bx < x1; bx += R(6, 12)) { const r = R(2.5, 4.5); b += bushMass(bx, y - r * .7, r, tones, 14); }
   for (let bx = x0 + R(4, 10); bx < x1; bx += R(12, 22)) b += monstera(bx, y - R(1, 3), R(4, 6.5), R(-60, -20), pick([tones[1], tones[2]]), { cls: '' }) + monstera(bx + R(1, 3), y - R(.5, 2), R(3.5, 5.5), R(20, 60), pick([tones[2], tones[3]]), { cls: '' });
   for (let bx = x0; bx < x1; bx += R(1.5, 3)) b += tuft(bx, y + .8, R(1.5, 3), [tones[1], tones[2], tones[3]], 5);
+  b += farBankFront(x0, x1, y, tones);
   // 水ぎわの土と、映り込み
   return `<g id="${id}">${b}</g><path d="M${n1(x0)} ${n1(y + .5)}H${n1(x1)}V${n1(y + 2.2)}H${n1(x0)}Z" fill="#3f4a2c" opacity=".6"/><g transform="translate(0 ${n1((y + 2.2) * 2)}) scale(1 -.75)" opacity=".28"><use href="#${id}"/></g>`;
 }
