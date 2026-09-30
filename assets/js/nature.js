@@ -593,8 +593,17 @@ export function farewellSVG() {
   return `<svg class="fw-land" viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${back}${cabin}${front}<rect x="-5" y="40.5" width="210" height="5" fill="#0a0c20"/></svg><svg class="fw-anim" viewBox="0 0 200 40" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${anim}</svg>`;
 }
 // 月（画面に直接置く、ぼやけない月）。viewBox は -50〜50、月の半径は 10。kind：'full' 満月 / 'crescent' 三日月（欠けた側も地球照でほのかに見える）
+// 今夜の本当の月の満ち欠け（0 = 新月、.5 = 満月）。基準の新月（2000-01-06 18:14 UTC）からの日数を、平均の朔望月で割った余り
+export function moonAge(date = new Date()) {
+  const days = (date.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5;
+  return ((days / 29.530588853) % 1 + 1) % 1;
+}
+// 今夜の月の光っている割合（0 = 新月、1 = 満月）
+export const moonLit = (date) => (1 - Math.cos(moonAge(date) * Math.PI * 2)) / 2;
 export function moonSVG(kind = 'full', halo = false) {
   const id = `mn${gid++}`;
+  // 'real'：今夜の本当の形。光っている側は、日本から見た向き（満ちていくときは右、欠けていくときは左）
+  const age = kind === 'real' ? moonAge() : null, lit = age == null ? 1 : (1 - Math.cos(age * Math.PI * 2)) / 2;
   const maria = [[-3.2, -3.4, 3.4, 2.5, 20], [2.6, -2.4, 2.6, 2.1, -15], [.8, 3, 3.3, 2.3, 10], [-4.4, 2.4, 1.9, 2.8, 0], [5, 1.4, 1.5, 1.9, 30], [-.8, -6.6, 1.6, 1, 0]];
   const craters = [[-5.8, -5.2, .55], [4.2, 5.6, .7], [-2, 6.8, .45], [6.4, -3.8, .4], [-6.9, 1, .42], [2.2, -7, .35]];
   const disc = `<circle r="10" fill="url(#${id}b)"/><g filter="url(#${id}s)">${maria.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})" fill="#c9bb98" opacity=".55"/>`).join('')}</g>`
@@ -605,12 +614,22 @@ export function moonSVG(kind = 'full', halo = false) {
     + `<radialGradient id="${id}g"><stop offset=".18" stop-color="#fff3d2" stop-opacity=".5"/><stop offset=".32" stop-color="#fff0cc" stop-opacity=".18"/><stop offset=".6" stop-color="#e8e4ff" stop-opacity=".06"/><stop offset="1" stop-color="#e8e4ff" stop-opacity="0"/></radialGradient>`
     + `<radialGradient id="${id}h"><stop offset=".84" stop-color="#fff" stop-opacity="0"/><stop offset=".88" stop-color="#ffd6c4" stop-opacity=".07"/><stop offset=".905" stop-color="#fff6e6" stop-opacity=".09"/><stop offset=".935" stop-color="#cfe0ff" stop-opacity=".05"/><stop offset=".97" stop-color="#cfe0ff" stop-opacity="0"/></radialGradient>`
     + `<filter id="${id}s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".7"/></filter><filter id="${id}t" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".55"/></filter>`
-    + (kind === 'crescent' ? `<mask id="${id}m"><circle r="10.2" fill="#fff"/><circle cx="4" cy="-2.7" r="8.9" fill="#000" filter="url(#${id}t)"/></mask>` : '') + '</defs>';
-  const glow = `<circle r="50" fill="url(#${id}g)"${kind === 'crescent' ? ' opacity=".6"' : ''}/>` + (halo ? `<circle r="46" fill="url(#${id}h)"/>` : '');
-  const body = kind === 'crescent'
-    ? `<g opacity=".2"><circle r="10" fill="#9aa4cf"/>${maria.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})" fill="#6f78a6" opacity=".5"/>`).join('')}</g><g mask="url(#${id}m)">${disc}</g>`
+    + (kind === 'crescent' ? `<mask id="${id}m"><circle r="10.2" fill="#fff"/><circle cx="4" cy="-2.7" r="8.9" fill="#000" filter="url(#${id}t)"/></mask>` : '')
+    + (age != null ? `<mask id="${id}m"><path d="${phasePath(age, 10.15)}" fill="#fff" filter="url(#${id}t)"/></mask>` : '') + '</defs>';
+  // 光のにじみは、光っている面の広さに合わせて（新月に近いほど、ほとんど光らない）
+  const gk = kind === 'crescent' ? .6 : age != null ? .08 + lit * .92 : 1;
+  const glow = `<circle r="50" fill="url(#${id}g)"${gk < 1 ? ` opacity="${gk.toFixed(2)}"` : ''}/>` + (halo ? `<circle r="46" fill="url(#${id}h)"/>` : '');
+  const body = kind === 'crescent' || age != null
+    ? `<g opacity="${age != null ? n2(.05 + .15 * Math.min(1, lit * 8)) : .2}"><circle r="10" fill="#9aa4cf"/>${maria.map(([x, y, rx, ry, a]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(${a} ${x} ${y})" fill="#6f78a6" opacity=".5"/>`).join('')}</g><g mask="url(#${id}m)">${disc}</g>`
     : disc;
   return `<svg viewBox="-50 -50 100 100" aria-hidden="true">${defs}${glow}${body}</svg>`;
+}
+// 月の光っている部分の形：半円（満ちていくときは右半分）と、明暗の境め（楕円の半分）でかこむ
+function phasePath(age, r) {
+  const waxing = age < .5, k = Math.cos(age * Math.PI * 2), rx = Math.abs(k) * r, crescent = k > 0;
+  // 外側の半円：上 → 右 → 下（満ちていく）／上 → 左 → 下（欠けていく）。境めは下 → 上へ、三日月なら光っている側へ、半月より太ければ反対側へふくらむ
+  const outer = waxing ? 1 : 0, term = waxing === crescent ? 0 : 1;
+  return `M0 ${-r}A${r} ${r} 0 0 ${outer} 0 ${r}A${n2(rx)} ${r} 0 0 ${term} 0 ${-r}Z`;
 }
 function strands(x0, x1, y, sag, n) {
   let s = `<path d="M${n1(x0)} ${n1(y)}Q${n1((x0 + x1) / 2)} ${n1(y + sag * 2)} ${n1(x1)} ${n1(y)}" stroke="#1a1410" stroke-width=".2" fill="none"/>`;
@@ -1981,7 +2000,7 @@ export function sceneNight(W, stops) {
   const mx = fw * .3;
   const SKY = nightSky(-5, fw + 5, 0, hz - 8, { milky: [fw * .02, 3, fw * .98, 30, 4.5] });
   const skyArt = SKY.svg + wisps(mx - 24, mx + 36, 9, 30, 6);
-  const skyDom = { moon: { x: mx, y: 16, r: 4.5, kind: 'crescent' }, bright: SKY.bright.filter(([x, y]) => Math.hypot(x - mx, y - 16) > 12) };
+  const skyDom = { moon: { x: mx, y: 16, r: 4.5, kind: 'real' }, bright: SKY.bright.filter(([x, y]) => Math.hypot(x - mx, y - 16) > 12) };
   far += `<path d="M-5 106L-5 ${hz - 4}${smoothD(Array.from({ length: 9 }, (_, i) => [-5 + (fw + 10) * i / 8, hz - 6 + R(-3, 2)]))}L${n1(fw + 5)} 106Z" fill="#282c55"/>`;
   for (let i = 0; i < fw / 1.4; i++) far += `<circle cx="${n1(R(0, fw))}" cy="${n1(R(hz - 7, hz - 1))}" r="${n1(R(.1, .22))}" fill="${pick(['#ffd79a', '#ffb45a', '#fff1d0'])}" opacity="${n1(R(.4, .9) * 100) / 100}"/>`;
   let towns = ''; // 水面に逆さに映すので、町の並びをとっておく
@@ -2003,7 +2022,8 @@ export function sceneNight(W, stops) {
   { const mk = `rf${gid++}`, [mg, md] = lgrad([[0, '#ffffff', .75], [.35, '#ffffff', .35], [1, '#ffffff', 0]]);
     far += `<defs>${md}<mask id="${mk}" maskUnits="userSpaceOnUse" x="-5" y="${hz}" width="${n1(fw + 10)}" height="16"><rect x="-5" y="${hz}" width="${n1(fw + 10)}" height="16" fill="url(#${mg})"/></mask></defs><g mask="url(#${mk})" opacity=".55"><g transform="translate(0 ${n1(hz * 2.35 + .2)}) scale(1 -1.35)">${towns}</g></g>`; }
   // 月明かりの反射：月の真下に、淡い黄みの光が水平線から手前へひろがる（白く強くしない）
-  far += sunColumn(mx, hz, 90, ['#efe3bd', '#b9b6d2', '#8e94c4'], .6);
+  // 月の光の道は、焼かずに画面に直接置く（今夜の月の明るさに合わせて濃さを変えるので。新月の夜はほとんど見えない）
+  skyDom.column = { x: mx, hz, svg: sunColumn(mx, hz, 90, ['#efe3bd', '#b9b6d2', '#8e94c4'], .6) };
   // 町の灯りの映り込み：線ではなく、縦に少し伸びたぼけた光
   for (let i = 0; i < fw / 2.2; i++) { const x = R(0, fw), y = R(hz + .8, hz + 6), l = R(.6, 1.6), c = pick(['#ffd79a', '#ffb45a']), o = R(.25, .55); far += `<ellipse cx="${n1(x)}" cy="${n1(y + l * .7)}" rx=".3" ry="${n1(l * 1.1)}" fill="${c}" opacity="${n2(o * .45)}"/>`; }
   for (let k = 0; k < Math.max(2, Math.round(fw / 60)); k++) { const x = R(fw * .05, fw * .95), y = hz + R(2.5, 5); far += `<path d="M${n1(x - 2)} ${n1(y)}h4l-.6 .8h-2.8Z" fill="#141733"/><path d="M${n1(x)} ${n1(y)}v-3" stroke="#141733" stroke-width=".2"/><circle cx="${n1(x)}" cy="${n1(y - 3)}" r=".25" fill="#ffe7a8"/>` + rglow(x, y - 3, 2, '#ffe7a8', .35); }

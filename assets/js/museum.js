@@ -6,7 +6,7 @@ import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
 import WORK_COLORS from './work-colors.js';
-import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG, FERRIS_N } from './nature.js';
+import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, moonLit, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG, FERRIS_N } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
 import { introSVG } from './intros.js';
@@ -81,6 +81,8 @@ const svgImg = (w, body, cls = '') => {
 };
 // 明るい星（またたく）と月は、焼いた絵ではなく画面に直接置く（どの画面でもくっきり）
 const skyDomHTML = (sd) => !sd ? '' : `<div class="skydom" aria-hidden="true">${sd.bright.map(([x, y, sz, c, d]) => `<i class="sky-star" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${(sz * U).toFixed(1)}px;--c:${c};animation-delay:-${d}s"></i>`).join('')}`
+  // 海に映る月の光の道（今夜の月の明るさで濃さが変わる）
+  + (sd.column ? `<svg class="moon-column" viewBox="${n2(sd.column.x - 12)} ${n2(sd.column.hz)} 24 ${n2(100 - sd.column.hz)}" preserveAspectRatio="none" style="left:${((sd.column.x - 12) * U).toFixed(1)}px;top:${(sd.column.hz * U).toFixed(1)}px;width:${(24 * U).toFixed(1)}px;height:${((100 - sd.column.hz) * U).toFixed(1)}px;opacity:${(.06 + moonLit() * .94).toFixed(2)}">${gradeColors(sd.column.svg, GRADE)}</svg>` : '')
   + (sd.moon ? `<div class="sky-moon" style="left:${((sd.moon.x - sd.moon.r * 5) * U).toFixed(1)}px;top:${((sd.moon.y - sd.moon.r * 5) * U).toFixed(1)}px;width:${(sd.moon.r * 10 * U).toFixed(1)}px">${moonSVG(sd.moon.kind, sd.moon.halo)}</div>` : '') + '</div>';
 // 葉のカーテンの 1 かたまり（正方形の絵）
 // 葉のかたまりの画像は、正方形のままだと四隅の透明なところが広い。描いた葉の外形ぎりぎりまで切り詰めて、画像を小さくする（見た目は同じ）
@@ -721,7 +723,7 @@ function buildLiving(r) {
   if (D.sunpath) {
     const [x, hz] = D.sunpath, n = COARSE ? 9 : 14;
     const bars = Array.from({ length: n }, (_, i) => { const t = i / (n - 1), w = 14 + t * 76; return `<i style="top:${(t * t * 92).toFixed(1)}%;left:${(50 - w / 2 + Math.sin(i * 2.1) * t * 6).toFixed(1)}%;width:${w.toFixed(1)}%;height:${(1.1 + t * 2.6).toFixed(2)}vh;margin-top:-${(.5 + t * 1.3).toFixed(2)}vh;animation-duration:${(2.6 + (i * 1.7) % 2.4).toFixed(1)}s;animation-delay:${(-(i * .83) % 3).toFixed(2)}s"></i>`; }).join('');
-    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath${D.moonpath ? ' moon' : ''}" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh">${bars}</div>`, gradeOf(r.room.scene)));
+    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living sunpath${D.moonpath ? ' moon' : ''}" style="left:${((x - 9) * U).toFixed(1)}px;top:${((hz + .4) * U).toFixed(1)}px;width:18vh;height:17vh${D.skyDom?.moon?.kind === 'real' ? `;opacity:${(.05 + moonLit() * .95).toFixed(2)}` : ''}">${bars}</div>`, gradeOf(r.room.scene)));
   }
   // 夕凪の浜：海の面のゆらぎ。空を映す明るいゆらぎと、うねりの暗い帯が、ゆっくり寄っては離れて明滅する（奥ほど細く短く、ゆっくり）
   if (D.sunpath) {
