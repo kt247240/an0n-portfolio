@@ -1097,9 +1097,35 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 .scene-attic > .sticky, .scene-attic .stage { background: #22170f; }
 
 /* 作品の共有ボタン（DM・Message の並びの端に、共有のしるしだけの四角いボタン。非売品・売約済みでも出す） */
-.v-ask .share { position: relative; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--cream); border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); cursor: pointer; transition: background .3s, color .3s; }
-.v-ask .share svg { width: 17px; height: 17px; }
-.v-ask .share:hover { background: var(--cream); color: var(--ink); }
+.v-ask .share, .v-ask .flip { position: relative; display: grid; place-items: center; width: 34px; height: 34px; padding: 0; color: var(--cream); border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); cursor: pointer; transition: background .3s, color .3s; }
+.v-ask .share svg, .v-ask .flip svg { width: 17px; height: 17px; }
+.v-ask .share:hover, .v-ask .flip:hover, #viewer.flipped .v-ask .flip { background: var(--cream); color: var(--ink); }
+/* 作品の裏（裏返すボタン）：カードごと Y 軸で回る。表と裏は、回転のちょうど半分で入れかわる（Safari の動画は裏面を隠せないことがあるので、見える・見えないで切りかえる） */
+#v-screen { perspective: 1800px; }
+.v-card { position: relative; display: block; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.55, 0, .25, 1); }
+#viewer.flipped .v-card { transform: rotateY(180deg); }
+.v-card > img, .v-card > video { transition: visibility 0s .45s; }
+#viewer.flipped .v-card > img, #viewer.flipped .v-card > video { visibility: hidden; }
+.v-back { position: absolute; inset: 0; transform: rotateY(180deg); visibility: hidden; transition: visibility 0s .45s; container-type: size; overflow: hidden; cursor: pointer;
+  background: repeating-linear-gradient(0deg, rgba(110, 90, 60, .07) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(110, 90, 60, .06) 0 1px, transparent 1px 3px), radial-gradient(120% 90% at 40% 35%, #e2d7be, #cbbd9d);
+  box-shadow: 0 0 0 6px #c9b994, 0 40px 90px rgba(0, 0, 0, .5); }
+#viewer.flipped .v-back { visibility: visible; }
+.v-back .bar { position: absolute; background: linear-gradient(90deg, #c99d66, #b08150); box-shadow: 0 .6cqmin 1.4cqmin rgba(40, 26, 12, .28); }
+.v-back .bar.t, .v-back .bar.b { left: 0; right: 0; height: 6.5cqmin; background: linear-gradient(#c99d66, #b08150); }
+.v-back .bar.t { top: 0; } .v-back .bar.b { bottom: 0; }
+.v-back .bar.l, .v-back .bar.r { top: 0; bottom: 0; width: 6.5cqmin; }
+.v-back .bar.l { left: 0; } .v-back .bar.r { right: 0; }
+.v-back .bar.m { left: 0; right: 0; top: calc(50% - 3cqmin); height: 6cqmin; background: linear-gradient(#c99d66, #b08150); }
+.v-label { position: absolute; left: 50%; top: 62%; width: 58cqmin; padding: 3.6cqmin 4.4cqmin 3cqmin; transform: translate(-50%, -50%) rotate(-2.2deg); background: #f8f3e7; box-shadow: 0 .4cqmin 1.6cqmin rgba(40, 30, 16, .22); color: #2a2620; display: flex; flex-direction: column; gap: 1.2cqmin; text-align: left; }
+.v-label .lb-sig { font-family: "Yellowtail", cursive; font-size: 8cqmin; line-height: 1; color: #1d1a16; }
+.v-label .lb-title { font-family: "Permanent Marker", cursive; font-size: 5.4cqmin; line-height: 1.1; letter-spacing: .02em; }
+.v-label .lb-meta { font-family: "Zen Kaku Gothic New", sans-serif; font-size: 3cqmin; letter-spacing: .08em; color: #5a5246; }
+.v-label .lb-no { font-family: "VT323", monospace; font-size: 3.6cqmin; letter-spacing: .12em; color: #7a6f60; }
+.v-label .tape { position: absolute; width: 15cqmin; height: 4.6cqmin; background: rgba(233, 222, 190, .78); box-shadow: 0 .2cqmin .6cqmin rgba(40, 30, 16, .12); }
+.v-label .tape.a { left: -5cqmin; top: -1.6cqmin; transform: rotate(-32deg); }
+.v-label .tape.b { right: -5cqmin; bottom: -1.6cqmin; transform: rotate(-32deg); }
+.v-stamp { position: absolute; right: 13%; top: 15%; width: 23cqmin; aspect-ratio: 1; border-radius: 50%; border: .7cqmin solid rgba(168, 52, 40, .5); box-shadow: inset 0 0 0 1.2cqmin transparent, inset 0 0 0 1.6cqmin rgba(168, 52, 40, .35); display: grid; place-items: center; transform: rotate(14deg); color: rgba(168, 52, 40, .6); font-family: "VT323", monospace; font-size: 3.6cqmin; line-height: 1.05; letter-spacing: .1em; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .v-card { transition: none; } .v-card > img, .v-card > video, .v-back { transition: none; } }
 .v-ask .share .done { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translate(-50%, 4px); font-family: "Cormorant Garamond", serif; font-size: 14px; letter-spacing: .14em; color: var(--cream); opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
 .v-ask .share.copied .done { opacity: 1; transform: translate(-50%, 0); }
 .v-ask { flex-wrap: wrap; row-gap: 10px; }

@@ -1,7 +1,7 @@
 // =========================================================
 // 森の美術館 — スクロールで森の小道を歩き、作品の前で立ち止まる
 // =========================================================
-import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
+import { ARTIST, ROOMS, WORKS, SOUND, RADIO, PLANNED_TOTAL } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
@@ -1485,13 +1485,27 @@ const viewer = $('#viewer'), vScreen = $('#v-screen'), wash = $('#v-wash'), wctx
 const vWalls = [...viewer.querySelectorAll('.v-wall, .v-floor')].map((c) => ({ c, x: c.getContext('2d') }));
 const vfx = $('#v-fx'), vctx = vfx.getContext('2d');
 let vOpenedAt = 0, vPoster = null, vOpen = false, vWork = null, vMedia = null, vParts = [], vGlow = [255, 220, 180], vTarget = [255, 220, 180], vSample = 0;
+// 作品の裏：木枠に張った麻布、作品ラベル（サイン・題名・年・技法・通し番号）とマスキングテープ、ギャラリーのスタンプ
+function backHTML(w) {
+  const no = WORKS.indexOf(w) + 1;
+  return `<div class="v-back" aria-hidden="true"><i class="bar t"></i><i class="bar b"></i><i class="bar l"></i><i class="bar r"></i>${w.aspect < .9 ? '<i class="bar m"></i>' : ''}`
+    + `<div class="v-label"><i class="tape a"></i><i class="tape b"></i><span class="lb-sig">An0n.</span><span class="lb-title">${esc(w.title)}</span>`
+    + `<span class="lb-meta">${esc([w.year, w.medium, w.credit].filter(Boolean).join(' · '))}</span><span class="lb-no">No. ${String(no).padStart(2, '0')} / ${PLANNED_TOTAL}</span></div>`
+    + '<div class="v-stamp"><span>AN0N.<br>ONLINE<br>GALLERY</span></div></div>';
+}
+function flipWork(on = !viewer.classList.contains('flipped')) {
+  viewer.classList.toggle('flipped', on);
+  $('.v-ask .flip', viewer)?.setAttribute('aria-pressed', on);
+}
 function setViewer(w) {
   // 作品ごとの URL（#w=作品の id）。Instagram などから、その作品が開いた状態で来てもらえる
   try { history.replaceState(null, '', `#w=${encodeURIComponent(w.id)}`); } catch { /* 使えない環境では何もしない */ }
   vOpenedAt = performance.now() / 1000;
   vWork = w;
-  vScreen.innerHTML = mediaHTML(w, { autoplay: true });
-  vMedia = vScreen.firstElementChild;
+  // 作品は表（絵）と裏（キャンバスの裏）を持つカードに入れる。裏返すボタンで、くるっと回る
+  vScreen.innerHTML = `<div class="v-card">${mediaHTML(w, { autoplay: true })}${backHTML(w)}</div>`;
+  vMedia = vScreen.querySelector('img, video');
+  viewer.classList.remove('flipped');
   vPoster = null;
   if (w.type === 'video') {
     vMedia.play().catch(() => {});
@@ -1551,7 +1565,7 @@ function openViewer(w, x, y) {
 }
 function closeViewer() {
   if (!vOpen) return;
-  viewer.classList.add('closing'); viewer.classList.remove('open', 'cap');
+  viewer.classList.add('closing'); viewer.classList.remove('open', 'cap', 'flipped');
   document.body.classList.remove('viewing');
   viewer.setAttribute('aria-hidden', 'true');
   vOpen = false;
@@ -1565,6 +1579,8 @@ function viewerStep(d) {
   setTimeout(() => { setViewer(n); vScreen.style.opacity = 1; viewer.classList.add('cap'); }, 330);
 }
 $('#v-close').addEventListener('click', closeViewer);
+$('.v-ask .flip', viewer)?.addEventListener('click', () => flipWork());
+vScreen.addEventListener('click', () => { if (viewer.classList.contains('flipped')) flipWork(false); }); // 裏を見ているときは、作品をタップすると表に戻る
 $('#v-prev').addEventListener('click', () => viewerStep(-1));
 $('#v-next').addEventListener('click', () => viewerStep(1));
 
