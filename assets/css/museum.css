@@ -120,6 +120,10 @@ body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; 
 .guide.huff .walker { animation: huff .6s var(--ease-out); }
 /* 案内人の後ろ姿の歩き（23 コマで 1 周の横並びの絵）。コマはスクロールで進んだ距離に合わせて JS で送る */
 .guide .walker { display: block; height: 100%; aspect-ratio: 186 / 480; background: url("../guide-walk.webp") 0 0 / 2300% 100% no-repeat; transform-origin: 50% 100%; filter: brightness(.94) saturate(.94); }
+/* 帰り道の跡（小屋まで行って引き返すと現れる） */
+.trace { position: absolute; overflow: visible; pointer-events: none; }
+.lantern-glow { position: absolute; width: 14vh; height: 14vh; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 200, 110, .42), rgba(255, 180, 90, .12) 55%, rgba(255, 170, 80, 0)); animation: flicker 3.1s steps(9) infinite; }
+.trace.paperboat { animation: float 2.6s ease-in-out infinite alternate; }
 @keyframes huff { 30% { transform: scale(1.04, .96) rotate(-2deg); } }
 .guide img { height: 100%; width: auto; filter: drop-shadow(0 .8vh .6vh rgba(20, 30, 10, .25)); animation: breathe 3.6s ease-in-out infinite; transform-origin: 50% 100%; }
 .guide .puff { position: absolute; left: 17%; top: 13%; width: 1.4vh; height: 1.4vh; border-radius: 50%; background: radial-gradient(rgba(245, 242, 236, .9), rgba(245, 242, 236, 0) 70%); animation: puff 3.6s ease-out infinite; pointer-events: none; }

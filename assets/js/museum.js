@@ -495,6 +495,7 @@ function buildRoomScene(r) {
     r.layerHTML['.far'] += part('snow-mount.webp', P.x, P.y(240), 480 * P.s) + sides(P.farTiles, 'mount', P.y(240), 480 * P.s);
     // スノーボードは、小屋の前の雪に縦に刺す
     const bh = W < 80 ? 32 : 38, bw = bh * 136 / 640, bx = P.facade0 + 1.2 + bw / 2, by = 97; // 小屋の前の雪に刺す（扉の左、角の雪だまりの手前。根もとは土台より下の雪の中） // 扉（高さ 38）と比べて、人の背丈より少し低いくらいに見える大きさ
+    r.boardX = bx - bw / 2; // 帰り道の跡は、狭い画面ではボードの左に
     r.layerHTML['.mid'] += part('snow-ground.webp', P.x, P.y(600), 722 * P.s, P.facade0) + sides(P.midTiles, 'ground', P.y(600), 722 * P.s, P.facade0)
       + `<svg class="snowcut" viewBox="${P.corner[0]} 0 ${P.corner[1]} 100" preserveAspectRatio="none" style="${box(P.corner[0], 0, P.corner[1], 100)};overflow:visible" aria-hidden="true">${gradeColors(P.corner[2], GRADES.attic)}</svg>`
       + `<div class="snowcut board" style="${box(bx - bw / 2, by - bh, bw, bh)}">${im('snow-board.webp', bw, bh)}</div>`
@@ -1096,6 +1097,46 @@ function updateBleed(r, focus, now) {
   el.classList.add('on'); r.el.classList.add('bleeding'); r.bleedShown = want;
 }
 
+// 帰り道の跡を置く場所：最初の作品（小屋は扉）の左どなりの、作品の枠や台・小物に重ならないところ
+const TRACE_FEET = { forest: 93, jungle: 91, cove: 90.5, night: 91.5, attic: 93.5 };
+function traceSpot(r) {
+  const sc = r.room.scene, w0 = r.items[0]?.work;
+  let half = 9;
+  if (w0) { let wh = Math.min(56, (W * .74) / w0.aspect); if (W < 70) wh = Math.min(wh, 46); half = wh * w0.aspect / 2; }
+  const x = sc === 'attic' && W < 70 && r.boardX != null ? r.boardX - 5 : W + W / 2 - half - (W < 70 ? 5.5 : 9); // 小屋の前：広い画面はボードと扉のあいだ、狭い画面はボードの左
+  return [x, TRACE_FEET[sc] || 93];
+}
+// 帰り道：小屋の中まで行って引き返すと、行きには無かったものが残っている
+// （森はランタン、水辺は紙の舟、浜と雪は奥へ続く足あと、夜の庭は湯気の立つコーヒー）
+let returning = false;
+const prints = (x, y, c, n = 7) => Array.from({ length: n }, (_, i) => { const k = 1 - i * .09, s = i % 2 ? 1 : -1; return `<ellipse cx="${n2(x + s * .85 * k + i * .35)}" cy="${n2(y - i * 1.7 * k)}" rx="${n2(.72 * k)}" ry="${n2(.34 * k)}" fill="${c}" opacity="${n2(.62 - i * .06)}"/>`; }).join(''); // 奥へ続く足あと（奥ほど小さく薄く）
+function traceHTML(r) {
+  const sc = r.room.scene, [x, y] = traceSpot(r), G = (svg) => gradeColors(svg, gradeOf(sc));
+  if (x == null) return '';
+  // sc：絵の大きさの倍率（足もとを基準に大きくする）
+  const box = (x0, y0, w, h, body, cls = '', sc = 1) => `<svg class="living trace ${cls}" viewBox="${n2(x0)} ${n2(y0)} ${w} ${h}" style="left:${(x0 * U).toFixed(1)}px;top:${(y0 * U).toFixed(1)}px;width:${w}vh;height:${h}vh${sc !== 1 ? `;transform:scale(${sc});transform-origin:50% 100%` : ''}" aria-hidden="true">${G(body)}</svg>`;
+  switch (sc) {
+    case 'forest': { // ランタン（小屋から持ってきた灯り）。台の上の光がゆらぐ
+      const lx = x + 1.5, ly = y;
+      return `<i class="living trace lantern-glow" style="left:${((lx - 7) * U).toFixed(1)}px;top:${((ly - 11.5) * U).toFixed(1)}px"></i>`
+        + box(lx - 1.3, ly - 4.2, 2.6, 4.4, `<path d="M${n2(lx - .45)} ${n2(ly - 3.9)}h.9v.5h-.9z" fill="#34322d"/><path d="M${n2(lx - .5)} ${n2(ly - 3.95)}a.5 .45 0 0 1 1 0h-.25a.25 .22 0 0 0-.5 0z" fill="#34322d"/><rect x="${n2(lx - 1.05)}" y="${n2(ly - 3.4)}" width="2.1" height="3" rx=".3" fill="#2f2d29"/><rect x="${n2(lx - .78)}" y="${n2(ly - 3.1)}" width="1.56" height="2.4" rx=".15" fill="#f6c46a"/><path d="M${n2(lx)} ${n2(ly - 2.6)}c.35 .5 .35 1 0 1.5c-.35-.5-.35-1 0-1.5z" fill="#fff0c4"/><rect x="${n2(lx - 1.2)}" y="${n2(ly - .45)}" width="2.4" height=".45" rx=".1" fill="#2f2d29"/>`, 'lantern', 1.9);
+    }
+    case 'jungle': // 紙の舟：桟橋の手前の水に、ゆっくり揺れる
+      return box(x + 2, 83.6, 4, 2.6, `<path d="M${n2(x + 2.2)} 84.9h3.6l-.55 1H${n2(x + 2.75)}z" fill="#e6e0cf"/><path d="M${n2(x + 3.2)} 84.9l.8-1.15.8 1.15z" fill="#f3efe2"/><path d="M${n2(x + 4)} 83.75v1.15l.8 0z" fill="#d9d2bf"/><ellipse cx="${n2(x + 4)}" cy="86.05" rx="2" ry=".2" fill="#1d2a1c" opacity=".25"/>`, 'paperboat', 1.5);
+    case 'cove': { const px = x - (W < 70 ? 1 : 3), py = 97.5; return box(px - 3, py - 11, 7, 11.8, prints(px, py + .2, '#5e4630'), '', 1.7); } // 岩や潮だまりをよけて、手前の砂の上に
+    case 'attic': return box(x - 3, y - 11, 7, 11.8, prints(x, y + .2, '#6f76a3'), '', 1.6);
+    case 'night': // 手すりの前に、湯気の立つ紙のコップ
+      return box(x + .8, y - 2.1, 1.6, 2.2, `<path d="M${n2(x + 1)} ${n2(y - 1.75)}h1.2l-.15 1.7h-.9z" fill="#e8e0cf"/><path d="M${n2(x + .95)} ${n2(y - 2)}h1.3v.3h-1.3z" fill="#5b4334"/><path d="M${n2(x + 1.06)} ${n2(y - 1.2)}h1.08l-.05.6h-.98z" fill="#8a5a3c"/>`, '', 1.8)
+        + `<div class="living trace steam" style="left:${((x + 1.6 - 1) * U).toFixed(1)}px;top:${((y - 3.9 - 4) * U).toFixed(1)}px"><i></i><i></i><i></i></div>`;
+    default: return '';
+  }
+}
+function updateTraces(r) {
+  if (!returning || r.room.scene === 'attic' && r.c >= 1.5) return;
+  const P = q(r, '.props'); if (!P || P.querySelector('.trace')) return;
+  P.insertAdjacentHTML('beforeend', traceHTML(r));
+}
+
 function updateRoom(r, now) {
   manageMemory(r);
   const { top, len } = roomMetrics(r);
@@ -1159,6 +1200,8 @@ function updateRoom(r, now) {
   // 作品の前の暗がり（周辺の減光と、しずまり）。部屋全体ではなく、使う要素にだけ渡す
   const fv = focus.toFixed(3); put(q(r, '.vig'), '--focus', fv); put(q(r, '.hush'), '--focus', fv);
   updateBleed(r, focus, now);
+  if (!returning && r.room.scene === 'attic' && r.c >= 2) returning = true; // 小屋の中の作品の前まで来たら、帰り道に跡が出る
+  updateTraces(r);
   // 光の流れ・次の部屋の気配は、部屋の中にいる間だけ（葉のカーテンが開いている間）。いま見ている部屋だけに付けて軽く
   r.el.classList.toggle('lit', p > .015 && p < .985);
   put(q(r, '.lightplay'), '--p', p.toFixed(3));
