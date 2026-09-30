@@ -5,6 +5,7 @@ import { ARTIST, ROOMS, WORKS, SOUND, RADIO } from './works.js';
 import { createRadio } from './radio.js';
 import { paceScroll } from './pace.js';
 import PRE_MANIFEST from './pre-manifest.js';
+import WORK_COLORS from './work-colors.js';
 import { SCENES, FACTORS, sceneForest, curtainLeaves, LEAF_DEFS, ENTRANCE_PATH, pressedSpecimen, GRADES, gradeColors, moonSVG, nightSky, farewellSVG, swimmerSVG, ferrisSVG, fireSVG, windowSnowSVG, flyerSVG, beamSVG, FERRIS_N } from './nature.js';
 import { createBeat } from './beat.js';
 import { PROPS, ROCK } from './street.js';
@@ -368,7 +369,7 @@ const rooms = ROOMS.map((room, ri) => {
       <div class="plane props" aria-hidden="true"></div>
       <div class="flash" aria-hidden="true"></div>
       <div class="neon" aria-hidden="true"></div><div class="grain-under" aria-hidden="true"></div>
-      <div class="lightplay" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></div><div class="hush" aria-hidden="true"></div><div class="nextglow" aria-hidden="true"></div>
+      <div class="lightplay" aria-hidden="true"><i class="l1"></i><i class="l2"></i><i class="l3"></i></div><div class="hush" aria-hidden="true"></div><div class="bleed" aria-hidden="true"></div><div class="nextglow" aria-hidden="true"></div>
       ${gradeColors(introSVG(room.scene), GRADES[room.scene])}
       <div class="plane art"></div>
       <div class="plane move"></div>
@@ -1071,6 +1072,28 @@ function updateWater(r, p, cam, mx, now) {
   drawWater(el, t, wx);
 }
 
+// 絵の色が部屋ににじみ出す：作品の前でしばらく立ち止まると、作品の上下左右のふちの色が、まわりの空気にじわっと広がる
+// （作品より奥の層。作品そのものには何も重ねない）。歩きだすと、ゆっくり元の景色に戻る
+function updateBleed(r, focus, now) {
+  const el = r.bleedEl || (r.bleedEl = q(r, '.bleed')); if (!el) return;
+  const k = Math.round(r.c), it = r.items[k - 1];
+  const want = focus > .85 && it?.work && WORK_COLORS[it.work.id] ? k : null;
+  if (want !== r.bleedWant) { r.bleedWant = want; r.bleedSince = now; if (r.bleedShown != null) { el.classList.remove('on'); r.el.classList.remove('bleeding'); r.bleedShown = null; } return; }
+  if (want == null || r.bleedShown === want || now - r.bleedSince < 1400) return;
+  const cv = r.itemEls?.[k - 1]?.querySelector('.canvas'); if (!cv) return;
+  const b = cv.getBoundingClientRect(); if (!b.width) return;
+  const [ct, cr, cb, cl] = WORK_COLORS[it.work.id];
+  // 位置と大きさは画面に対する %（スマホで層を小さくして拡大する仕組みでも、同じ見た目になるように）
+  const X = (v) => (v / vw * 100).toFixed(2), Y = (v) => (v / vh * 100).toFixed(2);
+  const cx = X(b.left + b.width / 2), cy = Y(b.top + b.height / 2), bw = b.width / vw * 100, bh = b.height / vh * 100;
+  const g = (x, y, rx, ry, c) => `radial-gradient(${rx.toFixed(1)}% ${ry.toFixed(1)}% at ${x}% ${y}%, ${c}cc, ${c}4d 50%, ${c}00 100%)`;
+  el.style.background = [
+    g(cx, Y(b.top), bw * .95, bh * .55, ct), g(X(b.right), cy, bw * .75, bh * .85, cr),
+    g(cx, Y(b.bottom), bw * .95, bh * .45, cb), g(X(b.left), cy, bw * .75, bh * .85, cl),
+  ].join(', ');
+  el.classList.add('on'); r.el.classList.add('bleeding'); r.bleedShown = want;
+}
+
 function updateRoom(r, now) {
   manageMemory(r);
   const { top, len } = roomMetrics(r);
@@ -1133,6 +1156,7 @@ function updateRoom(r, now) {
   const focus = r.c > .5 ? at : 0;
   // 作品の前の暗がり（周辺の減光と、しずまり）。部屋全体ではなく、使う要素にだけ渡す
   const fv = focus.toFixed(3); put(q(r, '.vig'), '--focus', fv); put(q(r, '.hush'), '--focus', fv);
+  updateBleed(r, focus, now);
   // 光の流れ・次の部屋の気配は、部屋の中にいる間だけ（葉のカーテンが開いている間）。いま見ている部屋だけに付けて軽く
   r.el.classList.toggle('lit', p > .015 && p < .985);
   put(q(r, '.lightplay'), '--p', p.toFixed(3));
