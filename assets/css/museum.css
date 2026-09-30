@@ -27,7 +27,8 @@ img, video { display: block; }
 
 /* ---------- 紙の粒子（作品と同じ質感を全体に） ---------- */
 #grain {
-  position: fixed; inset: -50%; pointer-events: none; z-index: 90; opacity: .12; mix-blend-mode: multiply;
+  /* 画面と同じ大きさで、ふつうに重ねる（乗算で重ねると、毎コマ画面全体を合成し直すことになってパソコンで重い） */
+  position: fixed; inset: 0; pointer-events: none; z-index: 90; opacity: .12;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3  0 0 0 0 .26  0 0 0 0 .2  0 0 0 .95 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 @keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
@@ -775,8 +776,10 @@ body.grain-off #grain, body.viewing #grain { opacity: 0; visibility: hidden; }
 .curtain .raster { position: absolute; will-change: transform; transform-origin: 50% 50%; }
 .curtain .raster canvas { height: 100% !important; }
 /* スマホ・タブレット：画面いっぱいの重ね合わせ（ブレンド）と粒子の層は、メモリを大きく使うので省く */
+/* 部屋ごとの粒子（オーバーレイ合成で動かし続ける層）は、どの画面でも出さない（パソコンでは全体の紙の粒子だけ） */
+.room .grain-under { display: none; }
 @media (pointer: coarse) {
-  .room .grain-under, #grain { display: none; }
+  #grain { display: none; }
 }
 
 /* =========================================================

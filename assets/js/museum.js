@@ -28,7 +28,9 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const DPR = Math.min(devicePixelRatio || 1, 2);
 const COARSE = matchMedia('(pointer: coarse)').matches;
-const FXD = COARSE ? Math.min(DPR, 1.5) : DPR; // 粒の canvas の密度（スマホは控えめに）
+// 画面いっぱいの canvas は、画素の数に上限をつける（パソコンの大きな Retina 画面で、毎コマ 500 万画素を描き直さないように）
+const pxCap = (budget) => Math.sqrt(budget / Math.max(1, innerWidth * innerHeight));
+const FXD = COARSE ? Math.min(DPR, 1.5) : Math.max(1, Math.min(DPR, pxCap(2.2e6))); // 粒の canvas の密度（スマホは控えめに）
 // 画面の高さは CSS の 100vh と同じもので測る。スマホでアドレスバーが出入りしても変わらない
 // （innerHeight はスクロールのたびに変わるので、そのたびに絵を描き直すと、リロードしたように見えてメモリも跳ねる）
 const vhProbe = document.createElement('div');
@@ -43,11 +45,14 @@ const splitTitle = (txt) => { let i = 0; return txt.split(' ').map((word) => `<s
 // ・スマホ・タブレット：<img> だと画面の密度（iPhone は 3 倍）で描かれ、メモリが 9 倍になって落ちる。
 //   そこで 1.5 倍の密度で <canvas> に一度だけ焼き付けて表示する（メモリはおよそ 1/4）。
 //   横に長い層は、幅 4096px 以下のタイルに分けて焼く（iOS の canvas の大きさの上限をこえないように）
-const RASTER = COARSE ? Math.min(DPR, 1.5) : 0;
+// 背景の書き出し（tools/prerender.mjs）のときは、パソコンの画面でも同じ焼き方の層を用意する
+const RASTER = COARSE ? Math.min(DPR, 1.5) : location.search.includes('prerender') ? 1.5 : 0;
 // 前もって描いておいた背景（lite.html）：背景の層を、その場で SVG から組み立てるのではなく、書き出し済みの画像（タイル）で置く。
 // 画面の縦横比ごとに用意してあるので、いちばん近いものを選ぶ（近いものがなければ、ふつうに SVG から組み立てる）
 const PRE_BUCKET = (() => {
-  if (document.documentElement.dataset.pre !== '1') return null;
+  // パソコンは、いつも書き出し済みの背景を使う（その場で SVG を描くと、スクロールのたびに細かい絵の描き直しで止まるので）。
+  // スマホは lite.html のときだけ（スマホはその場で canvas に焼く方式で軽く動いている）
+  if (document.documentElement.dataset.pre !== '1' && (COARSE || location.search.includes('prerender'))) return null;
   let best = null;
   for (const k of Object.keys(PRE_MANIFEST)) { const bw = PRE_MANIFEST[k].W, e = Math.abs(W - bw) / bw; if (e < .14 && (!best || e < best.e)) best = { k, e }; }
   return best ? best.k : null;
@@ -1018,7 +1023,7 @@ function prepareCaustic() {
 // 光の網目は、画面の半分ほどの解像度の canvas 1 枚に毎フレーム描く（大きな層を 3D で傾けると、
 // iPhone はそれを丸ごと画像として持つので数百 MB になり落ちる。canvas なら 1MB 未満）。
 // 奥へ倒した水平な水面に見えるよう、横に細い帯ごとに網目の大きさを変える：手前は大きく、奥ほど小さく詰まり、薄れる
-const WQ = Math.min(devicePixelRatio || 1, 2), TILE = 256; // canvas は画面と同じ細かさ（最大 2 倍）。1 枚だけなので約 5MB
+const WQ = Math.min(devicePixelRatio || 1, 2, Math.max(.75, pxCap(1.6e6))), TILE = 256; // canvas は画面と同じ細かさ（最大 2 倍、画素の数は 160 万まで）。光の網目はやわらかいので、パソコンでは少し粗くしても見分けがつかない
 function drawWater(el, t, wx) {
   const cv = el._cv, g = el._g, Wc = cv.width, Hc = cv.height;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, Wc, Hc);
