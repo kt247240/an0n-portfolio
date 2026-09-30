@@ -1489,7 +1489,7 @@ let vOpenedAt = 0, vPoster = null, vOpen = false, vWork = null, vMedia = null, v
 // その上に作品ラベル（サイン・題名・年・技法・通し番号）とマスキングテープ、ギャラリーのスタンプ
 let backSeq = 0;
 function backSVG(w) {
-  const id = `bk${backSeq++}`, X = 1000, Y = Math.round(1000 / w.aspect), m = Math.min(X, Y), B = m * .115, wr = B * .34;
+  const id = `bk${backSeq++}`, X = 1000, Y = Math.round(1000 / w.aspect), m = Math.min(X, Y), B = m * .115, wr = B * .56;
   const n = (v) => Math.round(v * 10) / 10;
   // 木枠：上下は横向き、左右は縦向きの木目。四隅は 45 度で合わせる
   const bars = [
@@ -1501,13 +1501,33 @@ function backSVG(w) {
   // 木枠の内側のふち：面取りの明るい帯と、麻布に落ちる影
   const inner = (x, y, ww, hh, dir) => `<rect x="${n(x)}" y="${n(y)}" width="${n(ww)}" height="${n(hh)}" fill="url(#${id}s${dir})"/>`;
   const sh = B * .55;
-  // ホッチキスの針（巻き込んだ麻布の帯の上に、等間隔に）
-  const staples = [];
-  const st = (x, y, rot) => staples.push(`<g transform="translate(${n(x)} ${n(y)}) rotate(${rot})"><rect x="-13" y="-2.6" width="26" height="5.2" rx="1.4" fill="url(#${id}m)"/><rect x="-13" y="-2.6" width="26" height="1.6" rx=".8" fill="#fff" opacity=".35"/></g>`);
-  for (let x = B * 1.6; x < X - B * 1.4; x += 110) { st(x, wr * .5, 0); st(x, Y - wr * .5, 0); }
-  for (let y = B * 1.6; y < Y - B * 1.4; y += 110) { st(wr * .5, y, 90); st(X - wr * .5, y, 90); }
-  // 角の折りたたみ（麻布を三角に折って重ねる）
-  const f = wr * 2.1, corners = [[0, 0, 1, 1], [X, 0, -1, 1], [0, Y, 1, -1], [X, Y, -1, -1]].map(([cx, cy, sx, sy]) => `<polygon points="${cx},${cy} ${n(cx + sx * f)},${cy} ${cx},${n(cy + sy * f)}" fill="url(#${id}lin)"/><polygon points="${cx},${cy} ${n(cx + sx * f)},${cy} ${cx},${n(cy + sy * f)}" fill="url(#${id}fold)" transform="translate(${cx} ${cy}) scale(${sx} ${sy}) translate(${-cx} ${-cy})"/>`).join('');
+  // 木枠へ巻き込んだキャンバス地：辺ごとに「外側のふち（折り返しの丸み）→ 布の帯 → 切りっぱなしの布の端」を、
+  // 上の辺の向きで描いて、4 辺へ回して置く（左右は縦横を入れかえる）
+  const seed = WORKS.indexOf(w) + 1, jit = (k) => { const v = Math.sin(k * 12.9898 + seed * 78.233) * 43758.5453; return v - Math.floor(v); };
+  const side = (len, key) => {
+    // 切りっぱなしの端：少しだけ波打つ
+    let edge = '';
+    for (let x = len; x >= 0; x -= 28) edge += ` L${n(x)},${n(wr + (jit(x + key) - .5) * 5 + Math.sin(x * .021 + key) * 2)}`;
+    const body = `M0,0 L${len},0${edge} Z`;
+    // ホッチキスの針と、針のまわりで布が引っぱられてできるしわ（やわらかい影と光）
+    let pins = '';
+    for (let x = B * 1.7; x < len - B * 1.5; x += 118) {
+      const y = wr * .46;
+      pins += `<ellipse cx="${n(x)}" cy="${n(y + wr * .18)}" rx="${n(wr * .5)}" ry="${n(wr * .12)}" fill="#6b5a3c" opacity=".055" filter="url(#${id}b)"/><ellipse cx="${n(x)}" cy="${n(y - wr * .14)}" rx="${n(wr * .42)}" ry="${n(wr * .08)}" fill="#fff" opacity=".12" filter="url(#${id}b)"/>`
+        + `<g transform="translate(${n(x)} ${n(y)})"><rect x="-14" y="-2.8" width="28" height="5.6" rx="1.5" fill="#4a4a48" opacity=".35" transform="translate(1.2 1.6)"/><rect x="-14" y="-2.8" width="28" height="5.6" rx="1.5" fill="url(#${id}m)"/><rect x="-13" y="-2.6" width="26" height="1.5" rx=".7" fill="#fff" opacity=".45"/></g>`;
+    }
+    return `<path d="${body}" fill="#2e2112" opacity=".32" filter="url(#${id}b)" transform="translate(0 4)"/>`
+      + `<path d="${body}" fill="url(#${id}wrap)"/><path d="${body}" fill="#000" filter="url(#${id}t)"/>`
+      // 布の端のほつれ（細かな糸くず）
+      + Array.from({ length: Math.floor(len / 34) }, (_, i) => jit(i * 7 + key) < .45 ? '' : (() => { const x = 12 + i * 34 + jit(i * 3 + key) * 18, y = wr + (jit(x + key) - .5) * 5 + Math.sin(x * .021 + key) * 2; return `<ellipse cx="${n(x)}" cy="${n(y + 1.2)}" rx="${n(2 + jit(i + key) * 4)}" ry=".9" fill="#d8ccb0" opacity=".5"/>`; })()).join('')
+      + pins;
+  };
+  const sides = `<g>${side(X, 1)}</g><g transform="matrix(1 0 0 -1 0 ${Y})">${side(X, 2)}</g><g transform="matrix(0 1 1 0 0 0)">${side(Y, 3)}</g><g transform="matrix(0 1 -1 0 ${X} 0)">${side(Y, 4)}</g>`;
+  // 角：布を三角に折りたたんで重ねる（下の層は少し暗く、上の折り返しには折り目の影と光）
+  const f = wr * 1.95;
+  const corner = `<polygon points="0,0 ${n(f * 1.08)},0 0,${n(f * 1.08)}" fill="#bfb08e"/><polygon points="0,0 ${n(f)},0 0,${n(f)}" fill="url(#${id}wrap2)"/><polygon points="0,0 ${n(f)},0 0,${n(f)}" fill="#000" filter="url(#${id}t)"/>`
+    + `<polygon points="${n(f)},0 0,${n(f)} 0,${n(f + 6)} ${n(f + 6)},0" fill="#3a2a16" opacity=".22" filter="url(#${id}b)"/><polygon points="${n(f * .92)},0 0,${n(f * .92)} 0,${n(f * .98)} ${n(f * .98)},0" fill="#fff" opacity=".3"/>`;
+  const corners = [[1, 0, 0, 1, 0, 0], [-1, 0, 0, 1, X, 0], [1, 0, 0, -1, 0, Y], [-1, 0, 0, -1, X, Y]].map((mt) => `<g transform="matrix(${mt.join(' ')})">${corner}</g>`).join('');
   // くさび（四隅の継ぎ目の内側に 2 枚ずつ）
   const wedge = (x, y, a) => `<g transform="translate(${n(x)} ${n(y)}) rotate(${a})"><polygon points="0,-6 ${n(B * .55)},-9 ${n(B * .55)},9 0,6" fill="#9c7243"/><polygon points="0,-6 ${n(B * .55)},-9 ${n(B * .55)},-4 0,-2" fill="#c49a66" opacity=".7"/></g>`;
   const wedges = [[B, B, 45], [X - B, B, 135], [B, Y - B, -45], [X - B, Y - B, -135]].map(([x, y, a]) => wedge(x, y, a + 180)).join('');
@@ -1525,6 +1545,10 @@ function backSVG(w) {
     + `<linearGradient id="${id}sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a16" stop-opacity=".32"/><stop offset="1" stop-color="#3a2a16" stop-opacity="0"/></linearGradient>`
     + `<linearGradient id="${id}sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a2a16" stop-opacity=".3"/><stop offset="1" stop-color="#3a2a16" stop-opacity="0"/></linearGradient>`
     + `<linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9dcdf"/><stop offset=".5" stop-color="#9ea3a8"/><stop offset="1" stop-color="#6d7277"/></linearGradient>`
+    // 折り返しの帯：外側のふちは木枠の角を回りこむ丸み（いったん暗く、すぐ明るく）、内側へいくほど落ちついた布の色
+    + `<linearGradient id="${id}wrap" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${n(wr)}"><stop offset="0" stop-color="#b9a883"/><stop offset=".07" stop-color="#d9ccae"/><stop offset=".16" stop-color="#f1e9d5"/><stop offset=".4" stop-color="#e3d8bf"/><stop offset="1" stop-color="#d7caad"/></linearGradient>`
+    + `<linearGradient id="${id}wrap2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9e0c9"/><stop offset=".55" stop-color="#e0d5bb"/><stop offset="1" stop-color="#d0c3a3"/></linearGradient>`
+    + `<filter id="${id}b" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3"/></filter>`
     + `</defs>`
     // 麻布（織り目と、中ほどが少し明るいたるみ）
     + `<rect width="${X}" height="${Y}" fill="url(#${id}lin)"/><rect width="${X}" height="${Y}" fill="#000" filter="url(#${id}t)"/>`
@@ -1540,12 +1564,8 @@ function backSVG(w) {
     + `<rect x="${n(B - 5)}" y="${n(B - 5)}" width="${n(X - B * 2 + 10)}" height="5" fill="#e8c893" opacity=".7"/><rect x="${n(B - 5)}" y="${n(B - 5)}" width="5" height="${n(Y - B * 2 + 10)}" fill="#e8c893" opacity=".6"/>`
     + `<rect x="${n(B - 5)}" y="${n(Y - B)}" width="${n(X - B * 2 + 10)}" height="5" fill="#7c5732" opacity=".45"/><rect x="${n(X - B)}" y="${n(B - 5)}" width="5" height="${n(Y - B * 2 + 10)}" fill="#7c5732" opacity=".4"/>`
     + wedges
-    // 木枠へ巻き込んだ麻布の帯（外側）と、帯が木枠に落とす影
-    + `<g><rect width="${X}" height="${n(wr)}" fill="url(#${id}lin)"/><rect y="${n(Y - wr)}" width="${X}" height="${n(wr)}" fill="url(#${id}lin)"/><rect width="${n(wr)}" height="${Y}" fill="url(#${id}lin)"/><rect x="${n(X - wr)}" width="${n(wr)}" height="${Y}" fill="url(#${id}lin)"/></g>`
-    + `<g fill="#000" filter="url(#${id}t)"><rect width="${X}" height="${n(wr)}"/><rect y="${n(Y - wr)}" width="${X}" height="${n(wr)}"/><rect width="${n(wr)}" height="${Y}"/><rect x="${n(X - wr)}" width="${n(wr)}" height="${Y}"/></g>`
-    + `<rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/>`
-    + `<g transform="translate(0 ${Y}) scale(1 -1)"><rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/></g><g transform="translate(${X} 0) scale(-1 1)"><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/></g>`
-    + corners + staples.join('')
+    // 木枠へ巻き込んだキャンバス地（布の帯・切りっぱなしの端・ホッチキス）と、四隅の折りたたみ
+    + sides + corners
     // 吊り金具
     + ring(px, Y / 3) + ring(X - px, Y / 3)
     + `</svg>`;
