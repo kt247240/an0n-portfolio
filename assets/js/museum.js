@@ -1546,9 +1546,8 @@ function backSVG(w) {
     + `<rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/>`
     + `<g transform="translate(0 ${Y}) scale(1 -1)"><rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/></g><g transform="translate(${X} 0) scale(-1 1)"><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/></g>`
     + corners + staples.join('')
-    // 吊り金具と、鉛筆の書き込み（上の木枠に「TOP ↑」）
+    // 吊り金具
     + ring(px, Y / 3) + ring(X - px, Y / 3)
-    + `<text x="${X / 2}" y="${n(wr + (B - wr) * .78)}" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="${n((B - wr) * .62)}" fill="#3b3a38" opacity=".42" transform="rotate(-1.2 ${X / 2} ${n(B * .75)})">TOP ↑</text>`
     + `</svg>`;
 }
 function backHTML(w) {
