@@ -49,7 +49,7 @@ const splitTitle = (txt) => { let i = 0; return txt.split(' ').map((word) => `<s
 const RASTER = COARSE ? Math.min(DPR, 1.5) : location.search.includes('prerender') ? 1.5 : 0;
 // 前もって描いておいた背景（lite.html）：背景の層を、その場で SVG から組み立てるのではなく、書き出し済みの画像（タイル）で置く。
 // 画面の縦横比ごとに用意してあるので、いちばん近いものを選ぶ（近いものがなければ、ふつうに SVG から組み立てる）
-const PRE_BUCKET = (() => {
+const PRE_BUCKET0 = (() => {
   // パソコンは、いつも書き出し済みの背景を使う（その場で SVG を描くと、スクロールのたびに細かい絵の描き直しで止まるので）。
   // スマホは lite.html のときだけ（スマホはその場で canvas に焼く方式で軽く動いている）
   if (document.documentElement.dataset.pre !== '1' && (COARSE || location.search.includes('prerender'))) return null;
@@ -57,6 +57,8 @@ const PRE_BUCKET = (() => {
   for (const k of Object.keys(PRE_MANIFEST)) { const bw = PRE_MANIFEST[k].W, e = Math.abs(W - bw) / bw; if (e < .14 && (!best || e < best.e)) best = { k, e }; }
   return best ? best.k : null;
 })();
+// パソコンでは、その画面の型の画像が本当に置いてあるかを 1 枚だけ確かめてから使う（置いていない場所に載せたときは、ふつうに SVG から組み立てる）
+const PRE_BUCKET = PRE_BUCKET0 && document.documentElement.dataset.pre !== '1' ? await fetch(`assets/pre/${PRE_BUCKET0}/entrance-frame-0.webp`).then((r) => (r.ok ? PRE_BUCKET0 : null), () => null) : PRE_BUCKET0;
 const PRE = PRE_BUCKET ? PRE_MANIFEST[PRE_BUCKET].layers : null;
 const preBox = (key, w, cls = '') => (PRE && PRE[key] ? `<div class="raster pre ${cls}" data-pre="${key}" style="width:${w * U}px"></div>` : null);
 const SVG_STORE = new Map();
