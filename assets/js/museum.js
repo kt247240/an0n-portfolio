@@ -1485,10 +1485,75 @@ const viewer = $('#viewer'), vScreen = $('#v-screen'), wash = $('#v-wash'), wctx
 const vWalls = [...viewer.querySelectorAll('.v-wall, .v-floor')].map((c) => ({ c, x: c.getContext('2d') }));
 const vfx = $('#v-fx'), vctx = vfx.getContext('2d');
 let vOpenedAt = 0, vPoster = null, vOpen = false, vWork = null, vMedia = null, vParts = [], vGlow = [255, 220, 180], vTarget = [255, 220, 180], vSample = 0;
-// 作品の裏：木枠に張った麻布、作品ラベル（サイン・題名・年・技法・通し番号）とマスキングテープ、ギャラリーのスタンプ
+// 作品の裏：木枠に張った麻布。木枠は木目と四隅の斜めの継ぎ目、くさび。麻布は木枠の外側へ巻き込んでホッチキスで留め、角は折りたたむ。
+// その上に作品ラベル（サイン・題名・年・技法・通し番号）とマスキングテープ、ギャラリーのスタンプ
+let backSeq = 0;
+function backSVG(w) {
+  const id = `bk${backSeq++}`, X = 1000, Y = Math.round(1000 / w.aspect), m = Math.min(X, Y), B = m * .115, wr = B * .34;
+  const n = (v) => Math.round(v * 10) / 10;
+  // 木枠：上下は横向き、左右は縦向きの木目。四隅は 45 度で合わせる
+  const bars = [
+    [`0,0 ${X},0 ${n(X - B)},${n(B)} ${n(B)},${n(B)}`, 'h'], [`0,${Y} ${X},${Y} ${n(X - B)},${n(Y - B)} ${n(B)},${n(Y - B)}`, 'h'],
+    [`0,0 0,${Y} ${n(B)},${n(Y - B)} ${n(B)},${n(B)}`, 'v'], [`${X},0 ${X},${Y} ${n(X - B)},${n(Y - B)} ${n(X - B)},${n(B)}`, 'v'],
+  ];
+  const brace = w.aspect < .9 ? [`${n(B)},${n(Y / 2 - B * .45)} ${n(X - B)},${n(Y / 2 - B * .45)} ${n(X - B)},${n(Y / 2 + B * .45)} ${n(B)},${n(Y / 2 + B * .45)}`, 'h'] : null;
+  const wood = ([pts, dir]) => `<polygon points="${pts}" fill="url(#${id}w${dir})"/><polygon points="${pts}" fill="#000" filter="url(#${id}g${dir})" clip-path="none" style="mix-blend-mode:multiply" opacity=".9"/>`;
+  // 木枠の内側のふち：面取りの明るい帯と、麻布に落ちる影
+  const inner = (x, y, ww, hh, dir) => `<rect x="${n(x)}" y="${n(y)}" width="${n(ww)}" height="${n(hh)}" fill="url(#${id}s${dir})"/>`;
+  const sh = B * .55;
+  // ホッチキスの針（巻き込んだ麻布の帯の上に、等間隔に）
+  const staples = [];
+  const st = (x, y, rot) => staples.push(`<g transform="translate(${n(x)} ${n(y)}) rotate(${rot})"><rect x="-13" y="-2.6" width="26" height="5.2" rx="1.4" fill="url(#${id}m)"/><rect x="-13" y="-2.6" width="26" height="1.6" rx=".8" fill="#fff" opacity=".35"/></g>`);
+  for (let x = B * 1.6; x < X - B * 1.4; x += 110) { st(x, wr * .5, 0); st(x, Y - wr * .5, 0); }
+  for (let y = B * 1.6; y < Y - B * 1.4; y += 110) { st(wr * .5, y, 90); st(X - wr * .5, y, 90); }
+  // 角の折りたたみ（麻布を三角に折って重ねる）
+  const f = wr * 2.1, corners = [[0, 0, 1, 1], [X, 0, -1, 1], [0, Y, 1, -1], [X, Y, -1, -1]].map(([cx, cy, sx, sy]) => `<polygon points="${cx},${cy} ${n(cx + sx * f)},${cy} ${cx},${n(cy + sy * f)}" fill="url(#${id}lin)"/><polygon points="${cx},${cy} ${n(cx + sx * f)},${cy} ${cx},${n(cy + sy * f)}" fill="url(#${id}fold)" transform="translate(${cx} ${cy}) scale(${sx} ${sy}) translate(${-cx} ${-cy})"/>`).join('');
+  // くさび（四隅の継ぎ目の内側に 2 枚ずつ）
+  const wedge = (x, y, a) => `<g transform="translate(${n(x)} ${n(y)}) rotate(${a})"><polygon points="0,-6 ${n(B * .55)},-9 ${n(B * .55)},9 0,6" fill="#9c7243"/><polygon points="0,-6 ${n(B * .55)},-9 ${n(B * .55)},-4 0,-2" fill="#c49a66" opacity=".7"/></g>`;
+  const wedges = [[B, B, 45], [X - B, B, 135], [B, Y - B, -45], [X - B, Y - B, -135]].map(([x, y, a]) => wedge(x, y, a + 180)).join('');
+  // 吊り金具（左右の木枠の上から 1/3）
+  const ring = (x, y) => `<g transform="translate(${n(x)} ${n(y)})"><rect x="-14" y="-18" width="28" height="22" rx="4" fill="url(#${id}m)"/><circle cx="-7" cy="-11" r="2.4" fill="#5d6166"/><circle cx="7" cy="-11" r="2.4" fill="#5d6166"/><circle cx="0" cy="14" r="15" fill="none" stroke="url(#${id}m)" stroke-width="5"/></g>`;
+  const px = (B - wr) / 2 + wr;
+  return `<svg class="v-back-art" viewBox="0 0 ${X} ${Y}" preserveAspectRatio="none" aria-hidden="true"><defs>`
+    + `<linearGradient id="${id}wh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2c79c"/><stop offset=".5" stop-color="#d3b283"/><stop offset="1" stop-color="#b28d5d"/></linearGradient>`
+    + `<linearGradient id="${id}wv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e2c79c"/><stop offset=".5" stop-color="#d3b283"/><stop offset="1" stop-color="#b28d5d"/></linearGradient>`
+    + `<filter id="${id}gh" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency=".0032 .11" numOctaves="3" seed="${(WORKS.indexOf(w) * 7) % 97}"/><feColorMatrix values="0 0 0 0 .42  0 0 0 0 .29  0 0 0 0 .15  2.6 0 0 0 -1.05"/><feComposite in2="SourceGraphic" operator="in"/></filter>`
+    + `<filter id="${id}gv" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency=".11 .0032" numOctaves="3" seed="${(WORKS.indexOf(w) * 7 + 3) % 97}"/><feColorMatrix values="0 0 0 0 .42  0 0 0 0 .29  0 0 0 0 .15  2.6 0 0 0 -1.05"/><feComposite in2="SourceGraphic" operator="in"/></filter>`
+    + `<filter id="${id}t" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency=".9 .06" numOctaves="2" seed="11" result="a"/><feTurbulence type="fractalNoise" baseFrequency=".06 .9" numOctaves="2" seed="5" result="b"/><feBlend in="a" in2="b" mode="multiply"/><feColorMatrix values="0 0 0 0 .36  0 0 0 0 .3  0 0 0 0 .2  -1.1 0 0 0 .62"/><feComposite in2="SourceGraphic" operator="in"/></filter>`
+    + `<radialGradient id="${id}lin" cx=".45" cy=".4" r=".8"><stop offset="0" stop-color="#e6dcc4"/><stop offset=".7" stop-color="#d9ccb0"/><stop offset="1" stop-color="#c7b894"/></radialGradient>`
+    + `<linearGradient id="${id}fold" x1="0" y1="0" x2=".5" y2=".5"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".92" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".35"/></linearGradient>`
+    + `<linearGradient id="${id}sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a16" stop-opacity=".32"/><stop offset="1" stop-color="#3a2a16" stop-opacity="0"/></linearGradient>`
+    + `<linearGradient id="${id}sv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3a2a16" stop-opacity=".3"/><stop offset="1" stop-color="#3a2a16" stop-opacity="0"/></linearGradient>`
+    + `<linearGradient id="${id}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9dcdf"/><stop offset=".5" stop-color="#9ea3a8"/><stop offset="1" stop-color="#6d7277"/></linearGradient>`
+    + `</defs>`
+    // 麻布（織り目と、中ほどが少し明るいたるみ）
+    + `<rect width="${X}" height="${Y}" fill="url(#${id}lin)"/><rect width="${X}" height="${Y}" fill="#000" filter="url(#${id}t)"/>`
+    // 麻布に落ちる木枠の影（内側）
+    + inner(B, B, X - B * 2, sh, 'h') + `<g transform="translate(0 ${Y}) scale(1 -1)">${inner(B, B, X - B * 2, sh, 'h')}</g>`
+    + inner(B, B, sh, Y - B * 2, 'v') + `<g transform="translate(${X} 0) scale(-1 1)">${inner(B, B, sh, Y - B * 2, 'v')}</g>`
+    + (brace ? `<rect x="${n(B)}" y="${n(Y / 2 + B * .45)}" width="${n(X - B * 2)}" height="${n(sh * .7)}" fill="url(#${id}sh)"/>` : '')
+    // 木枠
+    + bars.map(wood).join('') + (brace ? wood(brace) : '')
+    // 節（木枠ごとに 1 つ、位置は作品ごとに変える）
+    + [[.3, B * .62, 'h'], [.68, Y - B * .6, 'h'], [.42, B * .6, 'v'], [.7, X - B * .6, 'v']].map(([t, c, d], i) => { const k = ((WORKS.indexOf(w) * 13 + i * 29) % 40) / 100 - .2, x = d === 'h' ? X * (t + k * .5) : c, y = d === 'h' ? c : Y * (t + k * .5), rx = d === 'h' ? B * .34 : B * .16, ry = d === 'h' ? B * .16 : B * .34; return `<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx * 1.9)}" ry="${n(ry * 1.9)}" fill="#8a6238" opacity=".16"/><ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(ry)}" fill="#7a5530" opacity=".55"/><ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx * .45)}" ry="${n(ry * .45)}" fill="#5c3d20" opacity=".6"/>`; }).join('')
+    // 面取り（内側のふちの明るい帯）
+    + `<rect x="${n(B - 5)}" y="${n(B - 5)}" width="${n(X - B * 2 + 10)}" height="5" fill="#e8c893" opacity=".7"/><rect x="${n(B - 5)}" y="${n(B - 5)}" width="5" height="${n(Y - B * 2 + 10)}" fill="#e8c893" opacity=".6"/>`
+    + `<rect x="${n(B - 5)}" y="${n(Y - B)}" width="${n(X - B * 2 + 10)}" height="5" fill="#7c5732" opacity=".45"/><rect x="${n(X - B)}" y="${n(B - 5)}" width="5" height="${n(Y - B * 2 + 10)}" fill="#7c5732" opacity=".4"/>`
+    + wedges
+    // 木枠へ巻き込んだ麻布の帯（外側）と、帯が木枠に落とす影
+    + `<g><rect width="${X}" height="${n(wr)}" fill="url(#${id}lin)"/><rect y="${n(Y - wr)}" width="${X}" height="${n(wr)}" fill="url(#${id}lin)"/><rect width="${n(wr)}" height="${Y}" fill="url(#${id}lin)"/><rect x="${n(X - wr)}" width="${n(wr)}" height="${Y}" fill="url(#${id}lin)"/></g>`
+    + `<g fill="#000" filter="url(#${id}t)"><rect width="${X}" height="${n(wr)}"/><rect y="${n(Y - wr)}" width="${X}" height="${n(wr)}"/><rect width="${n(wr)}" height="${Y}"/><rect x="${n(X - wr)}" width="${n(wr)}" height="${Y}"/></g>`
+    + `<rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/>`
+    + `<g transform="translate(0 ${Y}) scale(1 -1)"><rect x="${n(wr)}" y="${n(wr)}" width="${n(X - wr * 2)}" height="7" fill="url(#${id}sh)"/></g><g transform="translate(${X} 0) scale(-1 1)"><rect x="${n(wr)}" y="${n(wr)}" width="7" height="${n(Y - wr * 2)}" fill="url(#${id}sv)"/></g>`
+    + corners + staples.join('')
+    // 吊り金具と、鉛筆の書き込み（上の木枠に「TOP ↑」）
+    + ring(px, Y / 3) + ring(X - px, Y / 3)
+    + `<text x="${X / 2}" y="${n(wr + (B - wr) * .78)}" text-anchor="middle" font-family="Permanent Marker, cursive" font-size="${n((B - wr) * .62)}" fill="#3b3a38" opacity=".42" transform="rotate(-1.2 ${X / 2} ${n(B * .75)})">TOP ↑</text>`
+    + `</svg>`;
+}
 function backHTML(w) {
   const no = WORKS.indexOf(w) + 1;
-  return `<div class="v-back" aria-hidden="true"><i class="bar t"></i><i class="bar b"></i><i class="bar l"></i><i class="bar r"></i>${w.aspect < .9 ? '<i class="bar m"></i>' : ''}`
+  return `<div class="v-back" aria-hidden="true">${backSVG(w)}`
     + `<div class="v-label"><i class="tape a"></i><i class="tape b"></i><span class="lb-sig">An0n.</span><span class="lb-title">${esc(w.title)}</span>`
     + `<span class="lb-meta">${esc([w.year, w.medium, w.credit].filter(Boolean).join(' · '))}</span><span class="lb-no">No. ${String(no).padStart(2, '0')} / ${PLANNED_TOTAL}</span></div>`
     + '<div class="v-stamp"><span>AN0N.<br>ONLINE<br>GALLERY</span></div></div>';
