@@ -1317,6 +1317,70 @@ function updateEntrance() {
    空気のパーティクル（部屋ごと）
    ========================================================= */
 const fx = $('#fx'), fctx = fx.getContext('2d');
+
+/* ---------- 閉館後の美術館：深夜（0〜5 時）に来ると、館内の照明が落ちている ----------
+   作品は額のライトで照らされていて、そのまわりの景色だけが暗い。指（カーソル）の先が懐中電灯になる。
+   暗がりは粒の canvas に描き、作品の枠はくり抜く（作品の上には何も重ねない）。小屋の中に入ると灯りがついている */
+const AFTER = { on: false, dark: 0, x: 0, y: 0, tx: -1, ty: -1, touch: false };
+{
+  const h = new Date().getHours();
+  let lightsOn = false; try { lightsOn = sessionStorage.getItem('an0n-lights') === 'on'; } catch {}
+  AFTER.on = /[?&]closed\b/.test(location.search) || (h < 5 && !lightsOn);
+  if (AFTER.on || h < 5) document.body.classList.add('after-avail'); // 照明のスイッチ（深夜に来た人にだけ出す）
+  document.body.classList.toggle('after-hours', AFTER.on);
+  addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' || AFTER.touch) { AFTER.tx = e.clientX; AFTER.ty = e.clientY; } }, { passive: true });
+  addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') { AFTER.touch = true; AFTER.tx = e.clientX; AFTER.ty = e.clientY; } }, { passive: true });
+  const up = (e) => { if (e.pointerType !== 'mouse') { AFTER.touch = false; AFTER.tx = -1; } };
+  addEventListener('pointerup', up, { passive: true }); addEventListener('pointercancel', up, { passive: true });
+  document.addEventListener('mouseleave', () => { AFTER.tx = -1; });
+}
+function setAfterHours(on) {
+  AFTER.on = on; document.body.classList.toggle('after-hours', on);
+  try { sessionStorage.setItem('an0n-lights', on ? 'off' : 'on'); } catch {}
+}
+// 暗さの目標：小屋の中・目録より先は明るい
+function afterTarget() {
+  if (!AFTER.on || !document.body.classList.contains('loaded') || sy > GEO.cat - vh * .5) return 0;
+  if (currentRoom?.room.scene === 'attic' && currentRoom.c >= 1.5) return 0;
+  return 1;
+}
+function stepAfter(dt) {
+  const t = afterTarget();
+  AFTER.dark += (t - AFTER.dark) * (1 - Math.exp(-dt / (t ? 1.4 : .9)));
+  if (Math.abs(AFTER.dark - t) < .002) AFTER.dark = t;
+  document.body.classList.toggle('after-dark', AFTER.dark > 0); // 暗がりは入口の上にも（入口は粒の canvas より手前にあるので、暗い間だけ canvas を前へ）
+  // 懐中電灯：指やカーソルの先へ少し遅れてついていく。指を離すと画面の中ほどを照らす
+  const tx = AFTER.tx >= 0 ? AFTER.tx : vw / 2, ty = AFTER.tx >= 0 ? AFTER.ty : vh * .56;
+  if (!AFTER.x && !AFTER.y) { AFTER.x = tx; AFTER.y = ty; }
+  const k = REDUCED ? 1 : 1 - Math.exp(-dt / .09);
+  AFTER.x += (tx - AFTER.x) * k; AFTER.y += (ty - AFTER.y) * k;
+}
+function drawAfter(g, t) {
+  const d = AFTER.dark; if (d < .002) return;
+  g.save();
+  g.fillStyle = `rgba(5, 7, 15, ${(.9 * d).toFixed(3)})`; g.fillRect(0, 0, vw, vh);
+  g.globalCompositeOperation = 'destination-out';
+  // 懐中電灯の丸い光（ふちはやわらかく、かすかに揺れる）
+  const R = Math.min(vw, vh) * .27 * (1 + (REDUCED ? 0 : Math.sin(t * 1.7) * .012)), x = AFTER.x, y = AFTER.y;
+  let gr = g.createRadialGradient(x, y, 0, x, y, R * 1.55);
+  gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(.42, 'rgba(0,0,0,.94)'); gr.addColorStop(.75, 'rgba(0,0,0,.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(x - R * 1.6, y - R * 1.6, R * 3.2, R * 3.2);
+  // 作品は額のライトで照らされている：作品の枠はそのまま見せ、まわりもほんのり明るく
+  for (const b of GEO.workRects || []) {
+    const cx = (b.left + b.right) / 2, cy = (b.top + b.bottom) / 2, rw = b.width / 2, rh = b.height / 2;
+    g.save(); g.translate(cx, cy); g.scale(1, rh / rw);
+    const hg = g.createRadialGradient(0, 0, rw * .8, 0, 0, rw * 1.75);
+    hg.addColorStop(0, 'rgba(0,0,0,.85)'); hg.addColorStop(.5, 'rgba(0,0,0,.4)'); hg.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = hg; g.fillRect(-rw * 1.8, -rw * 1.8, rw * 3.6, rw * 3.6); g.restore();
+    g.fillStyle = '#000'; g.fillRect(b.left - 3, b.top - 3, b.width + 6, b.height + 6);
+  }
+  // 懐中電灯の光に、ほんの少しだけ暖かい色を
+  g.globalCompositeOperation = 'source-over';
+  gr = g.createRadialGradient(x, y, 0, x, y, R);
+  gr.addColorStop(0, `rgba(255, 226, 170, ${(.08 * d).toFixed(3)})`); gr.addColorStop(1, 'rgba(255, 226, 170, 0)');
+  g.fillStyle = gr; g.fillRect(x - R, y - R, R * 2, R * 2);
+  g.restore();
+}
 const parts = [];
 if (location.search.includes('memdebug')) window.__parts = parts; // 点検用
 const R = (a, b) => a + Math.random() * (b - a);
@@ -1720,6 +1784,7 @@ function toggleBeat() {
   document.dispatchEvent(new CustomEvent('beat', { detail: on })); // 小屋のプレーヤーの曲は、ビート／ラジオが始まったら止める
 }
 beatBtn.addEventListener('click', toggleBeat);
+$('#lights')?.addEventListener('click', () => setAfterHours(!AFTER.on)); // 閉館後の照明のスイッチ
 if (!SOUND) document.body.classList.add('no-sound'); // ビートボタン・音の選択・ラジカセの「▶」を出さない
 $('#player').innerHTML = PROPS.recordStand.svg();
 initEggs({ parts, toggleBeat, isBeatOn: () => beat.playing, works: WORKS, openViewer, beat });
@@ -1822,13 +1887,20 @@ function frame(now) {
     if (GEO.workRects?.length) for (const q of parts) { if (q.k === 'leaf') q.life = Math.min(q.life, q.age + .6); } // 作品が画面に入ったら、落ちている葉はすぐ消す
     if (GEO.workRects?.length) for (const q of parts) { if (q.k !== 'leaf') continue; for (const b of GEO.workRects) { const l = b.left / vw * 100 - 3, r = b.right / vw * 100 + 3; if (q.x > l && q.x < r && q.y > b.top / vh * 100 - 12) { q.life = Math.min(q.life, q.age + .8); break; } } }
     // 粒子がひとつもないときは、画面いっぱいの canvas を消し直さない
-    if (parts.length || fxDirty) {
+    stepAfter(dt);
+    if (parts.length || fxDirty || AFTER.dark) {
       fctx.setTransform(FXD, 0, 0, FXD, 0, 0); fctx.clearRect(0, 0, vw, vh);
       const u = vh / 100, wu = vw / 100;
       const fClip = parts.length && currentRoom && GEO.workRects ? clipOutRects(fctx, GEO.workRects, u * 2.5) : false;
-      parts.forEach((q) => drawP(fctx, q, q.x * wu - mouse.x * 8, q.y * u - mouse.y * 5, q.s * u, t));
+      // 閉館後は、葉は暗がりの下に（懐中電灯で照らしたときだけ見える）、光の粒は暗がりの上に（暗い中で光る）
+      const under = AFTER.dark ? (q) => q.k === 'leaf' : () => false;
+      parts.forEach((q) => { if (under(q)) drawP(fctx, q, q.x * wu - mouse.x * 8, q.y * u - mouse.y * 5, q.s * u, t); });
       if (fClip) fctx.restore();
-      fxDirty = parts.length > 0;
+      drawAfter(fctx, t);
+      const fClip2 = fClip ? clipOutRects(fctx, GEO.workRects, u * 2.5) : false;
+      parts.forEach((q) => { if (!under(q)) drawP(fctx, q, q.x * wu - mouse.x * 8, q.y * u - mouse.y * 5, q.s * u, t); });
+      if (fClip2) fctx.restore();
+      fxDirty = parts.length > 0 || AFTER.dark > 0;
     }
     put($('#progress'), 'transform', `scaleX(${clamp(SY / (GEO.docH - vh)).toFixed(4)})`);
     const inCatalog = sy > GEO.cat - vh && sy < GEO.art - 80;
