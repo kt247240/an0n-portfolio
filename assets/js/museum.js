@@ -576,13 +576,10 @@ const STREET = {
   water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
-  afterhours: { intro: 'musicStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
+  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
-const PLINTH_MUSIC = { 'deep-in': { art: 'assets/works/deep-in.jpg', track: 'assets/audio/deep-in.mp3' } }; // 作品の台にはめ込むプレーヤー
-const MUSIC = {
-  musicStand: { art: 'assets/art/bhi-store.webp', track: 'assets/audio/bhi-store.mp3' },
-  musicStandDeep: { art: 'assets/works/deep-in.jpg', track: 'assets/audio/deep-in.mp3', bottom: 9.5, prop: 'musicBarrel' }, // 水辺は、作品と同じ樽の台に竹の枠のプレーヤー
-};
+const PLINTH_MUSIC = {}; // 作品の台にはめ込むプレーヤー（いまは置かない。置くときは { 作品の id: { art, track } }）
+const MUSIC = {}; // 画面つきプレーヤー（いまは置かない。置くときは { 小物の名前: { art, track, prop } }）
 function propHTML(kind, scene) {
   if (kind === 'rock') return { html: ROCK.svg(Math.floor(Math.random() * 2)), cls: 'rock', w: ROCK.w, bottom: 5 };
   if (kind === 'armchair' || kind === 'bookcrate') return { html: PROPS[kind].svg(), cls: '', w: PROPS[kind].w, bottom: kind === 'armchair' ? 7.4 : 7.8 };
