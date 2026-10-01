@@ -882,6 +882,8 @@ function scatter(r, x, y) {
 if (location.search.includes('prerender')) window.__pre = { W, U, vw, vh, store: SVG_STORE, rooms, get entrance() { return entrance.layerHTML; }, setForestNight, svgDoc };
 /* ---------- 入口 ---------- */
 const entrance = $('#entrance');
+// 入口の操作の案内：スマホは「Swipe up」と指でなぞる動き、PC は「Scroll」とマウスのホイール
+if (COARSE) { const c = $('.scroll-cue', entrance); c.classList.add('touch'); $('.cue-txt', c).textContent = 'Swipe up'; }
 function buildEntrance() {
   const S = sceneForest(W, 1, { entrance: true });
   GRADE = GRADES.forest;
@@ -1352,7 +1354,7 @@ function updateEntrance() {
     entranceCurtain.leaves = r0.leaves; entranceCurtain.curtainHTML = r0.curtainHTML;
     updateCurtain(entranceCurtain, smooth(.68, .96, p));
   }
-  $('.scroll-cue', entrance).style.opacity = 1 - smooth(0, .1, p);
+  $('.scroll-cue', entrance).style.opacity = 1 - smooth(0, .06, p); // 歩き始めたらすぐ消える
 }
 
 /* =========================================================
