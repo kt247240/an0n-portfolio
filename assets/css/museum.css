@@ -59,6 +59,22 @@ img, video { display: block; }
 /* ---------- ローダー：署名を書くように ---------- */
 #loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: var(--moss); color: var(--cream); transition: opacity 1s .2s, transform 1.4s var(--ease-io); }
 body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; }
+/* 最初の画面：入口の森の絵（奥の層）を暗くぼかして敷き、木漏れ日の光の玉がゆっくり漂う（光の筋は使わない） */
+.loader-forest { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.loader-forest::before { content: ""; position: absolute; inset: -4%; background: url("../pre/46/entrance-far-0.webp") 50% 100% / cover no-repeat; filter: blur(6px) saturate(.8); opacity: 0; animation: ldbg 1.6s ease-out .2s forwards; }
+@media (min-aspect-ratio: 1/1) { .loader-forest::before { background-image: url("../pre/160/entrance-far-0.webp"); } }
+.loader-forest::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(23, 44, 33, .72), rgba(23, 44, 33, .84) 60%, rgba(16, 32, 24, .92)); }
+@keyframes ldbg { to { opacity: 1; } }
+.loader-forest i { z-index: 1; }
+.loader-forest i { position: absolute; width: 34vmin; height: 34vmin; border-radius: 50%; background: radial-gradient(closest-side, rgba(240, 236, 200, .1), rgba(240, 236, 200, 0)); animation: dapple 14s ease-in-out infinite alternate; }
+.loader-forest i:nth-of-type(1) { left: 8%; top: 18%; } .loader-forest i:nth-of-type(2) { left: 62%; top: 10%; animation-duration: 17s; animation-delay: -4s; }
+.loader-forest i:nth-of-type(3) { left: 38%; top: 48%; width: 22vmin; height: 22vmin; animation-duration: 12s; animation-delay: -7s; }
+.loader-forest i:nth-of-type(4) { left: 78%; top: 52%; width: 26vmin; height: 26vmin; animation-duration: 19s; animation-delay: -2s; }
+.loader-forest i:nth-of-type(5) { left: 20%; top: 64%; width: 18vmin; height: 18vmin; animation-duration: 15s; animation-delay: -9s; }
+.loader-forest i:nth-of-type(6) { left: 50%; top: 26%; width: 16vmin; height: 16vmin; animation-duration: 11s; animation-delay: -5s; }
+@keyframes dapple { 0% { transform: translate(0, 0) scale(1); opacity: .55; } 50% { opacity: 1; } 100% { transform: translate(3vmin, -2vmin) scale(1.12); opacity: .7; } }
+.loader-inner { position: relative; }
+@media (prefers-reduced-motion: reduce) { .loader-forest i { animation: none; } }
 .loader-inner { text-align: center; }
 .loader-sig { font-family: var(--sig); font-size: clamp(90px, 16vw, 170px); line-height: 1; margin: 0; clip-path: inset(0 100% 0 0); animation: write 1.6s .2s var(--ease-io) forwards; }
 .loader-sub { margin: 10px 0 0; font-family: var(--serif); letter-spacing: .5em; font-size: 14px; opacity: 0; animation: fadeUp .8s 1.2s forwards; }

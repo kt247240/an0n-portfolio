@@ -113,6 +113,46 @@ export const PROPS = {
       <g transform="translate(90 0)"><path d="M0 78V26" stroke="#b08a4a" stroke-width="1.6"/><path d="M-5 78H5" stroke="#8a6a36" stroke-width="2.4"/>
       <path d="M-7 26L-4 12H4L7 26Z" fill="#e8d7b0"/><path d="M-7 26H7" stroke="#cbb58a" stroke-width="1"/><ellipse cx="0" cy="27" rx="6" ry="1.2" fill="#ffe2a8" class="lit"/></g></svg>`,
   },
+  // 小屋の床の小物（作品の下の床に、暮らしの気配）
+  // フェルトのスリッパ（脱いだまま、少しずれて）
+  slippers: {
+    w: 9.4, h: 3.2, bottom: 7.4,
+    svg: () => `<svg viewBox="0 0 40 14"><ellipse cx="20" cy="12.6" rx="19" ry="1.4" fill="#000" opacity=".25"/>
+      <g transform="rotate(-6 12 9)"><path d="M2 10Q2 5 8 4.6H16Q22 5 22 9.6Q22 12 18 12H5Q2 12 2 10Z" fill="#5a3b2a"/><path d="M2.6 9.4Q2.6 5.2 8 5H15.6Q21 5.4 21.2 9H12Q9 9 7.6 7.4Q6 6.4 2.6 9.4Z" fill="#c99a3e"/><path d="M8 5H15.6Q19 5.2 20.4 7.2H10Q8.6 6 8 5Z" fill="#dcb45e"/></g>
+      <g transform="rotate(4 28 9)"><path d="M17 10.4Q17 5.6 23 5.2H31Q37 5.6 37 10Q37 12.4 33 12.4H20Q17 12.4 17 10.4Z" fill="#4a3022"/><path d="M17.6 9.8Q17.6 5.8 23 5.6H30.6Q36 6 36.2 9.4H27Q24 9.4 22.6 7.8Q21 6.8 17.6 9.8Z" fill="#b38634"/></g></svg>`,
+  },
+  // 閉じたスケッチブックと鉛筆、消しゴム（絵を描く人の小屋）
+  sketchbook: {
+    w: 11.6, h: 3.4, bottom: 7.4,
+    svg: () => `<svg viewBox="0 0 44 13"><ellipse cx="22" cy="11.8" rx="21" ry="1.2" fill="#000" opacity=".25"/>
+      <path d="M2 8.6L6 3.6H32L28 8.6Z" fill="#2b2a28"/><path d="M2 8.6H28V10.6H2Z" fill="#1d1c1a"/><path d="M2.6 8.6H27.4V9.2H2.6Z" fill="#efe6d0"/><path d="M22 3.6L18 8.6H19.6L23.6 3.6Z" fill="#c2463a"/>
+      <g transform="rotate(-8 36 9)"><path d="M30 8.4H42L43.6 9.2L42 10H30Z" fill="#e4b23c"/><path d="M42 8.4L43.6 9.2L42 10Z" fill="#e9d2a8"/><path d="M43 9L43.6 9.2L43 9.4Z" fill="#2b2a28"/><path d="M30 8.4H31V10H30Z" fill="#c97a6a"/></g>
+      <g transform="rotate(14 34 6)"><path d="M29 5.6H39L40.2 6.2L39 6.8H29Z" fill="#3c6aa0"/><path d="M39 5.6L40.2 6.2L39 6.8Z" fill="#e9d2a8"/></g>
+      <rect x="35.4" y="10" width="3.2" height="1.6" rx=".5" fill="#efc7c0"/></svg>`,
+  },
+  // 編みかごと、たたんだチェックのブランケット
+  basket: {
+    w: 7.4, h: 6.4, bottom: 7.6,
+    svg: () => `<svg viewBox="0 0 30 26"><ellipse cx="15" cy="24.8" rx="14" ry="1.2" fill="#000" opacity=".25"/>
+      <path d="M5 4H25V9H5Z" fill="#a8362e"/>${[0, 1, 2, 3, 4].map((k) => `<path d="M${6 + k * 4} 4H${7.4 + k * 4}V9H${6 + k * 4}Z" fill="#2f5a44" opacity=".75"/>`).join('')}<path d="M5 6H25V7H5Z" fill="#e9d8b0" opacity=".6"/><path d="M5 4Q15 1 25 4Z" fill="#b8453a"/>
+      <path d="M3 9H27L24.6 24H5.4Z" fill="#a8824e"/>${[0, 1, 2, 3, 4].map((k) => `<path d="M3.4 ${11 + k * 2.6}H26.6L26.4 ${12.3 + k * 2.6}H3.6Z" fill="#8a6638" opacity=".7"/>`).join('')}${[0, 1, 2, 3, 4, 5, 6].map((k) => `<path d="M${5 + k * 3.4} 9.6V23.4" stroke="#c49d62" stroke-width=".6" opacity=".55"/>`).join('')}<path d="M2.6 8.4H27.4V10.4H2.6Z" fill="#7a5a30"/></svg>`,
+  },
+  // 床に積んだ画集と、てっぺんの小さなサボテン
+  artbooks: {
+    w: 7.6, h: 5.2, bottom: 7.6,
+    svg: () => `<svg viewBox="0 0 32 22"><ellipse cx="16" cy="21" rx="15" ry="1" fill="#000" opacity=".25"/>
+      <path d="M1 16H31V21H1Z" fill="#2e4a5e"/><path d="M1 16H31V17H1Z" fill="#46677f"/><path d="M29 16H31V21H29Z" fill="#efe6d0"/>
+      <g transform="rotate(-3 16 14)"><path d="M3 11.6H29V16H3Z" fill="#d9c49f"/><path d="M3 11.6H29V12.4H3Z" fill="#efe0bd"/><path d="M8 12.8H20V14.8H8Z" fill="#a8362e"/></g>
+      <path d="M5 8H27V11.8H5Z" fill="#6b7a3a"/><path d="M5 8H27V8.7H5Z" fill="#879648"/><path d="M25.4 8H27V11.8H25.4Z" fill="#efe6d0"/>
+      <path d="M12 4.6H18L17.2 8H12.8Z" fill="#b7704a"/><path d="M11.6 4H18.4V5H11.6Z" fill="#c98a5e"/><path d="M13.6 4Q13 0.4 15 0.2Q17 .4 16.4 4Z" fill="#5f8a48"/><path d="M14.6 3.6Q14.4 1.2 15 1" stroke="#8fb06a" stroke-width=".4"/></svg>`,
+  },
+  // 背の高いサンスベリア（床置きの鉢）
+  floorplant: {
+    w: 6, h: 10, bottom: 7.6,
+    svg: () => `<svg viewBox="0 0 26 44"><ellipse cx="13" cy="43" rx="11" ry="1" fill="#000" opacity=".25"/>
+      ${[[-14, 30, '#3d6a3e'], [-4, 36, '#4f7d46'], [6, 33, '#3d6a3e'], [16, 27, '#5a8a4e'], [-22, 22, '#5a8a4e']].map(([a, l, c]) => `<g transform="translate(13 32) rotate(${a})"><path d="M-2 0Q-2.6 -${l * .6} 0 -${l}Q2.6 -${l * .6} 2 0Z" fill="${c}"/><path d="M-.6 -2Q-.9 -${l * .55} 0 -${l * .9}" stroke="#c9d27a" stroke-width=".5" opacity=".6" fill="none"/></g>`).join('')}
+      <path d="M5 31H21L19.4 43H6.6Z" fill="#d8cdb6"/><path d="M4.4 30H21.6V32.4H4.4Z" fill="#e6dcc6"/><path d="M5 31H8L7.4 43H6.6Z" fill="#fff" opacity=".35"/></svg>`,
+  },
   // 本とレコードを積んだ低い木箱
   bookcrate: {
     w: 13, h: 9.3,

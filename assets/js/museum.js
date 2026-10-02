@@ -623,7 +623,7 @@ const STREET = {
   water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
-  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
+  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15], [2, 'slippers', -6], [3, 'sketchbook', 4], [4, 'basket', -5], [5, 'artbooks', 4], [6, 'floorplant', -9]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
 const PLINTH_MUSIC = {}; // 作品の台にはめ込むプレーヤー（いまは置かない。置くときは { 作品の id: { art, track } }）
 const MUSIC = {}; // 画面つきプレーヤー（いまは置かない。置くときは { 小物の名前: { art, track, prop } }）
@@ -634,7 +634,7 @@ function propHTML(kind, scene) {
   // 画面つきプレーヤー（曲ごとに、画面の絵と曲を変える）。小屋は BHI STORE、水辺は Deep In.
   if (MUSIC[kind]) return { html: PROPS[MUSIC[kind].prop || 'musicStand'].svg(MUSIC[kind].art) + '<i class="mb-glow" aria-hidden="true"></i>', cls: 'music-stand', w: PROPS.musicStand.w, bottom: MUSIC[kind].bottom ?? 8, track: MUSIC[kind].track }; // 画面の光は、流れているあいだだけ
   const P = PROPS[kind];
-  return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : 7 + Math.random() * 3 };
+  return { html: P.svg(), cls: P.hang ? 'hang-prop' : '', w: P.w, bottom: P.hang ? null : P.bottom ?? 7 + Math.random() * 3 };
 }
 // スクロールに合わせて動く生きもの：水辺の鯉（歩くと先へ泳ぐ）、夕凪のカモメ（夕日のほうへ渡る）、森の白い蝶（ひらひらと先へ）
 // [種類, 数, 高さの範囲（vh）, 大きさ（vh）, 歩く速さ（vh／立ち止まる場所 1 つぶん）, 向き（1＝右へ）, 置く層（奥＝swim、中景＝props。蝶は木の前を飛ぶので中景）]
