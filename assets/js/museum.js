@@ -2015,7 +2015,11 @@ if (matchMedia('(pointer: fine)').matches && !REDUCED) {
 buildCatalog();
 buildArtist();
 rebuild();
-document.querySelectorAll('.reveal-up, #catalog-grid').forEach((el) => io.observe(el));
+document.querySelectorAll('.reveal-up').forEach((el) => io.observe(el));
+// 目録は部屋ごとの箱を、それぞれ画面に入ったときに出す（目録全体を 1 つで見ると、作品が増えて縦に長くなったとき
+// スマホの画面では 15% が一度に見えることがなく、ずっと出てこなかった）
+{ const ioSpec = new IntersectionObserver((ents) => ents.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); ioSpec.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('#catalog-grid .specimen').forEach((el) => ioSpec.observe(el)); }
 requestAnimationFrame((n) => { last = n; frame(n); });
 Promise.all(WORKS.map(sampleGlow)).then(() => {
   // レコードのラベルを作品の色に

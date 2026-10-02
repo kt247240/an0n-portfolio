@@ -647,9 +647,7 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 #catalog { background: #e9e1cf; }
 #catalog-grid { display: grid; gap: 7vh; max-width: 1180px; margin: 0 auto; }
 .specimen { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--ease-out), transform 1.2s var(--ease-out); }
-#catalog-grid.in .specimen { opacity: 1; transform: none; }
-#catalog-grid.in .specimen:nth-child(2) { transition-delay: .12s; } #catalog-grid.in .specimen:nth-child(3) { transition-delay: .24s; }
-#catalog-grid.in .specimen:nth-child(4) { transition-delay: .36s; } #catalog-grid.in .specimen:nth-child(5) { transition-delay: .48s; }
+#catalog-grid .specimen.in { opacity: 1; transform: none; } /* 部屋ごとの箱が、画面に入ったときにふわっと出る */
 /* 木の枠：上が明るく下が暗い板、角は少し丸く */
 .specimen .box { padding: 18px; border-radius: 4px; background: linear-gradient(#8a6440, #6b4a2e 55%, #5a3d25);
   box-shadow: inset 0 1px 0 rgba(255, 236, 200, .35), inset 0 -2px 0 rgba(0, 0, 0, .25), 0 18px 40px rgba(50, 35, 20, .28); }
