@@ -669,13 +669,6 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 #catalog-grid { display: grid; gap: 7vh; max-width: 1180px; margin: 0 auto; }
 .specimen { opacity: 0; transform: translateY(30px); transition: opacity 1s var(--ease-out), transform 1.2s var(--ease-out); }
 #catalog-grid .specimen.in { opacity: 1; transform: none; } /* 部屋ごとの箱が、画面に入ったときにふわっと出る */
-/* 目録の箱の見出し：部屋の番号・名前・英名（押すとその部屋へ） */
-.spec-head { display: flex; align-items: baseline; justify-content: center; gap: 14px; margin: 0 auto 2.4vh; color: #3b3326; text-decoration: none; width: fit-content; padding: 4px 10px; transition: color .3s, opacity .3s; }
-.spec-head .sh-no { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 22px; letter-spacing: .08em; color: #8a6440; }
-.spec-head .sh-ja { font-family: "Shippori Mincho", serif; font-weight: 600; font-size: 17px; letter-spacing: .18em; }
-.spec-head .sh-en { font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 15px; letter-spacing: .06em; color: #7a6c58; }
-.spec-head:hover { color: #8a6440; }
-@media (max-width: 520px) { .spec-head { gap: 9px; } .spec-head .sh-no { font-size: 18px; } .spec-head .sh-ja { font-size: 14px; letter-spacing: .12em; } .spec-head .sh-en { font-size: 12.5px; } }
 /* 木の枠：上が明るく下が暗い板、角は少し丸く */
 .specimen .box { padding: 18px; border-radius: 4px; background: linear-gradient(#8a6440, #6b4a2e 55%, #5a3d25);
   box-shadow: inset 0 1px 0 rgba(255, 236, 200, .35), inset 0 -2px 0 rgba(0, 0, 0, .25), 0 18px 40px rgba(50, 35, 20, .28); }

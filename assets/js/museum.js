@@ -953,7 +953,7 @@ function buildCatalog() {
   grid.innerHTML = ROOMS.map((room) => {
     const specs = WORKS.map((w, i) => [w, i]).filter(([w]) => w.room === room.id).map(([w, i]) => `<button class="spec" data-i="${i}" data-id="${w.id}" aria-label="${esc(w.title)} を見る" style="--ar:${w.aspect}">
         <span class="mount">${w.type === 'video' ? `<img src="${esc(w.poster)}" alt="" loading="lazy"><video muted loop playsinline preload="none" data-src="${esc(w.src)}"></video>` : `<img src="${esc(w.src)}" alt="" loading="lazy">`}</span><i class="pin" aria-hidden="true"></i><span class="name" aria-hidden="true">${esc(w.title)}${w.year ? `<small>${esc(w.year)}</small>` : ''}</span><i class="ask${w.sold ? ' sold' : w.nfs ? ' nfs' : ''}" aria-hidden="true">${w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'ASK'}</i></button>`).join('');
-    return `<section class="specimen" data-room="${room.id}" aria-label="${esc(room.ja)}"><a class="spec-head" href="#room-${room.id}" aria-label="${esc(room.ja)}へ行く"><span class="sh-no">${esc(room.no)}</span><span class="sh-ja">${esc(room.ja)}</span><span class="sh-en">${esc(room.en)}</span></a><div class="box"><div class="bed">${specs}<span class="pressed">${pressedSpecimen(room.scene)}</span></div></div></section>`;
+    return `<section class="specimen" data-room="${room.id}" aria-label="${esc(room.ja)}"><div class="box"><div class="bed">${specs}<span class="pressed">${pressedSpecimen(room.scene)}</span></div></div></section>`;
   }).join('');
   grid.addEventListener('click', (e) => {
     const c = e.target.closest('.spec[data-i]'); if (!c) return;
