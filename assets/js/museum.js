@@ -623,7 +623,7 @@ const STREET = {
   water: { intro: null, pool: [] },
   dusk: { intro: null, pool: [] },
   night: { intro: 'sneakers', pool: [] },
-  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15], [2, 'slippers', -6], [3, 'sketchbook', 4], [4, 'basket', -5], [5, 'artbooks', 4], [6, 'floorplant', -9]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
+  afterhours: { intro: 'recordStand', introAt: 3.5, pool: [], extra: [[4.5, 'armchair', 0], [5.5, 'bookcrate', -15]] }, // 小屋の家具 // 小屋のレコードプレーヤーは台に載せる
 };
 const PLINTH_MUSIC = {}; // 作品の台にはめ込むプレーヤー（いまは置かない。置くときは { 作品の id: { art, track } }）
 const MUSIC = {}; // 画面つきプレーヤー（いまは置かない。置くときは { 小物の名前: { art, track, prop } }）
