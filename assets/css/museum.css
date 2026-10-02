@@ -140,12 +140,11 @@ body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; 
 body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 .hero-title > * { transition: opacity 1.2s var(--ease-out), transform 1.4s var(--ease-out); }
 .hero-title > :nth-child(2) { transition-delay: .25s; } .hero-title > :nth-child(3) { transition-delay: .4s; } .hero-title > :nth-child(4) { transition-delay: .55s; }
-.scroll-cue { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--cream); z-index: 3; text-shadow: 0 1px 10px rgba(0, 0, 0, .35); animation: cuein 1.2s var(--ease-out) 1.2s both; }
-.scroll-cue .cue-txt { font-size: 12px; font-weight: 600; letter-spacing: .36em; margin-right: -.36em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 0 12px rgba(0, 0, 0, .35); }
-/* 明るい小道の上でも読めるよう、うしろにやわらかい暗がり */
-.scroll-cue::before { content: ""; position: absolute; left: 50%; top: 50%; width: 220%; height: 150%; transform: translate(-50%, -50%); z-index: -1; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 28, 18, .34), rgba(22, 28, 18, .14) 60%, rgba(22, 28, 18, 0)); pointer-events: none; }
+.scroll-cue { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--cream); z-index: 3; opacity: 0; transition: opacity 1.2s ease-out 1.2s; }
+body.loaded .scroll-cue { opacity: 1; } /* 入口に来てから少しして、ふわっと出る */
+.scroll-cue .cue-txt { font-size: 12px; font-weight: 600; letter-spacing: .36em; margin-right: -.36em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
 /* 入口の操作の案内：PC はマウスのホイールが下へ、スマホは指が下から上へなぞる */
-.scroll-cue .cue-ico { position: relative; display: block; width: 18px; height: 28px; border: 1.5px solid rgba(255, 250, 242, .95); border-radius: 10px; filter: drop-shadow(0 1px 6px rgba(0, 0, 0, .3)); }
+.scroll-cue .cue-ico { position: relative; display: block; width: 18px; height: 28px; border: 1.5px solid rgba(255, 250, 242, .95); border-radius: 10px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .25)); }
 .scroll-cue .cue-ico i { position: absolute; left: 50%; top: 6px; width: 3px; height: 6px; margin-left: -1.5px; border-radius: 2px; background: var(--cream); animation: wheel 1.8s var(--ease-io) infinite; }
 @keyframes wheel { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 70% { transform: translateY(9px); opacity: 0; } 100% { transform: translateY(9px); opacity: 0; } }
 .scroll-cue.touch .cue-ico { width: 14px; height: 40px; border: 0; }
@@ -153,7 +152,8 @@ body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 .scroll-cue.touch .cue-ico::after { content: ""; position: absolute; left: 50%; bottom: 7px; width: 4px; height: 26px; margin-left: -2px; border-radius: 2px; background: linear-gradient(rgba(255, 250, 242, 0), rgba(255, 250, 242, .35)); transform-origin: bottom; animation: swipetrail 1.9s var(--ease-io) infinite; }
 @keyframes swipe { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 65% { transform: translateY(-26px); opacity: 0; } 100% { transform: translateY(-26px); opacity: 0; } }
 @keyframes swipetrail { 0%, 12% { transform: scaleY(0); opacity: 0; } 50% { transform: scaleY(1); opacity: 1; } 75%, 100% { transform: scaleY(1); opacity: 0; } }
-@keyframes cuein { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+/* 縦にスクロール（スワイプ）して歩き出したら、消えたまま戻らない */
+body.loaded .scroll-cue.used { opacity: 0; visibility: hidden; transition: opacity .35s, visibility 0s .35s; }
 @media (prefers-reduced-motion: reduce) { .scroll-cue .cue-ico i, .scroll-cue .cue-ico::after { animation: none; } }
 
 /* ---------- 展示室 ---------- */

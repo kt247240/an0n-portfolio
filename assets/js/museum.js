@@ -1354,7 +1354,7 @@ function updateEntrance() {
     entranceCurtain.leaves = r0.leaves; entranceCurtain.curtainHTML = r0.curtainHTML;
     updateCurtain(entranceCurtain, smooth(.68, .96, p));
   }
-  $('.scroll-cue', entrance).style.opacity = 1 - smooth(0, .06, p); // 歩き始めたらすぐ消える
+  if (sy > 3) $('.scroll-cue', entrance).classList.add('used'); // 歩き出したら（少しでも縦にスクロールしたら）消す
 }
 
 /* =========================================================
