@@ -331,21 +331,24 @@ const mediaHTML = (w, { autoplay = false } = {}) => (w.type === 'video'
   : `<img src="${esc(w.src)}" alt="${esc(w.title)}" decoding="async">`);
 
 /* ---------- 作品の色を読む（空間の光の色にする） ---------- */
-const glowOf = new Map();
+const glowOf = new Map(), glowK = new Map();
 function sampleGlow(w) {
   return new Promise((res) => {
     const img = new Image();
     img.onload = () => {
       const c = document.createElement('canvas'); c.width = c.height = 24;
       const x = c.getContext('2d'); x.drawImage(img, 0, 0, 24, 24);
-      const d = x.getImageData(0, 0, 24, 24).data; let r = 0, g = 0, b = 0, n = 0;
+      const d = x.getImageData(0, 0, 24, 24).data; let r = 0, g = 0, b = 0, n = 0, sat = 0, lum = 0;
       for (let i = 0; i < d.length; i += 4) {
         const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]);
+        sat += (mx - mn) / 255; lum += (d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11) / 255;
         const wgt = (mx - mn) / 255 + .05; // 彩度の高い色を重く
         r += d[i] * wgt; g += d[i + 1] * wgt; b += d[i + 2] * wgt; n += wgt;
       }
       const k = Math.min(2.4, 240 / Math.max(r / n, g / n, b / n));
       glowOf.set(w.id, [r, g, b].map((v) => Math.round(clamp(v / n * k, 0, 255))));
+      // 光の強さ：色の少ない（灰色の）絵や暗い絵ほど、まわりの光を弱く（絵が白っぽく浮かないように）
+      const px = d.length / 4; glowK.set(w.id, clamp(.42 + (sat / px) * 1.5 + (lum / px - .35) * .5, .42, 1));
       res();
     };
     img.onerror = res;
@@ -706,6 +709,12 @@ function tickClocks() {
 }
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
+  // 水辺：水面をゆっくり漂う蓮の花びら（手前の水面に、ところどころ。ふわりと揺れながら横へ流れる）
+  if (r.room.scene === 'jungle') {
+    const mw = W + (r.stops - 1) * W * FACTORS.mid, g = hrand(r.stops * 31 + 7), n = Math.round(mw / (COARSE ? 18 : 14));
+    P.insertAdjacentHTML('beforeend', Array.from({ length: n }, (_, i) => { const x = g() * mw, y = 70 + g() * 16, s = (.7 + (y - 70) / 16 * .8) * (.8 + g() * .4), d = 26 + g() * 20;
+      return `<i class="living petal" style="left:${(x * U).toFixed(1)}px;top:${(y * U).toFixed(1)}px;width:${(s * 1.6).toFixed(2)}vh;--dx:${(3 + g() * 5).toFixed(1)}vh;--r:${Math.round(g() * 360)}deg;animation-duration:${d.toFixed(1)}s,${(3 + g() * 2).toFixed(1)}s;animation-delay:${(-g() * d).toFixed(1)}s,${(-g() * 3).toFixed(1)}s"></i>`; }).join(''));
+  }
   if (D.ferris) {
     const { x, y, r: rr } = D.ferris, R2 = rr + 3, h = rr + 3.8, G = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(gradeColors(svg, gradeOf(r.room.scene)))}`;
     const gon = Array.from({ length: FERRIS_N }, (_, k) => { const a = k / FERRIS_N * Math.PI * 2; return `<img class="gondola" alt="" src="${G(ferrisSVG(rr, 'gondola'))}" style="left:${((R2 + Math.cos(a) * rr - 1.3) / (R2 * 2) * 100).toFixed(2)}%;top:${((R2 + Math.sin(a) * rr) / (R2 * 2) * 100).toFixed(2)}%;width:${(2.6 / (R2 * 2) * 100).toFixed(2)}%">`; }).join('');
@@ -1265,6 +1274,7 @@ function updateRoom(r, now) {
   const k = 1 - smooth(.3, 1, best);
   r.glow = r.glow.map((v, i) => lerp(v, lerp(r.sceneData.glowDefault[i], glow[i], k), .08));
   put(q(r, '.art'), '--glow', r.glow.map(Math.round).join(',')); // 作品のうしろの光（作品の層だけが使う）
+  { const gk = it?.work && glowK.has(it.work.id) ? lerp(1, glowK.get(it.work.id), k) : 1; r.glowK = lerp(r.glowK ?? gk, gk, .08); put(q(r, '.art'), '--glowk', r.glowK.toFixed(3)); }
   if (sy > top - vh * .5 && sy < top + len + vh * .5) currentRoom = r;
 }
 function pauseRoomVideos(r) { r.el.querySelectorAll('video').forEach((v) => { if (!v.paused) v.pause(); }); }

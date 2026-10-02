@@ -1303,6 +1303,13 @@ export function sceneJungle(W, stops, { birdGap = -1 } = {}) {
     for (const [dx, n, c] of [[-.34, 7, '#6f8a3a'], [.36, 6, '#7c9a40']]) { const x = cx + W * dx; if (clearOfWorks(W, stops, x - 3, 2) && clearOfWorks(W, stops, x + 3, 2)) { mid += reeds(x, 100, n, c); rings.push([x, 99.2, 3.6]); } } // 水草の根もとにも波紋
   }
   for (let i = 0; i < mw / 3; i++) { R(0, mw); R(30, 100); R(2, 6); } // （白い横線はやめた：チープに見えるので。乱数の並びだけ残す）
+  // 浅瀬の底：水の中にうっすら透けて見える小石（手前ほど大きく、はっきり。水の色にとけこむ淡い色で）
+  { const g = hrng(mw + 3.7), G = (a, b) => a + g() * (b - a);
+    for (let i = 0; i < mw / 2.2; i++) {
+      const y = G(66, 87), t = (y - 66) / 21, x = G(-3, mw + 3), w = G(.8, 2.2) * (.55 + t * .9), a = .2 + t * .28;
+      mid += `<ellipse cx="${n1(x)}" cy="${n1(y)}" rx="${n2(w)}" ry="${n2(w * .55)}" fill="${['#4e5a3a', '#5d6646', '#6b6a4e'][Math.floor(g() * 3)]}" opacity="${n2(a)}"/><ellipse cx="${n1(x - w * .2)}" cy="${n1(y - w * .18)}" rx="${n2(w * .55)}" ry="${n2(w * .26)}" fill="#c8d2a0" opacity="${n2(a * .55)}"/>`;
+    }
+  }
   mid += waterSheen(-5, mw + 5, 30, 100);
   // 生きもの：蓮の葉のカエル、水面のトンボとアメンボ、丸太のカメ、浅瀬のサギ、つるの先のカワセミ（作品の枠にはかからないところに）
   for (let s = 0; s < stops; s++) {
@@ -1567,6 +1574,24 @@ function campfire(x, y, s) {
   f += `<path d="M${n1(x - s * .55)} ${n1(y - s * .2)}Q${n1(x - s * .5)} ${n1(y - s * 1.1)} ${n1(x)} ${n1(y - s * 1.9)}Q${n1(x + s * .55)} ${n1(y - s * 1)} ${n1(x + s * .55)} ${n1(y - s * .2)}Z" fill="#e8874a"/><path d="M${n1(x - s * .3)} ${n1(y - s * .2)}Q${n1(x - s * .28)} ${n1(y - s * .85)} ${n1(x + s * .05)} ${n1(y - s * 1.3)}Q${n1(x + s * .32)} ${n1(y - s * .8)} ${n1(x + s * .3)} ${n1(y - s * .2)}Z" fill="#f2c56a"/>`;
   for (let k = 0; k < 5; k++) f += `<circle cx="${n1(x + R(-s * .5, s * .6))}" cy="${n1(y - s * R(1.8, 2.6))}" r="${n1(s * R(.05, .09))}" fill="#ffd36a" opacity=".85"/>`;
   return f;
+}
+// 浜の小物（作品の台の手前の砂に置く）：ヒトデ（5 本の腕、まん中が明るい）
+function beachStar(x, y, r, rot, c) {
+  const pts = Array.from({ length: 10 }, (_, i) => { const a = (i * 36 + rot - 90) * Math.PI / 180, rr = i % 2 ? r * .42 : r; return `${n2(x + Math.cos(a) * rr)},${n2(y + Math.sin(a) * rr * .62)}`; }).join(' ');
+  return `<ellipse cx="${n2(x + r * .15)}" cy="${n2(y + r * .3)}" rx="${n2(r * 1.05)}" ry="${n2(r * .32)}" fill="#7d6348" opacity=".18"/><polygon points="${pts}" fill="${c}" stroke="${c}" stroke-width="${n2(r * .22)}" stroke-linejoin="round"/>`
+    + `<ellipse cx="${n2(x - r * .08)}" cy="${n2(y - r * .08)}" rx="${n2(r * .32)}" ry="${n2(r * .22)}" fill="#f6c39a" opacity=".55"/>`;
+}
+// ホタテの貝殻：扇の形に、放射のすじを濃淡の細い面で（線は引かない）
+function scallop(x, y, w, rot, c) {
+  const ribs = [-.55, -.18, .18, .55].map((t) => `<path d="M${n2(x)} ${n2(y + w * .25)}L${n2(x + t * w * 1.05 - w * .07)} ${n2(y - w * .55 + Math.abs(t) * w * .35)}L${n2(x + t * w * 1.05 + w * .07)} ${n2(y - w * .55 + Math.abs(t) * w * .35)}Z" fill="#000" opacity=".07"/>`).join('');
+  return `<g transform="rotate(${n1(rot)} ${n2(x)} ${n2(y)})"><ellipse cx="${n2(x + w * .2)}" cy="${n2(y + w * .32)}" rx="${n2(w * 1.05)}" ry="${n2(w * .25)}" fill="#7d6348" opacity=".18"/>`
+    + `<path d="M${n2(x - w)} ${n2(y)}Q${n2(x - w * .9)} ${n2(y - w * .95)} ${n2(x)} ${n2(y - w * 1.02)}Q${n2(x + w * .9)} ${n2(y - w * .95)} ${n2(x + w)} ${n2(y)}Q${n2(x)} ${n2(y + w * .45)} ${n2(x - w)} ${n2(y)}Z" fill="${c}"/>${ribs}`
+    + `<path d="M${n2(x - w * .28)} ${n2(y + w * .1)}H${n2(x + w * .28)}L${n2(x + w * .2)} ${n2(y + w * .38)}H${n2(x - w * .2)}Z" fill="${c}"/><path d="M${n2(x - w * .7)} ${n2(y - w * .45)}Q${n2(x - w * .3)} ${n2(y - w * .88)} ${n2(x + w * .1)} ${n2(y - w * .9)}Q${n2(x - w * .3)} ${n2(y - w * .7)} ${n2(x - w * .7)} ${n2(y - w * .45)}Z" fill="#fff" opacity=".35"/></g>`;
+}
+// シーグラス：波に磨かれた、すりガラスの小さなかけら
+function seaGlass(x, y, w, c) {
+  return `<ellipse cx="${n2(x + w * .2)}" cy="${n2(y + w * .35)}" rx="${n2(w * 1.1)}" ry="${n2(w * .3)}" fill="#7d6348" opacity=".16"/><path d="M${n2(x - w)} ${n2(y)}Q${n2(x - w * .8)} ${n2(y - w * .7)} ${n2(x + w * .1)} ${n2(y - w * .6)}Q${n2(x + w * 1.1)} ${n2(y - w * .4)} ${n2(x + w)} ${n2(y + w * .1)}Q${n2(x + w * .2)} ${n2(y + w * .5)} ${n2(x - w)} ${n2(y)}Z" fill="${c}" opacity=".88"/>`
+    + `<ellipse cx="${n2(x - w * .3)}" cy="${n2(y - w * .35)}" rx="${n2(w * .35)}" ry="${n2(w * .14)}" fill="#fff" opacity=".55"/>`;
 }
 // カニ（上から見た形）
 function crab(x, y, s, c = '#e07a5a') {
@@ -1960,6 +1985,16 @@ export function sceneCove(W, stops, { night = false } = {}) {
     const Zb = [Z[0], [cx - 16.5, 58, cx + 16.5, 99], Z[2], [nx - 16.5, 58, nx + 16.5, 99]];
     if (s % 3 === 1) mid += guard(Zb, (k) => rowboat(gx + R(-3, 3), R(94, 97), R(16, 20) * k, pick(['#d9a06a', '#c98a7a', '#8fb0b8'])), { min: .6 });
     if (s % 3 === 2) mid += guard(Z, () => campfire(gx + R(-4, 4), R(95, 98), R(1.8, 2.2)), { min: 1 });
+  }
+  // 作品の台の手前の砂：ヒトデ、ホタテの貝殻、波に磨かれたシーグラス（スマホの縦長の画面でも、台の足もとに見えるところ）。瓶のまわりはあける
+  for (let s = 1; s < stops; s++) {
+    const cx = at(W, FACTORS.mid)(s, W / 2), g = hrng(cx * 1.7 + s), G = (a, b) => a + g() * (b - a), span = Math.min(W * .34, 20);
+    const spots = [];
+    const free = (x) => Math.abs(x - bottleX) > 7 && spots.every((q) => Math.abs(q - x) > 4.2);
+    const put = (fn) => { for (let t = 0; t < 6; t++) { const x = cx + G(-span, span); if (free(x)) { spots.push(x); mid += fn(x, G(93.5, 98.5)); return; } } };
+    put((x, y) => beachStar(x, y, G(1.7, 2.3), G(0, 72), ['#e08a6a', '#d9775a', '#e3a06a'][Math.floor(g() * 3)]));
+    for (let k = 0; k < 3; k++) put((x, y) => scallop(x, y, G(1.2, 1.7), G(-25, 25), ['#f3e6cf', '#efd2c4', '#e9dcc0'][Math.floor(g() * 3)]));
+    if (g() < .85) put((x, y) => seaGlass(x, y, G(.7, 1), ['#9cc8b6', '#8fb4cf', '#b8d6a6'][Math.floor(g() * 3)]));
   }
   // 手前：浜辺の草と流木（作品と作品のあいだ）
   for (let s = 0; s < stops - 1; s++) {

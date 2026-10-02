@@ -179,6 +179,7 @@ body.loaded .scroll-cue.used { opacity: 0; visibility: hidden; transition: opaci
 .work.near .halo { opacity: 1; }
 .room.moonlit .work .halo { opacity: .75; }
 .room.moonlit .work.near .halo { opacity: 1; }
+.scene-night .work .halo { opacity: calc(.45 * var(--glowk, 1)); } .scene-night .work.near .halo { opacity: var(--glowk, 1); } /* 夜の庭：灰色や暗い絵は、うしろの光も控えめに */
 .work .deco { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; overflow: visible; }
 .work .deco.top { bottom: 100%; width: 150%; height: 14vh; }
 .work .deco.under { top: calc(100% - 1px); width: 130%; height: 16vh; }
@@ -189,10 +190,10 @@ body.loaded .scroll-cue.used { opacity: 0; visibility: hidden; transition: opaci
 .frame-lamp .work::before { content: ""; position: absolute; left: -2.6vh; right: -2.6vh; top: -6vh; bottom: -1.6vh; border-radius: 50vh 50vh 1vh 1vh; background: rgba(253, 244, 234, .35); box-shadow: inset 0 0 0 .5vh rgba(199, 179, 230, .6); pointer-events: none; }
 .frame-lamp .work .deco.lamp { width: 12vh; height: 16vh; }
 .frame-lamp .work .halo { top: 30%; }
-.frame-lightbox .work .canvas { border: 1.4vh solid #15121a; box-shadow: 0 0 0 .35vh rgba(var(--glow), .9), 0 0 6vh rgba(var(--glow), .55), 0 0 16vh rgba(var(--glow), .3); }
+.frame-lightbox .work .canvas { border: 1.4vh solid #15121a; box-shadow: 0 0 0 .35vh rgba(var(--glow), calc(.9 * var(--glowk, 1))), 0 0 6vh rgba(var(--glow), calc(.55 * var(--glowk, 1))), 0 0 16vh rgba(var(--glow), calc(.3 * var(--glowk, 1))); } /* --glowk：灰色や暗い絵ほど光を弱く */
 .work.near .canvas { box-shadow: 0 0 0 0 transparent, 0 3vh 7vh rgba(0, 0, 0, .35), 0 0 10vh rgba(var(--glow), .45); }
 .frame-hang .work.near .canvas { box-shadow: 0 3vh 6vh rgba(20, 30, 10, .35), 0 0 9vh rgba(var(--glow), .45); }
-.frame-lightbox .work.near .canvas { box-shadow: 0 0 0 .35vh rgba(var(--glow), 1), 0 0 8vh rgba(var(--glow), .7), 0 0 20vh rgba(var(--glow), .4); }
+.frame-lightbox .work.near .canvas { box-shadow: 0 0 0 .35vh rgba(var(--glow), calc(.5 + .5 * var(--glowk, 1))), 0 0 8vh rgba(var(--glow), calc(.7 * var(--glowk, 1))), 0 0 20vh rgba(var(--glow), calc(.4 * var(--glowk, 1))); }
 .work.pending .crate { width: 30vh; height: 36vh; display: grid; place-content: center; text-align: center; gap: 6px; color: #5a4128;
   background: repeating-linear-gradient(90deg, rgba(0, 0, 0, .04) 0 2px, transparent 2px 9px), #c9a878; box-shadow: 0 2vh 4vh rgba(0, 0, 0, .3); position: relative; }
 .work.pending .crate::before, .work.pending .crate::after { content: ""; position: absolute; left: 50%; width: 38%; height: 2.4vh; background: rgba(240, 225, 190, .85); transform: translateX(-50%) rotate(-3deg); }
@@ -892,6 +893,12 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 /* スクロールに合わせて動く生きもの（鯉・カモメ・蝶）。奥の層と同じ速さで流れる面の上を、歩くと先へ進む */
 .plane.drift { width: 100%; overflow: visible; }
 .swimmer { position: absolute; left: 0; top: 0; will-change: transform; }
+/* 水辺の水面を漂う蓮の花びら：横へゆっくり流れて戻り、小さく揺れる（花びらの形と、水に落ちる淡い影） */
+.petal { position: absolute; aspect-ratio: 1.7; border-radius: 60% 60% 55% 55% / 85% 85% 30% 30%; background: radial-gradient(120% 90% at 40% 20%, #fbe1e7, #f0b9c6 70%); box-shadow: .15vh .25vh .3vh rgba(30, 50, 30, .18); transform: rotate(var(--r)); animation: petaldrift 30s ease-in-out infinite alternate, petalbob 4s ease-in-out infinite alternate; pointer-events: none; }
+@keyframes petaldrift { from { translate: 0 0; } to { translate: var(--dx) .4vh; } }
+@keyframes petalbob { from { rotate: -8deg; } to { rotate: 8deg; } }
+.room:not(.live) .petal { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .petal { animation: none; } }
 .swimmer svg, .swimmer img { display: block; width: 100%; height: auto; }
 .swimmer.koi { opacity: 1; }
 /* 鯉：中のひれは動かさない（SVG の中でアニメすると 1 コマごとに描き直しになって重い）。泳ぎの揺れは要素ごとの回転だけ（合成だけで済む） */

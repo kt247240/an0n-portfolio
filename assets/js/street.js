@@ -123,12 +123,40 @@ export const PROPS = {
       <g transform="rotate(-10 44 14)"><rect x="32" y="9" width="24" height="3.2" fill="#df7418"/><rect x="33" y="12.2" width="22" height="3" fill="#d9c49f"/><rect x="34" y="15.2" width="20" height="3" fill="#385871"/></g>
       <circle cx="60" cy="16" r="3.6" fill="#141210"/><circle cx="60" cy="16" r="1.2" fill="#df7418"/></svg>`,
   },
+  // 電線に掛かったスニーカー：靴ひもを結んで電線にかけた一足。かかとの口がひもで吊られ、つま先が下へ（重さのかかる向き）
+  // 色は入口の案内人の靴と同じ深い緑に、生成りのソール。光は左上から
   sneakers: {
     w: 12, h: 30, hang: true,
-    svg: () => `<svg viewBox="0 0 60 150"><path d="M-40 4Q30 14 100 2" stroke="#1d1a14" stroke-width="1.2" fill="none"/>
-      <path d="M28 9L20 96M32 9L40 104" stroke="#f1e6cf" stroke-width="1.1"/>
-      <g transform="rotate(12 20 110)"><path d="M8 96h20q8 0 10 10l2 8H6Z" fill="#2f7a5c"/><rect x="5" y="112" width="36" height="6" rx="2" fill="#efe3c8"/><path d="M14 100h10M13 104h12" stroke="#efe3c8" stroke-width="1.4"/></g>
-      <g transform="rotate(-8 40 118)"><path d="M28 104h20q8 0 10 10l2 8H26Z" fill="#2f7a5c"/><rect x="25" y="120" width="36" height="6" rx="2" fill="#efe3c8"/><path d="M34 108h10M33 112h12" stroke="#efe3c8" stroke-width="1.4"/></g></svg>`,
+    svg: () => {
+      // 靴 1 つ（横から見て、つま先が右）。原点はかかとの口の後ろの上
+      const shoe = (dark) => {
+        const U = dark ? ['#25624a', '#1d503c', '#173f30'] : ['#2f7a5c', '#276a4f', '#1f5a43'];
+        return `<path d="M1 12.2Q0 12.4 0 14.6Q0 17.2 3 17.2H29.6Q33.4 17.2 33.4 14.6Q33.4 12.6 30.6 12.2Z" fill="#ece0c6"/>`
+          + `<path d="M0.4 16Q1 17.2 3 17.2H29.6Q32.6 17.2 33.2 15.8Z" fill="#cbbb9a"/><path d="M0.6 13.4H33.1V14.1H0.6Z" fill="#d9cbab"/>`
+          + `<path d="M1.6 12.4V3.6Q1.6 0 5 0H10.6Q12.6 0 13.6 1.8L16.8 6Q24.4 7 29.2 9.2Q32 10.6 31.4 12.4Z" fill="${U[0]}"/>`
+          + `<path d="M1.6 9.6Q12 11.2 31.6 11.4L31.4 12.4H1.6Z" fill="${U[1]}"/>`
+          + `<path d="M21.6 7.6Q27.6 8.4 30.4 10.2Q31.8 11.2 31.4 12.4H21.4Q22.6 10 21.6 7.6Z" fill="${U[1]}"/>`
+          + `<path d="M1.6 12.4V5.4Q5.2 5.6 7.4 8.2L8.4 12.4Z" fill="${U[2]}"/>`
+          + `<path d="M7.6 11Q15 6.6 24.4 8.4L24.6 9.6Q16 8.6 9.2 12.2Z" fill="#efe3c8"/>`
+          + `<path d="M10.6 0Q12.8 -3 15.8 -1.4L17 5.6L13.6 1.8Q12.6 0 10.6 0Z" fill="${dark ? '#2d7457' : '#3a8b69'}"/>`
+          + `<ellipse cx="6.2" cy=".5" rx="4.4" ry="1.1" fill="${U[2]}"/>`
+          + `<path d="M2.6 1.2Q5 .2 9.8 .6L10.4 1.6Q5.4 1.2 2.6 2.6Z" fill="#5aa585" opacity=".55"/>`
+          // ほどけたひもの先が、ひと房たれる
+          + `<path d="M16.4 5.2Q19.6 7.6 18.6 11.4Q18 13.6 19.4 15.2" stroke="#e9dcbf" stroke-width=".7" fill="none" stroke-linecap="round"/><path d="M15.8 5.6Q17 9 15.6 12" stroke="#d9cbab" stroke-width=".6" fill="none" stroke-linecap="round"/>`
+          + [[12.6, 1.6], [14.2, 3], [15.6, 4.4]].map(([x, y]) => `<path d="M${x - 1.2} ${y - .9}L${x + 1.6} ${y + .5}L${x + 1.3} ${y + 1.1}L${x - 1.5} ${y - .3}Z" fill="#efe3c8"/><circle cx="${x - 1.1}" cy="${y - .4}" r=".42" fill="${U[2]}"/>`).join('');
+      };
+      // 結んだひも：電線から 2 本に分かれて、それぞれの靴のかかとの口へ
+      const knot = [30, 5.2];
+      const lace = (x, y, bend) => `<path d="M${knot[0] - .5} ${knot[1]}Q${(knot[0] + x) / 2 + bend} ${(knot[1] + y) / 2} ${x} ${y}" stroke="#e9dcbf" stroke-width=".9" fill="none" stroke-linecap="round"/>`;
+      return `<svg viewBox="0 0 60 150"><path d="M-40 4Q30 14 100 2" stroke="#1d1a14" stroke-width="1.2" fill="none"/>`
+        + lace(25.4, 60, -3) + lace(34.6, 63, 3)
+        // 2 足ともつま先が下、ソールは外側。奥の 1 足（右・少し暗い）は鏡に返して、少し回す
+        + `<g transform="translate(34.6 63) scale(-1 1) rotate(76) translate(-6.2 -.4)">${shoe(true)}</g>`
+        + `<g transform="translate(25.4 60) rotate(82) translate(-6.2 -.4)">${shoe(false)}</g>`
+        // 電線に巻きついた結び目
+        + `<ellipse cx="${knot[0]}" cy="${knot[1] + .2}" rx="1.7" ry="1.4" fill="#e9dcbf"/><ellipse cx="${knot[0] - .4}" cy="${knot[1] - .2}" rx=".8" ry=".6" fill="#f6eedb"/>`
+        + `</svg>`;
+    },
   },
 };
 
