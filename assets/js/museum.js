@@ -388,6 +388,50 @@ const rooms = ROOMS.map((room, ri) => {
   return { room, ri, el, items, stops: items.length + 1, c: 0, glow: [255, 230, 200], sceneData: null, live: false, capIdx: -2 };
 });
 
+// 作品の台の小物：台ごとに少しずつ違うものを、台の足もとと側面に（作品の上には何も置かない）。
+// 位置は台の箱に対する %（横）と、下からの %（縦）。大きさは高さ（vh か台の高さの %）で、形は絵の縦横比のまま
+const PLINTH_X = (() => {
+  // 高さは「台の上端を越えない」ように抑える（台の低い広い画面で、作品に重ならないように）
+  const box = (vb, body, l, b, h) => { const [, , vw2, vh2] = vb.split(' ').map(Number); return `<svg viewBox="${vb}" style="left:${l}%;bottom:${b}%;height:min(${h}, ${94 - b}%);aspect-ratio:${(vw2 / vh2).toFixed(3)}" aria-hidden="true">${body}</svg>`; };
+  const leaf = (x, y, s, a, c) => `<path transform="translate(${x} ${y}) rotate(${a}) scale(${s})" d="M0 0C-3.2 -1.6 -3.4 -6 0 -7.4C3.4 -6 3.2 -1.6 0 0Z" fill="${c}"/>`;
+  // つた（樽の側面をはい上がる）
+  const ivy = (flip) => `<g${flip ? ' transform="translate(24 0) scale(-1 1)"' : ''}><path d="M12 70C6 58 16 48 10 36C5 26 15 16 9 4" stroke="#4a5a2a" stroke-width=".9" fill="none" stroke-linecap="round"/>`
+    + [[11, 64, 1.5, -40, '#3f6a35'], [9, 56, 1.3, 50, '#4f7d3c'], [13, 49, 1.4, -55, '#6b9447'], [11, 42, 1.2, 35, '#3f6a35'], [7, 34, 1.3, -30, '#4f7d3c'], [12, 26, 1.1, 60, '#6b9447'], [12, 19, 1, -50, '#4f7d3c'], [9, 11, .9, 40, '#6b9447'], [9, 5, .8, -20, '#3f6a35']].map(([x, y, sc, a, c]) => leaf(x, y, sc, a, c)).join('') + '</g>';
+  const lantern = `<path d="M3 6Q7 -1 11 6" stroke="#3a3a36" stroke-width=".7" fill="none"/><rect x="3" y="5.4" width="8" height="1.4" rx=".4" fill="#3a3a36"/><circle cx="7" cy="13.4" r="7" fill="#ffd27a" opacity=".16"/><rect x="2.6" y="6.6" width="8.8" height="12.6" rx="2" fill="#dfe9d8" opacity=".38"/><ellipse cx="7" cy="14.6" rx="1.3" ry="2.2" fill="#ffcf73"/><ellipse cx="7" cy="14.8" rx=".6" ry="1.2" fill="#fff4cf"/><rect x="5.8" y="16.6" width="2.4" height="2.6" fill="#efe3c8"/><rect x="3.6" y="7.4" width="1.2" height="10.6" rx=".6" fill="#fff" opacity=".35"/>`;
+  const can = `<path d="M8 6H22L21 20H9Z" fill="#8a948f"/><path d="M8 6H11L10.4 20H9Z" fill="#b5bdb7"/><path d="M21 9L29 4L29.6 5.2L21.4 11.4Z" fill="#7a847f"/><ellipse cx="29.2" cy="4.4" rx="1.4" ry="1.8" fill="#6d7772"/><path d="M8.6 8Q2 8 3.4 14Q4.2 17 8.8 16.4" stroke="#7a847f" stroke-width="1.6" fill="none"/><rect x="7.6" y="5" width="14.8" height="1.6" rx=".6" fill="#6d7772"/>`;
+  const fern = `${[[-58, 1.5, '#4f7d3c'], [-30, 1.7, '#6b9447'], [-8, 1.8, '#3f6a35'], [16, 1.7, '#5a8a48'], [40, 1.5, '#6b9447'], [62, 1.3, '#4f7d3c']].map(([a, sc, c]) => `<g transform="translate(12 18) rotate(${a})">${[0, 1, 2, 3].map((k) => leaf(k % 2 ? 1.2 : -1.2, -2 - k * 3.2, sc * (1 - k * .16), k % 2 ? 50 : -50, c)).join('')}</g>`).join('')}`;
+  const pots = `<path d="M2 9H12L11 18H3Z" fill="#b7704a"/><path d="M1.4 7.6H12.6V9.6H1.4Z" fill="#c98a5e"/><path d="M2 9H4L3.6 18H3Z" fill="#d49a70" opacity=".6"/><g transform="rotate(-24 16 12)"><path d="M10 8H19L18.2 16H10.8Z" fill="#a8623f"/><path d="M9.4 6.8H19.6V8.6H9.4Z" fill="#bf7f55"/></g><ellipse cx="9" cy="18.2" rx="9" ry="1" fill="#000" opacity=".18"/>`;
+  // 浜：ロープの束、ガラスの浮き球、流木の板、ヒトデ、フジツボ
+  const rope = `<ellipse cx="13" cy="7.6" rx="12" ry="2.6" fill="#8a7352"/>${[0, 1, 2, 3].map((k) => `<ellipse cx="13" cy="${(7 - k * 1.2).toFixed(1)}" rx="${(11 - k * 1.6).toFixed(1)}" ry="${(2.4 - k * .3).toFixed(1)}" fill="${k % 2 ? '#c2a77a' : '#b39466'}"/><ellipse cx="13" cy="${(6.6 - k * 1.2).toFixed(1)}" rx="${(10.6 - k * 1.6).toFixed(1)}" ry=".5" fill="#e0c99c" opacity=".55"/>`).join('')}<ellipse cx="13" cy="2.6" rx="3.4" ry="1" fill="#6f5a3e"/><path d="M23 6Q27 7 26 9.6" stroke="#b39466" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  const float = (c1, c2) => `<path d="M7 0V9" stroke="#b39466" stroke-width=".8"/><circle cx="7" cy="16" r="7" fill="${c1}"/><circle cx="7" cy="16" r="7" fill="url(#none)"/><path d="M0.6 14.4Q7 11.6 13.4 14.4M0.4 17.6Q7 20.6 13.6 17.6M7 9V23M3 10.6Q1 16 3.2 21.4M11 10.6Q13 16 10.8 21.4" stroke="#8a7352" stroke-width=".55" fill="none" opacity=".85"/><ellipse cx="4.6" cy="13" rx="2" ry="1.4" fill="#fff" opacity=".4"/><circle cx="9.6" cy="19" r="2.8" fill="${c2}" opacity=".35"/>`;
+  const plank = `<g transform="rotate(8 5 40)"><rect x="2" y="2" width="6" height="38" rx="2" fill="#a8977f"/><rect x="2" y="2" width="2" height="38" rx="1" fill="#c3b49b"/><ellipse cx="5" cy="14" rx="1" ry="1.8" fill="#8a7962"/><rect x="2" y="30" width="6" height="1" fill="#8a7962" opacity=".5"/></g>`;
+  const star = (c) => { const pts = Array.from({ length: 10 }, (_, k) => { const a = (k * 36 - 90) * Math.PI / 180, rr = k % 2 ? 2.2 : 5; return `${(6 + Math.cos(a) * rr).toFixed(2)},${(6 + Math.sin(a) * rr).toFixed(2)}`; }).join(' '); return `<polygon points="${pts}" fill="${c}" stroke="${c}" stroke-width="1.1" stroke-linejoin="round"/><circle cx="6" cy="6" r="1.4" fill="#f4c19a" opacity=".6"/>`; };
+  const barn = Array.from({ length: 9 }, (_, k) => { const x = 2 + (k * 37 % 16), y = 2 + (k * 23 % 7), r = .7 + (k % 3) * .35; return `<circle cx="${x}" cy="${y}" r="${r.toFixed(2)}" fill="#d9d1bf"/><circle cx="${x}" cy="${(y - r * .2).toFixed(2)}" r="${(r * .4).toFixed(2)}" fill="#8f8674"/>`; }).join('');
+  // 夜の庭：観葉植物の鉢、立てかけたスケートボード、レコードの束、スプレー缶
+  const monstera = `<path d="M8 22H22L20.4 34H9.6Z" fill="#26222c"/><path d="M7.4 21H22.6V23.2H7.4Z" fill="#b89a5a" opacity=".8"/>`
+    + [[15, 22, -50, 2.2, '#2f5a44'], [15, 22, -15, 2.5, '#3d6f52'], [15, 22, 22, 2.3, '#2f5a44'], [15, 22, 55, 2, '#3d6f52']].map(([x, y, a, sc, c]) => `<g transform="translate(${x} ${y}) rotate(${a})"><path d="M0 0V-7" stroke="#2b4a38" stroke-width=".7"/><path transform="translate(0 -7) scale(${sc})" d="M0 0C-3.6 -.6 -4.4 -5 0 -6.6C4.4 -5 3.6 -.6 0 0Z" fill="${c}"/><path transform="translate(0 -7) scale(${sc})" d="M-2.6 -3.4L-1 -3M2.6 -3.6L1 -3.1" stroke="#1f3a2c" stroke-width=".5"/></g>`).join('');
+  const skate = `<g transform="rotate(-10 6 46)"><rect x="3" y="2" width="6" height="40" rx="3" fill="#1d1a22"/><rect x="3.6" y="6" width="4.8" height="32" rx="2.4" fill="#d9583c"/><path d="M3.6 14H8.4V20H3.6Z" fill="#f0c45c" opacity=".85"/><rect x="1.6" y="7" width="8.8" height="1.4" rx=".6" fill="#8a8a92"/><rect x="1.6" y="35" width="8.8" height="1.4" rx=".6" fill="#8a8a92"/><circle cx="1.8" cy="7.7" r="1.3" fill="#e8d9b8"/><circle cx="10.2" cy="7.7" r="1.3" fill="#e8d9b8"/><circle cx="1.8" cy="35.7" r="1.3" fill="#e8d9b8"/><circle cx="10.2" cy="35.7" r="1.3" fill="#e8d9b8"/></g>`;
+  const records = `<g transform="rotate(-8 4 16)"><rect x="2" y="2" width="13" height="13" fill="#c94c3c"/><circle cx="8.5" cy="8.5" r="3" fill="#1a1720"/><circle cx="8.5" cy="8.5" r=".9" fill="#e8c46a"/></g><g transform="rotate(6 14 16)"><rect x="9" y="3" width="13" height="13" fill="#3c6aa0"/><path d="M9 3H22V7H9Z" fill="#f0e6d0" opacity=".85"/></g><rect x="5" y="8" width="13" height="8" fill="#2a2632"/><circle cx="11.5" cy="8.4" r="5.2" fill="#121017"/><circle cx="11.5" cy="8.4" r="1.5" fill="#d9a35a"/><ellipse cx="12" cy="16.2" rx="11" ry=".8" fill="#000" opacity=".25"/>`;
+  const spray = `<rect x="1" y="4" width="4" height="11" rx="1" fill="#7fb8b0"/><rect x="1" y="4" width="1.2" height="11" rx=".6" fill="#b6ddd6"/><path d="M1.6 4Q3 1.8 4.4 4Z" fill="#cfd4d6"/><rect x="2.4" y="1" width="1.2" height="1.6" fill="#1a1720"/><rect x="1" y="8" width="4" height="2.4" fill="#f0c45c"/>`;
+  return {
+    easel: [
+      box('0 0 24 70', ivy(false), 25.5, 6, '70%') + box('0 0 14 22', lantern, 82, 4, '8vh'),
+      box('0 0 24 70', ivy(true), 74.5, 6, '64%') + box('0 0 30 20', can, 12, 4, '6.6vh'),
+      box('0 0 24 18', fern, 17, 4, '7.6vh') + box('0 0 24 18', fern, 77, 4, '6.4vh') + box('0 0 20 19', pots, 86, 4, '6vh'),
+    ],
+    post: [
+      box('0 0 28 11', rope, 80, 3, '5vh') + box('0 0 14 24', float('#6fa6a0', '#2f6a6a'), 13, 44, '10vh'),
+      box('0 0 10 42', plank, 5, 3, '70%') + box('0 0 12 12', star('#e07a5a'), 70, 14, '5vh'),
+      box('0 0 18 11', barn, 22, 9, '4.6vh') + box('0 0 14 24', float('#8fb4cf', '#3a5f86'), 87, 46, '9vh') + box('0 0 28 11', rope, 14, 3, '4.4vh'),
+    ],
+    lightbox: [
+      box('0 0 30 34', monstera, 10, 4, '15vh'),
+      box('0 0 12 46', skate, 83, 4, '17vh') + box('0 0 6 16', spray, 16, 4, '5vh'),
+      box('0 0 26 18', records, 11, 4, '8vh') + box('0 0 6 16', spray, 85, 4, '4.8vh'),
+    ],
+  };
+})();
+const plinthExtras = (frame, i) => (PLINTH_X[frame] ? `<div class="deco-x" aria-hidden="true">${PLINTH_X[frame][i % PLINTH_X[frame].length]}</div>` : '');
 function frameDeco(kind) {
   switch (kind) {
     // 森：太い枝から縄で吊るす。枝には樹皮の筋と節、苔、葉の小枝。縄は撚りと結び目
@@ -522,7 +566,7 @@ function buildRoomScene(r) {
       el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), gradeOf(r.room.scene))}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w)}</button>`;
       // 台座・柱が、作品の大きさによらず地面（遊歩道・桟橋・砂浜）まで届くように
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
-      if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
+      if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.insertAdjacentHTML('beforeend', gradeColors(plinthExtras(r.room.frame, i), gradeOf(r.room.scene))); const dx = el.querySelector('.deco-x'); if (dx) dx.style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
       // 作品の台の正面に掛ける画面つきプレーヤー（Deep In. の樽の台）
       const onPlinth = PLINTH_MUSIC[w.id];
       if (onPlinth && groundY) {

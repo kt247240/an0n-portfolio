@@ -628,6 +628,11 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 /* 夕凪の浜：流木の柱に吊るす額（作品は切り抜かない） */
 .frame-post .work .canvas { border: 1.4vh solid #e2d3bc; box-shadow: 0 2.4vh 4vh rgba(60, 40, 30, .28); }
 .frame-post .work .deco.under { top: calc(100% - 1px); width: 124%; height: 16vh; }
+/* 台の小物（台ごとに違う）：台と同じ箱に、足もとと側面に置く */
+.work .deco-x { position: absolute; left: 50%; top: calc(100% - 1px); width: 130%; height: 16vh; transform: translateX(-50%); pointer-events: none; z-index: 1; }
+.work:has(.deco-x) .canvas { z-index: 2; } /* 小物は作品より必ず奥に */
+.frame-post .work .deco-x { width: 124%; }
+.deco-x > svg { position: absolute; display: block; overflow: visible; transform: translateX(-50%); }
 .frame-post .work .deco.top.post { bottom: 100%; width: 124%; height: 8vh; }
 .frame-post .work .ground-shadow { top: calc(100% + 12.6vh); width: 104%; height: 3vh; opacity: .5; } /* 台の根もとは砂に埋まっているので、影は薄く、砂の盛り上がりのすぐ下に */
 .ib-drift { animation: ibdrift 18s linear infinite both; }
