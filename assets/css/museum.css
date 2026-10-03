@@ -46,7 +46,7 @@ img, video { display: block; }
 .swim { animation: swim 22s linear infinite alternate; }
 .float { animation: float 6s ease-in-out infinite alternate; }
 @keyframes sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
-@keyframes hang { from { transform: perspective(140vh) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)) rotate(-1.6deg); } to { transform: perspective(140vh) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)) rotate(1.6deg); } }
+@keyframes hang { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } } /* 森の吊るした額は傾けない（吊り元を軸に回ると、奥へ倒れて小さく見える） */
 @keyframes bob { from { transform: translateY(-.25px); } to { transform: translateY(.25px); } }
 @keyframes shimmer { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
 @keyframes beam { from { opacity: .45; } to { opacity: 1; } }
