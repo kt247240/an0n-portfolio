@@ -431,7 +431,8 @@ const PLINTH_X = (() => {
     ],
   };
 })();
-const plinthExtras = (frame, i) => (PLINTH_X[frame] ? `<div class="deco-x" aria-hidden="true">${PLINTH_X[frame][i % PLINTH_X[frame].length]}</div>` : '');
+const plinthExtras = (frame, i) => (PLINTH_X[frame] && frame !== 'lightbox' ? // 夜の庭の台は小物を置かない（すっきり）
+   `<div class="deco-x" aria-hidden="true">${PLINTH_X[frame][i % PLINTH_X[frame].length]}</div>` : '');
 function frameDeco(kind) {
   switch (kind) {
     // 森：太い枝から縄で吊るす。枝には樹皮の筋と節、苔、葉の小枝。縄は撚りと結び目
@@ -773,7 +774,7 @@ function lowriderSVG() {
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
   // 遠くを横切る乗りもの（奥の層と一緒に流れる）：夕凪は島々のふもとを走る列車、夜の庭は対岸の街の前を流す旧車
-  if (D.sunpath && (r.room.scene === 'cove' || r.room.scene === 'night')) {
+  if (D.sunpath && r.room.scene === 'night') { // （夕凪の列車はやめた）
     const hz = D.sunpath[1], fw = W + (r.stops - 1) * W * FACTORS.far + 40, train = r.room.scene === 'cove';
     const w = train ? 44 : 16, h = train ? 3.1 : 8, top = train ? hz - .2 - h : hz + 1.4 - h * .5; // 列車は水平線の上（島のふもと）、車は対岸の岸ぞい（水面に灯りが映る）
     S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living crosser ${train ? 'train' : 'lowrider'}" style="top:${(top * U).toFixed(1)}px;width:${w}vh;height:${h}vh;--x0:${(-w * 1.2 * U).toFixed(0)}px;--x1:${((fw + 4) * U).toFixed(0)}px;--dur:${(fw / (train ? 7 : 11)).toFixed(1)}s">${train ? trainSVG() : lowriderSVG()}</div>`, gradeOf(r.room.scene)));
