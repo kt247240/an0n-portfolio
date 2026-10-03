@@ -46,7 +46,7 @@ img, video { display: block; }
 .swim { animation: swim 22s linear infinite alternate; }
 .float { animation: float 6s ease-in-out infinite alternate; }
 @keyframes sway { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
-@keyframes hang { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+@keyframes hang { from { transform: perspective(140vh) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)) rotate(-1.6deg); } to { transform: perspective(140vh) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)) rotate(1.6deg); } }
 @keyframes bob { from { transform: translateY(-.25px); } to { transform: translateY(.25px); } }
 @keyframes shimmer { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
 @keyframes beam { from { opacity: .45; } to { opacity: 1; } }
@@ -126,6 +126,9 @@ body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; 
   mask-composite: intersect; }
 .frame-spot .work .canvas { border: .7vh solid #1a1712; box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5); }
 .frame-spot .work.near .canvas { box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5), 0 0 12vh rgba(var(--glow), .35); }
+/* 作品の傾き（目の前の作品だけ）。離れると、ゆっくり正面に戻る */
+.room .work .canvas { --tx: 0deg; --ty: 0deg; transform: perspective(140vh) rotateX(var(--tx)) rotateY(var(--ty)); transition: box-shadow .8s, transform .6s ease-out; }
+.room .work.near .canvas { --tx: var(--rx, 0deg); --ty: var(--ry, 0deg); transition: box-shadow .8s, transform .15s linear; }
 .frame-spot .work .deco.spot { width: 30vh; height: 20vh; margin-bottom: 1.9vh; }
 .scene-attic .room-title { text-shadow: 0 2px 24px rgba(0, 0, 0, .7); }
 
@@ -917,6 +920,15 @@ body.choosing .loader-choose { opacity: 1; transform: none; pointer-events: auto
 @keyframes petaldrift { from { translate: 0 0; } to { translate: var(--dx) .4vh; } }
 @keyframes petalbob { from { rotate: -8deg; } to { rotate: 8deg; } }
 .room:not(.live) .petal { animation-play-state: paused; }
+/* 遠くを横切る乗りもの：ゆっくり端から端へ、通り過ぎたらしばらく間をあけて、また */
+.crosser { position: absolute; left: 0; pointer-events: none; translate: var(--x0) 0; animation: cross var(--dur) linear infinite; }
+.crosser svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.crosser.train { animation-delay: -4s; }
+.crosser.lowrider { animation-duration: calc(var(--dur) * 1.6); animation-delay: -2s; }
+.crosser.lowrider .lr-refl { animation: lrrefl 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 0; }
+@keyframes cross { 0% { translate: var(--x0) 0; } 62% { translate: var(--x1) 0; } 100% { translate: var(--x1) 0; } }
+@keyframes lrrefl { from { transform: scaleX(.8); opacity: .7; } to { transform: scaleX(1.3); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .crosser { animation: none; display: none; } }
 @media (prefers-reduced-motion: reduce) { .petal { animation: none; } }
 .swimmer svg, .swimmer img { display: block; width: 100%; height: auto; }
 .swimmer.koi { opacity: 1; }

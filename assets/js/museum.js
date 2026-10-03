@@ -751,8 +751,33 @@ function tickClocks() {
   document.querySelectorAll('.wclock').forEach((c) => { c.querySelector('.mh').style.transform = `rotate(${(m * 6).toFixed(1)}deg)`; c.querySelector('.hh').style.transform = `rotate(${(h * 30).toFixed(1)}deg)`; });
   clearTimeout(tickClocks.t); tickClocks.t = setTimeout(tickClocks, 20000);
 }
+// 夕凪の列車：クリーム色と青緑の帯の 5 両編成。窓に灯り（夕方なので、あたたかく）
+function trainSVG() {
+  const car = (x, front) => `<g transform="translate(${x} 0)"><path d="M0 .9H${front ? 9.6 : 11.2}${front ? 'Q11.4 .9 11.6 2.4V3.6' : 'V3.6'}H0Z" fill="#e8dcc6"/><path d="M0 2.5H${front ? 11.6 : 11.2}V3.3H0Z" fill="#4f8a86"/><path d="M0 .5H${front ? 9.4 : 11.2}V1H0Z" fill="#9aa0a2"/>`
+    + [1, 3.4, 5.8, 8.2].filter((wx) => !front || wx < 8).map((wx) => `<rect x="${wx}" y="1.25" width="1.6" height=".9" rx=".15" fill="#ffd98c"/>`).join('')
+    + (front ? '<path d="M9.8 1.3H10.9Q11.2 1.4 11.3 2.1H9.8Z" fill="#3a4a52"/>' : '') + `<rect x=".6" y="3.6" width="1.4" height=".4" fill="#3a3a3e"/><rect x="${front ? 9 : 9.2}" y="3.6" width="1.4" height=".4" fill="#3a3a3e"/></g>`;
+  return `<svg viewBox="0 0 60 4.2" aria-hidden="true">${[0, 11.8, 23.6, 35.4].map((x) => car(x, false)).join('')}${car(47.2, true)}</svg>`;
+}
+// 夜の庭の旧車：長く低い車体、白いふちのタイヤ、ヘッドライトの光が前へのび、テールランプは赤く。水面に灯りが映る
+function lowriderSVG() {
+  return `<svg viewBox="0 0 40 20" aria-hidden="true"><defs><radialGradient id="lrH"><stop offset="0" stop-color="#fff2c8" stop-opacity=".75"/><stop offset="1" stop-color="#fff2c8" stop-opacity="0"/></radialGradient><radialGradient id="lrT"><stop offset="0" stop-color="#ff4a3a" stop-opacity=".8"/><stop offset="1" stop-color="#ff4a3a" stop-opacity="0"/></radialGradient></defs>`
+    + `<ellipse cx="33" cy="8.2" rx="7" ry="1.6" fill="url(#lrH)"/><ellipse cx="2.4" cy="8.4" rx="2.2" ry="1.2" fill="url(#lrT)"/>`
+    + `<path d="M3 8.6Q3 7.2 5 7H9.4L12.6 4.6Q13.4 4.1 14.6 4.1H20.4Q21.6 4.1 22.4 4.7L25.2 7H28Q30 7.2 30 8.6V9.6H3Z" fill="#5a2333"/><path d="M3 8.6H30V9.2H3Z" fill="#c9c4c0" opacity=".8"/>`
+    + `<path d="M13.2 4.9L11 6.9H17V4.7H14.6Q13.8 4.7 13.2 4.9ZM18 4.7V6.9H24.2L22 5.1Q21.4 4.7 20.4 4.7Z" fill="#2a2e44"/><path d="M14 5.4H16.2V6.4H13.2Z" fill="#ffd98c" opacity=".55"/>`
+    + `<circle cx="8" cy="9.8" r="1.5" fill="#141218"/><circle cx="8" cy="9.8" r=".9" fill="#d9d3c8"/><circle cx="8" cy="9.8" r=".45" fill="#8a8690"/><circle cx="25" cy="9.8" r="1.5" fill="#141218"/><circle cx="25" cy="9.8" r=".9" fill="#d9d3c8"/><circle cx="25" cy="9.8" r=".45" fill="#8a8690"/>`
+    + `<rect x="29.4" y="7.6" width=".9" height=".7" fill="#fff4d0"/><rect x="2.8" y="7.7" width=".7" height=".6" fill="#ff5a48"/>`
+    // 水面に映る灯り（縦にのびて、やわらかくゆれる）
+    + `<g class="lr-refl"><ellipse cx="30" cy="14.6" rx=".9" ry="4.4" fill="#fff2c8" opacity=".32"/><ellipse cx="3.2" cy="14" rx=".7" ry="3.2" fill="#ff5a48" opacity=".3"/></g></svg>`;
+}
+
 function buildLiving(r) {
   const D = r.sceneData, P = $('.props', r.el), S = $('.drift', r.el);
+  // 遠くを横切る乗りもの（奥の層と一緒に流れる）：夕凪は島々のふもとを走る列車、夜の庭は対岸の街の前を流す旧車
+  if (D.sunpath && (r.room.scene === 'cove' || r.room.scene === 'night')) {
+    const hz = D.sunpath[1], fw = W + (r.stops - 1) * W * FACTORS.far + 40, train = r.room.scene === 'cove';
+    const w = train ? 44 : 16, h = train ? 3.1 : 8, top = train ? hz - .2 - h : hz + 1.4 - h * .5; // 列車は水平線の上（島のふもと）、車は対岸の岸ぞい（水面に灯りが映る）
+    S.insertAdjacentHTML('beforeend', gradeColors(`<div class="living crosser ${train ? 'train' : 'lowrider'}" style="top:${(top * U).toFixed(1)}px;width:${w}vh;height:${h}vh;--x0:${(-w * 1.2 * U).toFixed(0)}px;--x1:${((fw + 4) * U).toFixed(0)}px;--dur:${(fw / (train ? 7 : 11)).toFixed(1)}s">${train ? trainSVG() : lowriderSVG()}</div>`, gradeOf(r.room.scene)));
+  }
   // 水辺：水面をゆっくり漂う蓮の花びら（手前の水面に、ところどころ。ふわりと揺れながら横へ流れる）
   if (r.room.scene === 'jungle') {
     const mw = W + (r.stops - 1) * W * FACTORS.mid, g = hrand(r.stops * 31 + 7), n = Math.round(mw / (COARSE ? 18 : 14));
@@ -1318,6 +1343,8 @@ function updateRoom(r, now) {
   const k = 1 - smooth(.3, 1, best);
   r.glow = r.glow.map((v, i) => lerp(v, lerp(r.sceneData.glowDefault[i], glow[i], k), .08));
   put(q(r, '.art'), '--glow', r.glow.map(Math.round).join(',')); // 作品のうしろの光（作品の層だけが使う）
+  // 作品の傾き：目の前の作品が、カーソル（スマホは端末の傾き）に合わせて額ごとわずかに立体的に傾く
+  if (!REDUCED) { put(q(r, '.art'), '--ry', `${(mouse.x * 5).toFixed(2)}deg`); put(q(r, '.art'), '--rx', `${(-mouse.y * 3.5).toFixed(2)}deg`); }
   { const gk = it?.work && glowK.has(it.work.id) ? lerp(1, glowK.get(it.work.id), k) : 1; r.glowK = lerp(r.glowK ?? gk, gk, .08); put(q(r, '.art'), '--glowk', r.glowK.toFixed(3)); }
   if (sy > top - vh * .5 && sy < top + len + vh * .5) currentRoom = r;
 }
