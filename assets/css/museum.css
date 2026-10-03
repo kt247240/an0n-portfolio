@@ -161,7 +161,7 @@ body:not(.loaded) .hero-title > * { opacity: 0; transform: translateY(20px); }
 .hero-title > :nth-child(2) { transition-delay: .25s; } .hero-title > :nth-child(3) { transition-delay: .4s; } .hero-title > :nth-child(4) { transition-delay: .55s; }
 .scroll-cue { position: absolute; left: 50%; bottom: 4vh; transform: translateX(-50%); margin: 0; display: flex; flex-direction: column; align-items: center; gap: 9px; color: var(--cream); z-index: 3; opacity: 0; transition: opacity 1.2s ease-out 1.2s; }
 body.loaded .scroll-cue { opacity: 1; } /* 入口に来てから少しして、ふわっと出る */
-.scroll-cue .cue-txt { font-size: 12px; font-weight: 600; letter-spacing: .36em; margin-right: -.36em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.scroll-cue .cue-txt { font-family: var(--en); font-size: 13px; font-weight: 600; letter-spacing: .36em; margin-right: -.36em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
 /* 入口の操作の案内：PC はマウスのホイールが下へ、スマホは指が下から上へなぞる */
 .scroll-cue .cue-ico { position: relative; display: block; width: 18px; height: 28px; border: 1.5px solid rgba(255, 250, 242, .95); border-radius: 10px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .25)); }
 .scroll-cue .cue-ico i { position: absolute; left: 50%; top: 6px; width: 3px; height: 6px; margin-left: -1.5px; border-radius: 2px; background: var(--cream); animation: wheel 1.8s var(--ease-io) infinite; }
@@ -253,7 +253,7 @@ body.loaded .scroll-cue.used { opacity: 0; visibility: hidden; transition: opaci
 #artist .role { font-family: var(--en); font-style: italic; font-size: 22px; margin: 10px 0 0; }
 #artist-bio { font-size: 15px; line-height: 2.1; letter-spacing: .06em; margin: 28px 0 0; max-width: 34em; }
 #artist-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
-#artist-links a { text-decoration: none; border: 1px solid rgba(255, 250, 242, .5); padding: 11px 20px; font-size: 13px; letter-spacing: .15em; transition: background .3s, color .3s; }
+#artist-links a { text-decoration: none; border: 1px solid rgba(255, 250, 242, .5); padding: 11px 20px; font-family: var(--en); font-weight: 600; font-size: 14px; letter-spacing: .18em; transition: background .3s, color .3s; }
 #artist-links a:hover { background: var(--cream); color: var(--ink); }
 .artist-figure { position: relative; justify-self: center; height: min(70vh, 640px); }
 .artist-figure img { height: 100%; width: auto; filter: brightness(.82) drop-shadow(0 0 40px rgba(223, 116, 24, .25)); }
@@ -264,7 +264,7 @@ body.loaded .scroll-cue.used { opacity: 0; visibility: hidden; transition: opaci
 footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 250, 242, .6); font-size: 11px; letter-spacing: .25em; padding: 22px 8vw; display: flex; justify-content: space-between; }
 
 /* ---------- 没入ビューア ---------- */
-#viewer { position: fixed; inset: 0; z-index: 80; background: #07080a; clip-path: circle(0 at var(--ox, 50%) var(--oy, 50%)); transition: clip-path 1.1s var(--ease-io); visibility: hidden; overflow: hidden; }
+#viewer { position: fixed; inset: 0; z-index: 80; background: #07080a; clip-path: circle(0 at var(--ox, 50%) var(--oy, 50%)); transition: clip-path 1.45s var(--ease-io); visibility: hidden; overflow: hidden; }
 #viewer.open { clip-path: circle(150% at var(--ox, 50%) var(--oy, 50%)); visibility: visible; }
 #viewer.closing { visibility: visible; }
 #v-wash { position: absolute; left: -8%; top: -8%; width: 116%; height: 116%; filter: blur(30px) saturate(1.35) brightness(.72); animation: vbreathe 9s ease-in-out infinite alternate; }
@@ -294,7 +294,7 @@ footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 2
 /* 価格：ASK と、問い合わせ（Instagram の DM・メッセージ） */
 .v-ask { display: flex; align-items: center; gap: 10px; margin-top: 14px; pointer-events: auto; }
 .v-ask .tag { font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: rgb(var(--glow)); margin-right: 4px; }
-.v-ask a { color: var(--cream); text-decoration: none; font-size: 12px; letter-spacing: .2em; padding: 8px 16px; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
+.v-ask a { color: var(--cream); text-decoration: none; font-family: var(--en); font-weight: 600; font-size: 13px; letter-spacing: .2em; padding: 8px 16px; border: 1px solid rgba(255, 250, 242, .55); background: rgba(255, 250, 242, .08); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
 .v-ask a:hover { background: var(--cream); color: var(--ink); }
 .spec .ask { position: absolute; right: -6px; bottom: 14px; font-style: normal; font-family: "Cormorant Garamond", serif; font-weight: 600; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: #3b2a1c; background: #efe3c3; padding: 2px 8px 1px; border-radius: 2px; box-shadow: 0 2px 4px rgba(0, 0, 0, .25); transform: rotate(-4deg); pointer-events: none; }
 .v-ask.sold a, .v-ask.nfs a { display: none; }
@@ -346,7 +346,7 @@ footer { position: relative; z-index: 2; background: #10132a; color: rgba(255, 2
 body:not(.beat-on) .spin { animation-duration: 7s; }
 
 /* ビートのボタン（イコライザーつき） */
-.beat { display: flex; align-items: center; gap: 8px; margin-left: auto; margin-right: 22px; padding: 7px 14px; cursor: pointer; font-family: "VT323", monospace; font-size: 17px; letter-spacing: .12em;
+.beat { display: flex; align-items: center; gap: 8px; margin-left: auto; margin-right: 22px; padding: 7px 14px; cursor: pointer; font-family: var(--en); font-weight: 600; font-size: 14px; letter-spacing: .2em;
   color: var(--cream); background: rgba(20, 20, 16, .35); border: 1px solid rgba(255, 250, 242, .5); backdrop-filter: blur(6px); transition: background .3s, color .3s; }
 #site-head.solid .beat { color: var(--ink); border-color: rgba(27, 35, 25, .4); background: rgba(255, 250, 242, .6); }
 .beat:hover { background: var(--cream); color: var(--ink); }
@@ -411,7 +411,7 @@ body.no-sound .player-btn::after { content: none !important; }
 #entrance.night .sign, #entrance.night .player-btn, #entrance.night .guide { filter: brightness(.5) saturate(.75) hue-rotate(-6deg); }
 @media (prefers-reduced-motion: reduce) { .fireflies i { animation: none; opacity: .7; } }
 .player-btn svg, .prop svg, .artist-boombox svg { display: block; width: 100%; height: auto; overflow: visible; }
-body:not(.beat-on) .player-btn::after { content: "PRESS PLAY"; position: absolute; left: 50%; top: -3.2vh; transform: translateX(-50%); font-family: "VT323", monospace; font-size: 2vh; letter-spacing: .15em; color: var(--cream); background: rgba(20, 20, 16, .55); padding: .2vh .8vh; white-space: nowrap; animation: twinkle 1.6s steps(2) infinite; }
+body:not(.beat-on) .player-btn::after { content: "PRESS PLAY"; position: absolute; left: 50%; top: -3.2vh; transform: translateX(-50%); font-family: var(--en); font-weight: 600; font-size: 1.5vh; letter-spacing: .24em; color: var(--cream); background: rgba(20, 20, 16, .55); padding: .2vh .8vh; white-space: nowrap; animation: twinkle 1.6s steps(2) infinite; }
 
 /* 森の中の小物 */
 .plane.props { z-index: 0; }
@@ -710,6 +710,7 @@ body.beat-on [data-egg="turntable"] .spin { animation-duration: 1.2s; }
 .room:not(.lit) .lightplay, .room:not(.lit) .nextglow, .room:not(.lit) .hush { display: none; }
 .lightplay { overflow: hidden; }
 .lightplay i { position: absolute; inset: 0; will-change: transform, opacity; }
+.lightplay { opacity: calc(1 - var(--calm, 0) * .6); } /* 作品の前では光のゆらぎを控えめに */
 @media (prefers-reduced-motion: reduce) { .lightplay i { animation: none !important; } }
 /* 朝の森：梢から差す光の筋が、ゆっくり揺れて強くなったり弱くなったりする */
 .scene-forest .lightplay i { mix-blend-mode: screen; -webkit-mask-image: linear-gradient(#000 0%, #000 35%, transparent 92%); mask-image: linear-gradient(#000 0%, #000 35%, transparent 92%); }
@@ -1100,9 +1101,10 @@ body.forest-night .farewell .fw-glow { opacity: 1; }
 #v-meta { display: grid; gap: 6px; }
 #v-meta .v-title { font-family: "Cormorant Garamond", "Shippori Mincho", serif; font-weight: 600; font-size: clamp(26px, 3.2vw, 40px); line-height: 1; letter-spacing: .01em; opacity: 1; text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
 #v-meta .v-year, #v-meta .v-credit { font-family: "Cormorant Garamond", "Shippori Mincho", serif; font-weight: 500; font-size: 16px; letter-spacing: .12em; line-height: 1.1; opacity: .75; }
-#v-meta .v-year::before { content: "— "; opacity: .6; }
+#v-meta .v-year { text-transform: uppercase; font-size: 14px; letter-spacing: .26em; opacity: .88; }
+#v-meta .v-title { margin-bottom: 4px; }
 #v-meta .v-credit { opacity: .95; color: rgb(var(--glow)); }
-.spec .name { position: absolute; left: -6px; right: -6px; top: calc(100% + 8px); display: block; text-align: center; font-family: "Permanent Marker", "Zen Kaku Gothic New", sans-serif; font-weight: 400; font-size: 16px; letter-spacing: .03em; color: #33291f; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: rotate(-1.2deg); }
+.spec .name { position: absolute; left: -6px; right: -6px; top: calc(100% + 8px); display: block; text-align: center; font-family: var(--en), var(--serif); font-weight: 600; font-size: 17px; letter-spacing: .04em; color: #33291f; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; transform: rotate(-1.2deg); }
 .spec:nth-child(2n) .name { transform: rotate(.9deg); }
 .spec .name small { display: block; font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 13px; letter-spacing: .12em; opacity: .6; margin-top: 3px; }
 .specimen .bed { row-gap: 64px; padding-bottom: 64px; }

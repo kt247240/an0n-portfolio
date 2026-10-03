@@ -1278,6 +1278,10 @@ function updateRoom(r, now) {
   // 作品の前の暗がり（周辺の減光と、しずまり）。部屋全体ではなく、使う要素にだけ渡す
   const fv = focus.toFixed(3); put(q(r, '.vig'), '--focus', fv); put(q(r, '.hush'), '--focus', fv);
   updateBleed(r, focus, now);
+  // 作品の前に立ち止まっていると、まわりの動き（光のゆらぎ・漂う粒）が少しずつ静まる。歩きだすと戻る
+  { const want = focus > .85 ? 1 : 0, dt2 = Math.min(.1, (now - (r.calmT ?? now)) / 1000); r.calmT = now;
+    r.calm = (r.calm ?? 0) + (want - (r.calm ?? 0)) * (1 - Math.exp(-dt2 / (want ? 2.2 : .6)));
+    put(r.el, '--calm', r.calm.toFixed(3)); if (currentRoom === r || r.c > 0) CALM = r.calm; }
   if (!returning && r.room.scene === 'attic' && r.c >= 2) returning = true; // 小屋の中の作品の前まで来たら、帰り道に跡が出る
   updateTraces(r);
   // 光の流れ・次の部屋の気配は、部屋の中にいる間だけ（葉のカーテンが開いている間）。いま見ている部屋だけに付けて軽く
@@ -1678,7 +1682,7 @@ function setViewer(w) {
   }
   const room = ROOMS.find((r) => r.id === w.room);
   // 作品名（と制作年）、その下に依頼作品のクレジット
-  { const m = $('#v-meta'); m.textContent = ''; const t = document.createElement('span'); t.className = 'v-title'; t.textContent = w.title; m.append(t); if (w.year) { const y = document.createElement('span'); y.className = 'v-year'; y.textContent = w.year; m.append(y); } if (w.credit) { const c = document.createElement('span'); c.className = 'v-credit'; c.textContent = w.credit; m.append(c); } }
+  { const m = $('#v-meta'); m.textContent = ''; const t = document.createElement('span'); t.className = 'v-title'; t.textContent = w.title; m.append(t); { const y = document.createElement('span'); y.className = 'v-year'; y.textContent = [w.year, w.medium].filter(Boolean).join('  ·  '); if (y.textContent) m.append(y); } if (w.credit) { const c = document.createElement('span'); c.className = 'v-credit'; c.textContent = w.credit; m.append(c); } }
   // 価格はすべて ASK：Instagram の DM か、作品名入りのメッセージ（メール）で問い合わせ
   const ig = ARTIST.links.find((l) => l.label === 'Instagram'), mail = ARTIST.links.find((l) => l.label === 'Mail');
   const ask = $('.v-ask', viewer);
@@ -1929,6 +1933,7 @@ function rebuild() {
 /* =========================================================
    ビート（音は最初は OFF。ボタンかラジカセで ON）
    ========================================================= */
+let CALM = 0; // 目の前の作品に立ち止まっている度合い（0〜1）
 let kick = 0, snare = 0, lastSY = scrollY, scratchAt = 0, fxDirty = true, movedAt = 0;
 // SoundCloud のラジオがあればそれを、なければサイトで作った曲を流す（どちらも同じ形で扱える）
 const beat = RADIO ? createRadio(RADIO) : createBeat({
@@ -2042,7 +2047,7 @@ function frame(now) {
     // 部屋の中を歩いている間は、ヘッダーとナビを引っ込める（画面の上か右端にポインタを寄せると出てくる）
     document.body.classList.toggle('walking', !!currentRoom && !pointerEdge);
     // パーティクル（画面に固定）
-    spawn(activeTheme, currentRoom || inEntrance || inArtist ? 1 : 0, dt, parts);
+    spawn(activeTheme, currentRoom || inEntrance || inArtist ? 1 - (currentRoom ? CALM * .75 : 0) : 0, dt, parts); // 作品の前では粒の出方を控えめに
     stepP(parts, dt);
     // 落ちながら作品の枠の列に入りそうな葉は、枠の手前で薄れて消える（枠の後ろへ回らない）
     if (GEO.workRects?.length) for (const q of parts) { if (q.k === 'leaf') q.life = Math.min(q.life, q.age + .6); } // 作品が画面に入ったら、落ちている葉はすぐ消す
