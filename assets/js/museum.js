@@ -1348,8 +1348,6 @@ function updateRoom(r, now) {
   const k = 1 - smooth(.3, 1, best);
   r.glow = r.glow.map((v, i) => lerp(v, lerp(r.sceneData.glowDefault[i], glow[i], k), .08));
   put(q(r, '.art'), '--glow', r.glow.map(Math.round).join(',')); // 作品のうしろの光（作品の層だけが使う）
-  // 作品の傾き：目の前の作品が、カーソル（スマホは端末の傾き）に合わせて額ごとわずかに立体的に傾く
-  if (!REDUCED) { put(q(r, '.art'), '--ry', `${(mouse.x * 5).toFixed(2)}deg`); put(q(r, '.art'), '--rx', `${(-mouse.y * 3.5).toFixed(2)}deg`); }
   { const gk = it?.work && glowK.has(it.work.id) ? lerp(1, glowK.get(it.work.id), k) : 1; r.glowK = lerp(r.glowK ?? gk, gk, .08); put(q(r, '.art'), '--glowk', r.glowK.toFixed(3)); }
   if (sy > top - vh * .5 && sy < top + len + vh * .5) currentRoom = r;
 }

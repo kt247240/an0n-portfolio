@@ -126,9 +126,6 @@ body.loaded #loader { opacity: 0; transform: scale(1.08); pointer-events: none; 
   mask-composite: intersect; }
 .frame-spot .work .canvas { border: .7vh solid #1a1712; box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5); }
 .frame-spot .work.near .canvas { box-shadow: 0 0 0 1.4vh #efe9dc, 0 0 0 1.9vh #1a1712, 0 3vh 6vh rgba(0, 0, 0, .5), 0 0 12vh rgba(var(--glow), .35); }
-/* 作品の傾き（目の前の作品だけ）。離れると、ゆっくり正面に戻る */
-.room .work .canvas { --tx: 0deg; --ty: 0deg; transform: perspective(140vh) rotateX(var(--tx)) rotateY(var(--ty)); transition: box-shadow .8s, transform .6s ease-out; }
-.room .work.near .canvas { --tx: var(--rx, 0deg); --ty: var(--ry, 0deg); transition: box-shadow .8s, transform .15s linear; }
 .frame-spot .work .deco.spot { width: 30vh; height: 20vh; margin-bottom: 1.9vh; }
 .scene-attic .room-title { text-shadow: 0 2px 24px rgba(0, 0, 0, .7); }
 
