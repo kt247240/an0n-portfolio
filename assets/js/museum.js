@@ -567,12 +567,12 @@ function buildRoomScene(r) {
       el.innerHTML = `<div class="halo"></div>${standing ? '<div class="ground-shadow"></div>' : ''}${gradeColors(frameDeco(r.room.frame), gradeOf(r.room.scene))}<button class="canvas" style="width:${h * w.aspect * U}px;height:${h * U}px" aria-label="${esc(w.title)} を見る">${mediaHTML(w)}</button>`;
       // 台座・柱が、作品の大きさによらず地面（遊歩道・桟橋・砂浜）まで届くように
       const groundY = { lightbox: 89, easel: 89, post: 88 }[r.room.frame];
-      if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.insertAdjacentHTML('beforeend', gradeColors(plinthExtras(r.room.frame, i), gradeOf(r.room.scene))); const dx = el.querySelector('.deco-x'); if (dx) dx.style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
+      if (groundY) { const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + (vw <= 760 ? 1.1 : 1.5) + 1)); el.querySelector('.deco.under').style.height = `${plinth}vh`; el.insertAdjacentHTML('beforeend', gradeColors(plinthExtras(r.room.frame, i), gradeOf(r.room.scene))); const dx = el.querySelector('.deco-x'); if (dx) dx.style.height = `${plinth}vh`; el.querySelector('.ground-shadow').style.top = `calc(100% + ${plinth - 1}vh)`; }
       // 作品の台の正面に掛ける画面つきプレーヤー（Deep In. の樽の台）
       const onPlinth = PLINTH_MUSIC[w.id];
       if (onPlinth && groundY) {
         // 樽の台の 2 本の鉄の帯（台の高さの 28.75% と 67.5%）のあいだに、壁掛けのように掛ける
-        const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + 1)), gapH = plinth * (27 - 11.5) / 40;
+        const plinth = Math.max(10, groundY - ((vw <= 760 ? 38 : 46) + h / 2 + (vw <= 760 ? 1.1 : 1.5) + 1)), gapH = plinth * (27 - 11.5) / 40;
         const ph = Math.min(gapH * .82, h * w.aspect * .598 * .86 * 30.2 / 48), pw = ph * 48 / 30.2, top = plinth * 11.5 / 40 + (gapH - ph) / 2;
         el.insertAdjacentHTML('beforeend', `<button class="music-stand pedestal-player egg-prop" data-egg="musicbox" data-track="${onPlinth.track}" aria-label="曲を流す" style="width:${pw.toFixed(2)}vh;top:calc(100% + ${top.toFixed(2)}vh)"><i class="mb-brk l" aria-hidden="true"></i><i class="mb-brk r" aria-hidden="true"></i>${gradeColors(PROPS.musicPanel.svg(onPlinth.art), gradeOf(r.room.scene))}<i class="mb-glow" aria-hidden="true"></i></button>`);
       }
