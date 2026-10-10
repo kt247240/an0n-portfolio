@@ -3,16 +3,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>An0n.portfolio</title>
 <meta name="robots" content="noindex">
-<!-- 見つからない URL のときに GitHub Pages が出すページ。
-     Instagram などは、リンクの「#」を「%23」に書き換えてしまい、…/an0n-portfolio/%23room-dapple のような存在しないページになる。
+<!-- 見つからない URL のときに 公開先（Vercel）が出すページ。
+     Instagram などは、リンクの「#」を「%23」に書き換えてしまい、…/%23room-dapple のような存在しないページになる。
      その場合は「#」に戻して美術館のその場所へ、それ以外は美術館の入口へ、すぐ移る -->
 <script>
 (function () {
-  var base = '/an0n-portfolio/', p = location.pathname, i = p.toLowerCase().indexOf('%23'), hash = location.hash;
+  var base = '/', p = location.pathname, i = p.toLowerCase().indexOf('%23'), hash = location.hash;
   if (i >= 0) { try { hash = '#' + decodeURIComponent(p.slice(i + 3)); } catch (e) { hash = ''; } }
   location.replace(base + location.search + hash);
 })();
 </script>
 </head><body style="margin:0;background:#1a3326;color:#f4ede1;font-family:sans-serif">
-<noscript><p style="padding:24px"><a href="/an0n-portfolio/" style="color:#f4ede1">An0n.portfolio</a></p></noscript>
+<noscript><p style="padding:24px"><a href="/" style="color:#f4ede1">An0n.portfolio</a></p></noscript>
 </body></html>
