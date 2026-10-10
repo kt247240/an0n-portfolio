@@ -14,7 +14,8 @@ export const ARTIST = {
   bio: 'Illustration & Animation',
   links: [
     { label: 'Instagram', href: 'https://www.instagram.com/he024mp/' },
-    { label: 'Mail', href: 'mailto:hektmp@gmail.com', title: 'hektmp@gmail.com' },
+    // メールアドレスはページに平文で書かない（迷惑メール業者の収集よけ）。逆順にして base64 に。押したときにだけ組み立てる
+    { label: 'Mail', href: '#', mail: 'bW9jLmxpYW1nQHBtdGtlaA==' },
   ],
 };
 

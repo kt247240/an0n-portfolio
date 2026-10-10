@@ -1002,8 +1002,12 @@ function buildArtist() {
   // メールは新しいタブではなくメールアプリで開く。アドレスはマウスを乗せると見える
   // 作家の欄の結び：星空に満月、森と小屋のシルエット（窓にひとつ灯り）。文字は増やさない
   { const sky = nightSky(0, 100, 0, 60, { density: .5 }); $('#artist').insertAdjacentHTML('afterbegin', `<div class="farewell" aria-hidden="true"><svg class="fw-stars" viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice">${sky.svg}</svg><div class="fw-moon">${moonSVG('full')}</div>${farewellSVG()}</div>`); }
-  $('#artist-links').innerHTML = ARTIST.links.map((l) => `<a href="${esc(l.href)}"${l.href.startsWith('mailto:') ? '' : ' target="_blank" rel="noopener"'} aria-label="${esc(l.title ? `${l.label}: ${l.title}` : l.label)}"${l.title ? ` title="${esc(l.title)}"` : ''}><svg viewBox="0 0 20 20" aria-hidden="true">${LOGO[l.label] || ''}</svg></a>`).join('');
+  $('#artist-links').innerHTML = ARTIST.links.map((l) => `<a href="${esc(l.href)}"${l.mail ? ' data-mail=""' : ' target="_blank" rel="noopener"'} aria-label="${esc(l.title ? `${l.label}: ${l.title}` : l.label)}"${l.title ? ` title="${esc(l.title)}"` : ''}><svg viewBox="0 0 20 20" aria-hidden="true">${LOGO[l.label] || ''}</svg></a>`).join('');
 }
+
+// メール：押したときにだけアドレスを組み立てて開く（data-mail には件名・本文の続きを入れておく）
+const MAIL_ADDR = (() => { const l = ARTIST.links.find((x) => x.mail); return l ? atob(l.mail).split('').reverse().join('') : ''; })();
+document.addEventListener('click', (e) => { const a = e.target.closest('[data-mail]'); if (!a || !MAIL_ADDR) return; e.preventDefault(); location.href = `mailto:${MAIL_ADDR}${a.dataset.mail || ''}`; });
 
 /* ---------- 右側の部屋ナビ ---------- */
 const nav = $('#room-nav');
@@ -1687,7 +1691,7 @@ function setViewer(w) {
   ask.classList.toggle('sold', !!w.sold); ask.classList.toggle('nfs', !!w.nfs);
   ask.querySelector('.tag').textContent = w.sold ? 'SOLD OUT' : w.nfs ? 'NOT FOR SALE' : 'Price: ASK';
   ask.querySelector('.dm').href = ig ? ig.href : '#';
-  ask.querySelector('.msg').href = mail ? `${mail.href}?subject=${encodeURIComponent(`Inquiry: ${w.title}`)}&body=${encodeURIComponent(`${w.title}${w.ja ? `（${w.ja}）` : ''}\n${location.origin}${location.pathname}#w=${w.id}\n\n`)}` : '#';
+  ask.querySelector('.msg').href = '#'; ask.querySelector('.msg').dataset.mail = mail ? `?subject=${encodeURIComponent(`Inquiry: ${w.title}`)}&body=${encodeURIComponent(`${w.title}${w.ja ? `（${w.ja}）` : ''}\n${location.origin}${location.pathname}#w=${w.id}\n\n`)}` : '';
   ask.querySelector('.share').classList.remove('copied');
   viewer.dataset.scene = room.scene;
   fitVScreen();
